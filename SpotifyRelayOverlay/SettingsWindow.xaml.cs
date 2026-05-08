@@ -57,7 +57,7 @@ public partial class SettingsWindow : Window
         catch (Exception ex)
         {
             UpdateStatus("Spotify не подключен.");
-            MessageBox.Show(this, ex.Message, "Spotify Relay Overlay", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, ex.Message, "Spotify Relay Overlay", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         finally
         {
@@ -86,7 +86,7 @@ public partial class SettingsWindow : Window
     {
         if (!TryParseVirtualKey(LikeHotkeyBox.Text, out var likeKey))
         {
-            MessageBox.Show(this, "Код кнопки должен быть числом: например 0xB3 или 179.", "Spotify Relay Overlay", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, "Код кнопки должен быть числом: например 0xB3 или 179.", "Spotify Relay Overlay", MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
 

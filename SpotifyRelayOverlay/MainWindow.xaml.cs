@@ -5,6 +5,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using Forms = System.Windows.Forms;
 
 namespace SpotifyRelayOverlay;
 
@@ -22,7 +23,9 @@ public partial class MainWindow : Window
     private IntPtr _hwnd;
     private bool _isPolling;
     private bool _hotkeysRegistered;
+    private bool _isExiting;
     private ToastWindow? _toastWindow;
+    private Forms.NotifyIcon? _trayIcon;
 
     public MainWindow()
     {
@@ -36,6 +39,8 @@ public partial class MainWindow : Window
 
         _topmostTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
         _topmostTimer.Tick += (_, _) => KeepAboveWindows();
+
+        InitializeTrayIcon();
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -53,17 +58,25 @@ public partial class MainWindow : Window
         _source = HwndSource.FromHwnd(_hwnd);
         _source?.AddHook(WndProc);
 
-        NativeMethods.HideFromAltTab(_hwnd);
         ApplyModeSettings();
     }
 
     private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
+        if (!_isExiting)
+        {
+            e.Cancel = true;
+            Hide();
+            return;
+        }
+
         SaveWindowPosition();
         _pollTimer.Stop();
         _topmostTimer.Stop();
         UnregisterHotkeys();
         _source?.RemoveHook(WndProc);
+        _trayIcon?.Dispose();
+        _toastWindow?.Close();
     }
 
     private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -109,6 +122,30 @@ public partial class MainWindow : Window
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
+        Close();
+    }
+
+    private void InitializeTrayIcon()
+    {
+        var menu = new Forms.ContextMenuStrip();
+        menu.Items.Add("Открыть", null, (_, _) => Dispatcher.Invoke(BringOverlayToFront));
+        menu.Items.Add("Настройки", null, (_, _) => Dispatcher.Invoke(ShowSettingsWindow));
+        menu.Items.Add(new Forms.ToolStripSeparator());
+        menu.Items.Add("Выход", null, (_, _) => Dispatcher.Invoke(ExitApplication));
+
+        _trayIcon = new Forms.NotifyIcon
+        {
+            Icon = System.Drawing.SystemIcons.Application,
+            Text = "Spotify Relay Overlay",
+            Visible = true,
+            ContextMenuStrip = menu
+        };
+        _trayIcon.DoubleClick += (_, _) => Dispatcher.Invoke(BringOverlayToFront);
+    }
+
+    private void ExitApplication()
+    {
+        _isExiting = true;
         Close();
     }
 
@@ -534,7 +571,7 @@ public partial class MainWindow : Window
     {
         while (source is not null)
         {
-            if (source is Button)
+            if (source is System.Windows.Controls.Button)
             {
                 return true;
             }

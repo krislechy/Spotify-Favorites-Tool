@@ -3,7 +3,7 @@ using System.Windows;
 
 namespace SpotifyRelayOverlay;
 
-public partial class App : Application
+public partial class App : System.Windows.Application
 {
     private const string SingleInstanceMutexName = @"Local\SpotifyRelayOverlay.SingleInstance";
 
