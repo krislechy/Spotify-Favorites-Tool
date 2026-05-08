@@ -15,6 +15,7 @@ public sealed class SpotifyClient
     };
 
     private readonly SpotifyAuthService _auth;
+    private readonly Dictionary<string, bool> _likedCache = new(StringComparer.Ordinal);
 
     public SpotifyClient(SpotifyAuthService auth)
     {
@@ -55,7 +56,7 @@ public sealed class SpotifyClient
             ?.Url;
 
         var track = new PlaybackTrack(item.Id, item.Uri, item.Name, artists, image);
-        var liked = await IsLikedAsync(track.Uri, cancellationToken);
+        var liked = await GetCachedLikeAsync(track.Uri, cancellationToken);
         return new PlaybackSnapshot(
             track,
             playback?.IsPlaying == true,
@@ -70,12 +71,16 @@ public sealed class SpotifyClient
         var uri = Uri.EscapeDataString(track.Uri);
         var method = currentlyLiked ? HttpMethod.Delete : HttpMethod.Put;
         await SendAsync(method, $"{ApiRoot}/me/library?uris={uri}", cancellationToken);
-        return !currentlyLiked;
+        var isLiked = !currentlyLiked;
+        _likedCache[track.Uri] = isLiked;
+        return isLiked;
     }
 
     public async Task<bool> IsTrackLikedAsync(PlaybackTrack track, CancellationToken cancellationToken = default)
     {
-        return await IsLikedAsync(track.Uri, cancellationToken);
+        var isLiked = await IsLikedAsync(track.Uri, cancellationToken);
+        _likedCache[track.Uri] = isLiked;
+        return isLiked;
     }
 
     public async Task TogglePlaybackAsync(bool isPlaying, CancellationToken cancellationToken = default)
@@ -94,6 +99,18 @@ public sealed class SpotifyClient
         await SendAsync(HttpMethod.Post, $"{ApiRoot}/me/player/previous", cancellationToken);
     }
 
+    private async Task<bool> GetCachedLikeAsync(string spotifyUri, CancellationToken cancellationToken)
+    {
+        if (_likedCache.TryGetValue(spotifyUri, out var isLiked))
+        {
+            return isLiked;
+        }
+
+        isLiked = await IsLikedAsync(spotifyUri, cancellationToken);
+        _likedCache[spotifyUri] = isLiked;
+        return isLiked;
+    }
+
     private async Task<bool> IsLikedAsync(string spotifyUri, CancellationToken cancellationToken)
     {
         var uri = Uri.EscapeDataString(spotifyUri);
@@ -102,7 +119,7 @@ public sealed class SpotifyClient
         return values is { Length: > 0 } && values[0];
     }
 
-    private async Task<ApiResponse> SendAsync(HttpMethod method, string url, CancellationToken cancellationToken)
+    private async Task<ApiResponse> SendAsync(HttpMethod method, string url, CancellationToken cancellationToken, int rateLimitRetries = 2)
     {
         for (var attempt = 0; attempt < 2; attempt++)
         {
@@ -122,6 +139,19 @@ public sealed class SpotifyClient
             if (response.StatusCode == HttpStatusCode.Unauthorized && attempt == 0 && _auth.HasRefreshToken)
             {
                 continue;
+            }
+
+            if (response.StatusCode == (HttpStatusCode)429)
+            {
+                var retryDelay = GetRetryDelay(response);
+                if (rateLimitRetries > 0 && retryDelay <= TimeSpan.FromSeconds(6))
+                {
+                    await Task.Delay(retryDelay + TimeSpan.FromMilliseconds(250), cancellationToken);
+                    return await SendAsync(method, url, cancellationToken, rateLimitRetries - 1);
+                }
+
+                var seconds = Math.Max(1, (int)Math.Ceiling(retryDelay.TotalSeconds));
+                throw new InvalidOperationException($"Spotify просит подождать {seconds} сек. Слишком много команд подряд.");
             }
 
             if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NoContent)
@@ -145,6 +175,32 @@ public sealed class SpotifyClient
         }
 
         throw new InvalidOperationException("Spotify вернул 401. Заново войди в Spotify в настройках.");
+    }
+
+    private static TimeSpan GetRetryDelay(HttpResponseMessage response)
+    {
+        var retryAfter = response.Headers.RetryAfter;
+        if (retryAfter?.Delta is { } delta)
+        {
+            return ClampRetryDelay(delta);
+        }
+
+        if (retryAfter?.Date is { } retryDate)
+        {
+            return ClampRetryDelay(retryDate - DateTimeOffset.UtcNow);
+        }
+
+        return TimeSpan.FromSeconds(2);
+    }
+
+    private static TimeSpan ClampRetryDelay(TimeSpan delay)
+    {
+        if (delay < TimeSpan.FromSeconds(1))
+        {
+            return TimeSpan.FromSeconds(1);
+        }
+
+        return delay;
     }
 
     private sealed record ApiResponse(HttpStatusCode StatusCode, string Body);

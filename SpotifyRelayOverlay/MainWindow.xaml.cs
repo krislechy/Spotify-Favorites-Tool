@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private HwndSource? _source;
     private IntPtr _hwnd;
     private bool _isPolling;
+    private bool _isRunningPlaybackCommand;
     private bool _hotkeysRegistered;
     private bool _isExiting;
     private bool _hasSeenPlayback;
@@ -35,7 +36,7 @@ public partial class MainWindow : Window
         _auth = new SpotifyAuthService(_settings);
         _spotify = new SpotifyClient(_auth);
 
-        _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
         _pollTimer.Tick += async (_, _) => await RefreshPlaybackAsync();
 
         _topmostTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
@@ -274,11 +275,17 @@ public partial class MainWindow : Window
             }
         }
 
+        if (_isRunningPlaybackCommand)
+        {
+            return;
+        }
+
+        _isRunningPlaybackCommand = true;
         try
         {
             SetPlaybackButtonsEnabled(false);
             await command();
-            await Task.Delay(450);
+            await Task.Delay(750);
             await RefreshPlaybackAsync(allowAutomaticTrackToast: false);
             if (_current is not null)
             {
@@ -293,6 +300,7 @@ public partial class MainWindow : Window
         finally
         {
             SetPlaybackButtonsEnabled(_current?.Track is not null);
+            _isRunningPlaybackCommand = false;
         }
     }
 
@@ -307,11 +315,17 @@ public partial class MainWindow : Window
             }
         }
 
+        if (_isRunningPlaybackCommand)
+        {
+            return;
+        }
+
+        _isRunningPlaybackCommand = true;
         try
         {
             SetPlaybackButtonsEnabled(false);
             await command();
-            await Task.Delay(450);
+            await Task.Delay(750);
             await RefreshPlaybackAsync(allowAutomaticTrackToast: false);
         }
         catch (Exception ex)
@@ -322,6 +336,7 @@ public partial class MainWindow : Window
         finally
         {
             SetPlaybackButtonsEnabled(_current?.Track is not null);
+            _isRunningPlaybackCommand = false;
         }
     }
 
