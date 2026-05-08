@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Threading;
 
 namespace SpotifyRelayOverlay;
 
@@ -9,6 +10,7 @@ public sealed class SpotifyClient
 {
     private const string ApiRoot = "https://api.spotify.com/v1";
     private static readonly HttpClient Http = new();
+    private static readonly TimeSpan MaxRateLimitDelay = TimeSpan.FromMinutes(5);
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -16,6 +18,8 @@ public sealed class SpotifyClient
 
     private readonly SpotifyAuthService _auth;
     private readonly Dictionary<string, bool> _likedCache = new(StringComparer.Ordinal);
+    private readonly SemaphoreSlim _requestGate = new(1, 1);
+    private DateTimeOffset _rateLimitedUntil = DateTimeOffset.MinValue;
 
     public SpotifyClient(SpotifyAuthService auth)
     {
@@ -119,62 +123,106 @@ public sealed class SpotifyClient
         return values is { Length: > 0 } && values[0];
     }
 
-    private async Task<ApiResponse> SendAsync(HttpMethod method, string url, CancellationToken cancellationToken, int rateLimitRetries = 2)
+    private async Task<ApiResponse> SendAsync(HttpMethod method, string url, CancellationToken cancellationToken)
     {
-        for (var attempt = 0; attempt < 2; attempt++)
+        await _requestGate.WaitAsync(cancellationToken);
+        try
         {
-            var token = attempt == 0
-                ? await _auth.GetAccessTokenAsync(cancellationToken)
-                : await _auth.RefreshAccessTokenAsync(cancellationToken);
+            ThrowIfRateLimited();
+
+            var token = await _auth.GetAccessTokenAsync(cancellationToken);
             if (string.IsNullOrWhiteSpace(token))
             {
                 throw new InvalidOperationException("Spotify не подключен. Открой настройки и войди в аккаунт.");
             }
 
-            using var request = new HttpRequestMessage(method, url);
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            using var response = await Http.SendAsync(request, cancellationToken);
-            var body = await response.Content.ReadAsStringAsync(cancellationToken);
-            if (response.StatusCode == HttpStatusCode.Unauthorized && attempt == 0 && _auth.HasRefreshToken)
+            var refreshedToken = false;
+            var rateLimitRetries = 2;
+            while (true)
             {
-                continue;
-            }
+                using var request = new HttpRequestMessage(method, url);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            if (response.StatusCode == (HttpStatusCode)429)
-            {
-                var retryDelay = GetRetryDelay(response);
-                if (rateLimitRetries > 0 && retryDelay <= TimeSpan.FromSeconds(6))
+                using var response = await Http.SendAsync(request, cancellationToken);
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                if (response.StatusCode == HttpStatusCode.Unauthorized && !refreshedToken && _auth.HasRefreshToken)
                 {
-                    await Task.Delay(retryDelay + TimeSpan.FromMilliseconds(250), cancellationToken);
-                    return await SendAsync(method, url, cancellationToken, rateLimitRetries - 1);
+                    token = await _auth.RefreshAccessTokenAsync(cancellationToken);
+                    refreshedToken = true;
+                    if (string.IsNullOrWhiteSpace(token))
+                    {
+                        throw new InvalidOperationException("Spotify не подключен. Открой настройки и войди в аккаунт.");
+                    }
+
+                    continue;
                 }
 
-                var seconds = Math.Max(1, (int)Math.Ceiling(retryDelay.TotalSeconds));
-                throw new InvalidOperationException($"Spotify просит подождать {seconds} сек. Слишком много команд подряд.");
-            }
-
-            if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NoContent)
-            {
-                if (response.StatusCode == HttpStatusCode.Unauthorized)
+                if (response.StatusCode == (HttpStatusCode)429)
                 {
-                    throw new InvalidOperationException(
-                        "Spotify вернул 401. Открой настройки, нажми «Выйти», потом «Войти в Spotify» и выдай новые права на управление.");
+                    var retryDelay = GetRetryDelay(response);
+                    var cooldownDelay = CapRateLimitDelay(retryDelay);
+                    _rateLimitedUntil = DateTimeOffset.UtcNow.Add(cooldownDelay);
+
+                    if (rateLimitRetries > 0 && retryDelay <= TimeSpan.FromSeconds(6))
+                    {
+                        rateLimitRetries--;
+                        await Task.Delay(retryDelay + TimeSpan.FromMilliseconds(250), cancellationToken);
+                        _rateLimitedUntil = DateTimeOffset.MinValue;
+                        continue;
+                    }
+
+                    throw CreateRateLimitException(cooldownDelay);
                 }
 
-                if (response.StatusCode == HttpStatusCode.Forbidden)
+                if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NoContent)
                 {
-                    throw new InvalidOperationException(
-                        "Spotify отказал в управлении. Заново войди в настройках для новых прав; для play/pause/skip обычно нужен Premium и активное устройство Spotify.");
+                    if (response.StatusCode == HttpStatusCode.Unauthorized)
+                    {
+                        throw new InvalidOperationException(
+                            "Spotify вернул 401. Открой настройки, нажми «Выйти», потом «Войти в Spotify» и выдай новые права на управление.");
+                    }
+
+                    if (response.StatusCode == HttpStatusCode.Forbidden)
+                    {
+                        throw new InvalidOperationException(
+                            "Spotify отказал в управлении. Заново войди в настройках для новых прав; для play/pause/skip обычно нужен Premium и активное устройство Spotify.");
+                    }
+
+                    throw new SpotifyApiException(response.StatusCode, body);
                 }
 
-                throw new SpotifyApiException(response.StatusCode, body);
+                return new ApiResponse(response.StatusCode, body);
             }
+        }
+        finally
+        {
+            _requestGate.Release();
+        }
+    }
 
-            return new ApiResponse(response.StatusCode, body);
+    private void ThrowIfRateLimited()
+    {
+        var remaining = _rateLimitedUntil - DateTimeOffset.UtcNow;
+        if (remaining > TimeSpan.Zero)
+        {
+            throw CreateRateLimitException(remaining);
+        }
+    }
+
+    private static InvalidOperationException CreateRateLimitException(TimeSpan delay)
+    {
+        return new InvalidOperationException(
+            $"Spotify временно ограничил запросы. Подожди {FormatDelay(delay)} и не нажимай команды подряд.");
+    }
+
+    private static string FormatDelay(TimeSpan delay)
+    {
+        if (delay >= TimeSpan.FromMinutes(1))
+        {
+            return $"{Math.Max(1, (int)Math.Ceiling(delay.TotalMinutes))} мин";
         }
 
-        throw new InvalidOperationException("Spotify вернул 401. Заново войди в Spotify в настройках.");
+        return $"{Math.Max(1, (int)Math.Ceiling(delay.TotalSeconds))} сек";
     }
 
     private static TimeSpan GetRetryDelay(HttpResponseMessage response)
@@ -201,6 +249,12 @@ public sealed class SpotifyClient
         }
 
         return delay;
+    }
+
+    private static TimeSpan CapRateLimitDelay(TimeSpan delay)
+    {
+        delay = ClampRetryDelay(delay);
+        return delay > MaxRateLimitDelay ? MaxRateLimitDelay : delay;
     }
 
     private sealed record ApiResponse(HttpStatusCode StatusCode, string Body);

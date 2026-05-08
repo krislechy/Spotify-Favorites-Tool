@@ -22,6 +22,7 @@ public partial class MainWindow : Window
     private IntPtr _hwnd;
     private bool _isPolling;
     private bool _isRunningPlaybackCommand;
+    private bool _isTogglingLike;
     private bool _hotkeysRegistered;
     private bool _isExiting;
     private bool _hasSeenPlayback;
@@ -191,7 +192,7 @@ public partial class MainWindow : Window
 
     private async Task RefreshPlaybackAsync(bool allowAutomaticTrackToast = true)
     {
-        if (_isPolling)
+        if (_isPolling || _isRunningPlaybackCommand)
         {
             return;
         }
@@ -228,6 +229,12 @@ public partial class MainWindow : Window
 
     private async Task ToggleLikeAsync()
     {
+        if (_isTogglingLike)
+        {
+            return;
+        }
+
+        _isTogglingLike = true;
         try
         {
             LikeButton.IsEnabled = false;
@@ -261,6 +268,7 @@ public partial class MainWindow : Window
         finally
         {
             LikeButton.IsEnabled = _current?.Track is not null;
+            _isTogglingLike = false;
         }
     }
 
