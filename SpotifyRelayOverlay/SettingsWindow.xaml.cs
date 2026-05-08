@@ -18,7 +18,9 @@ public partial class SettingsWindow : Window
         OverlayEnabledBox.IsChecked = _settings.Current.OverlayEnabled;
         SafeModeBox.IsChecked = _settings.Current.SafeMode;
         LikeHotkeyBox.Text = $"0x{_settings.Current.LikeHotkeyVirtualKey:X2}";
-        ToastNotificationsBox.IsChecked = _settings.Current.ToastNotificationsEnabled;
+        NotifyLikeBox.IsChecked = _settings.Current.NotifyOnLikeChange;
+        NotifyManualTrackBox.IsChecked = _settings.Current.NotifyOnManualTrackChange;
+        NotifyAutomaticTrackBox.IsChecked = _settings.Current.NotifyOnAutomaticTrackChange;
         RefreshModePanels();
         UpdateStatus();
     }
@@ -94,7 +96,9 @@ public partial class SettingsWindow : Window
         _settings.Current.OverlayEnabled = OverlayEnabledBox.IsChecked == true;
         _settings.Current.SafeMode = SafeModeBox.IsChecked == true;
         _settings.Current.LikeHotkeyVirtualKey = likeKey;
-        _settings.Current.ToastNotificationsEnabled = ToastNotificationsBox.IsChecked == true;
+        _settings.Current.NotifyOnLikeChange = NotifyLikeBox.IsChecked == true;
+        _settings.Current.NotifyOnManualTrackChange = NotifyManualTrackBox.IsChecked == true;
+        _settings.Current.NotifyOnAutomaticTrackChange = NotifyAutomaticTrackBox.IsChecked == true;
         _settings.Save();
         return true;
     }
@@ -106,13 +110,15 @@ public partial class SettingsWindow : Window
         OverlayOptionsPanel.Opacity = overlayEnabled ? 1 : 0.45;
         BackgroundModePanel.IsEnabled = !overlayEnabled;
         BackgroundModePanel.Opacity = overlayEnabled ? 0.45 : 1;
+        NotificationOptionsPanel.IsEnabled = !overlayEnabled;
+        NotificationOptionsPanel.Opacity = overlayEnabled ? 0.45 : 1;
     }
 
     private void UpdateStatus(string? prefix = null)
     {
         var authState = _auth.HasRefreshToken ? "Аккаунт подключен." : "Аккаунт не подключен.";
         var modeState = _settings.Current.OverlayEnabled ? "Оверлей включен." : "Фоновый режим включен.";
-        var toastState = _settings.Current.ToastNotificationsEnabled ? "Уведомления включены." : "Уведомления выключены.";
+        var toastState = _settings.Current.OverlayEnabled ? "Уведомления скрыты для режима оверлея." : "Уведомления настраиваются ниже.";
         StatusText.Text = string.IsNullOrWhiteSpace(prefix)
             ? $"{authState} {modeState} {toastState}"
             : $"{prefix} {authState} {modeState} {toastState}";

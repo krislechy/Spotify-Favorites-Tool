@@ -73,6 +73,11 @@ public sealed class SpotifyClient
         return !currentlyLiked;
     }
 
+    public async Task<bool> IsTrackLikedAsync(PlaybackTrack track, CancellationToken cancellationToken = default)
+    {
+        return await IsLikedAsync(track.Uri, cancellationToken);
+    }
+
     public async Task TogglePlaybackAsync(bool isPlaying, CancellationToken cancellationToken = default)
     {
         var action = isPlaying ? "pause" : "play";

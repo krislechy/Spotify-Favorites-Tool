@@ -13,7 +13,9 @@ public sealed class AppSettings
     public bool OverlayEnabled { get; set; } = true;
     public bool SafeMode { get; set; }
     public uint LikeHotkeyVirtualKey { get; set; } = 0xB3;
-    public bool ToastNotificationsEnabled { get; set; } = true;
+    public bool NotifyOnLikeChange { get; set; } = true;
+    public bool NotifyOnManualTrackChange { get; set; } = true;
+    public bool NotifyOnAutomaticTrackChange { get; set; } = true;
 }
 
 public sealed record PlaybackSnapshot(
