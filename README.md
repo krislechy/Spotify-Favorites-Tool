@@ -30,6 +30,18 @@ user-read-currently-playing user-read-playback-state user-modify-playback-state 
 
 Если при переключении треков или паузе появляется `401`, это значит, что сохраненный токен Spotify больше не подходит для управления playback. Открой `⚙`, нажми `Выйти`, затем снова `Войти в Spotify`.
 
+## Определение клавиш
+
+В репозитории есть мини-консоль `KeyInspector`, которая показывает, какую клавишу нажала Windows. Она слушает low-level keyboard hook и raw input, поэтому полезна для медиа-кнопок, нестандартных кнопок и HID consumer controls.
+
+```powershell
+dotnet run --project .\KeyInspector\KeyInspector.csproj
+```
+
+Нажми нужную кнопку и смотри строки `HOOK`, `RAWK` и `RAWH`. Для медиа-кнопок чаще всего нужны значения вроде `VK_MEDIA_PLAY_PAUSE`, `VK_MEDIA_NEXT_TRACK`, `VK_VOLUME_UP` или HID usage `0x00CD Play/Pause`. Выход из консоли: `Ctrl+C`.
+
+Если часть клавиш не отображается, попробуй запустить консоль от администратора. Если клавишу полностью перехватывает фирменная программа клавиатуры или она уходит как vendor-specific HID без события клавиатуры/consumer control, Windows может не отдавать ее обычному приложению.
+
 ## Управление
 
 - Перетащи оверлей мышью за любую пустую область.
