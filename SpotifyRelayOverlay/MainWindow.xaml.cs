@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private HwndSource? _source;
     private IntPtr _hwnd;
     private bool _isPolling;
+    private bool _hotkeysRegistered;
 
     public MainWindow()
     {
@@ -41,8 +42,7 @@ public partial class MainWindow : Window
         RestoreWindowPosition();
         RenderEmpty("Spotify Relay", "Открой настройки и подключи Spotify.", "Не подключено");
         _pollTimer.Start();
-        _topmostTimer.Start();
-        KeepAboveWindows();
+        ApplySafetyMode();
         await RefreshPlaybackAsync();
     }
 
@@ -53,8 +53,7 @@ public partial class MainWindow : Window
         _source?.AddHook(WndProc);
 
         NativeMethods.HideFromAltTab(_hwnd);
-        RegisterHotkeys();
-        KeepAboveWindows();
+        ApplySafetyMode();
     }
 
     private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -62,16 +61,7 @@ public partial class MainWindow : Window
         SaveWindowPosition();
         _pollTimer.Stop();
         _topmostTimer.Stop();
-
-        if (_hwnd != IntPtr.Zero)
-        {
-            NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyToggleLike);
-            NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyToggleVisibility);
-            NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyPreviousTrack);
-            NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyPlayPause);
-            NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyNextTrack);
-        }
-
+        UnregisterHotkeys();
         _source?.RemoveHook(WndProc);
     }
 
@@ -120,9 +110,17 @@ public partial class MainWindow : Window
         _settingsWindow = new SettingsWindow(_settings, _auth)
         {
             Owner = this,
-            Topmost = true
+            Topmost = !_settings.Current.SafeMode
         };
         _settingsWindow.AuthChanged += async (_, _) => await RefreshPlaybackAsync();
+        _settingsWindow.SettingsChanged += (_, _) =>
+        {
+            ApplySafetyMode();
+            if (_settingsWindow is not null)
+            {
+                _settingsWindow.Topmost = !_settings.Current.SafeMode;
+            }
+        };
         _settingsWindow.Closed += (_, _) => _settingsWindow = null;
         _settingsWindow.Show();
     }
@@ -287,9 +285,29 @@ public partial class MainWindow : Window
         }
     }
 
+    private void ApplySafetyMode()
+    {
+        if (_settings.Current.SafeMode)
+        {
+            _topmostTimer.Stop();
+            Topmost = false;
+            UnregisterHotkeys();
+            return;
+        }
+
+        Topmost = true;
+        RegisterHotkeys();
+        if (!_topmostTimer.IsEnabled)
+        {
+            _topmostTimer.Start();
+        }
+
+        KeepAboveWindows();
+    }
+
     private void RegisterHotkeys()
     {
-        if (_hwnd == IntPtr.Zero)
+        if (_settings.Current.SafeMode || _hotkeysRegistered || _hwnd == IntPtr.Zero)
         {
             return;
         }
@@ -319,6 +337,23 @@ public partial class MainWindow : Window
             NativeMethods.HotkeyNextTrack,
             NativeMethods.ModControl | NativeMethods.ModAlt,
             (uint)KeyInterop.VirtualKeyFromKey(Key.Right));
+
+        _hotkeysRegistered = true;
+    }
+
+    private void UnregisterHotkeys()
+    {
+        if (!_hotkeysRegistered || _hwnd == IntPtr.Zero)
+        {
+            return;
+        }
+
+        NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyToggleLike);
+        NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyToggleVisibility);
+        NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyPreviousTrack);
+        NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyPlayPause);
+        NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyNextTrack);
+        _hotkeysRegistered = false;
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -368,7 +403,7 @@ public partial class MainWindow : Window
 
     private void KeepAboveWindows()
     {
-        if (!IsVisible)
+        if (!IsVisible || _settings.Current.SafeMode)
         {
             return;
         }
@@ -439,6 +474,6 @@ public partial class MainWindow : Window
             return value;
         }
 
-        return value[..Math.Max(0, maxLength - 1)] + "…";
+        return value[..Math.Max(0, maxLength - 1)] + "...";
     }
 }

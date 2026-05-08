@@ -14,20 +14,24 @@ public partial class SettingsWindow : Window
         _auth = auth;
         ClientIdBox.Text = _settings.Current.ClientId;
         RedirectUriBox.Text = SpotifyAuthService.RedirectUri;
+        SafeModeBox.IsChecked = _settings.Current.SafeMode;
         UpdateStatus();
     }
 
     public event EventHandler? AuthChanged;
+    public event EventHandler? SettingsChanged;
 
     private void SaveButton_Click(object sender, RoutedEventArgs e)
     {
-        SaveClientId();
+        SaveSettings();
         UpdateStatus("Настройки сохранены.");
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private async void LoginButton_Click(object sender, RoutedEventArgs e)
     {
-        SaveClientId();
+        SaveSettings();
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
 
         try
         {
@@ -60,17 +64,19 @@ public partial class SettingsWindow : Window
         Close();
     }
 
-    private void SaveClientId()
+    private void SaveSettings()
     {
         _settings.Current.ClientId = ClientIdBox.Text.Trim();
+        _settings.Current.SafeMode = SafeModeBox.IsChecked == true;
         _settings.Save();
     }
 
     private void UpdateStatus(string? prefix = null)
     {
         var authState = _auth.HasRefreshToken ? "Аккаунт подключен." : "Аккаунт не подключен.";
+        var safetyState = _settings.Current.SafeMode ? "Безопасный режим включен." : "Безопасный режим выключен.";
         StatusText.Text = string.IsNullOrWhiteSpace(prefix)
-            ? authState
-            : $"{prefix} {authState}";
+            ? $"{authState} {safetyState}"
+            : $"{prefix} {authState} {safetyState}";
     }
 }

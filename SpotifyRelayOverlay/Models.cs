@@ -10,6 +10,7 @@ public sealed class AppSettings
     public DateTimeOffset AccessTokenExpiresAt { get; set; } = DateTimeOffset.MinValue;
     public double? WindowLeft { get; set; }
     public double? WindowTop { get; set; }
+    public bool SafeMode { get; set; }
 }
 
 public sealed record PlaybackSnapshot(
