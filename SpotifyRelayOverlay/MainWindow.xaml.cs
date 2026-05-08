@@ -358,6 +358,13 @@ public partial class MainWindow : Window
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+        if ((uint)msg == NativeMethods.ShowExistingWindowMessage)
+        {
+            handled = true;
+            BringOverlayToFront();
+            return IntPtr.Zero;
+        }
+
         if (msg != NativeMethods.WmHotkey)
         {
             return IntPtr.Zero;
@@ -387,6 +394,23 @@ public partial class MainWindow : Window
         }
 
         return IntPtr.Zero;
+    }
+
+    private void BringOverlayToFront()
+    {
+        if (!IsVisible)
+        {
+            Show();
+        }
+
+        if (WindowState == WindowState.Minimized)
+        {
+            WindowState = WindowState.Normal;
+        }
+
+        Activate();
+        NativeMethods.BringWindowToFront(_hwnd);
+        KeepAboveWindows();
     }
 
     private void ToggleVisibility()
