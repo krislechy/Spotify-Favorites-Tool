@@ -10,7 +10,10 @@ public sealed class AppSettings
     public DateTimeOffset AccessTokenExpiresAt { get; set; } = DateTimeOffset.MinValue;
     public double? WindowLeft { get; set; }
     public double? WindowTop { get; set; }
+    public bool OverlayEnabled { get; set; } = true;
     public bool SafeMode { get; set; }
+    public uint LikeHotkeyVirtualKey { get; set; } = 0xB3;
+    public bool ToastNotificationsEnabled { get; set; } = true;
 }
 
 public sealed record PlaybackSnapshot(

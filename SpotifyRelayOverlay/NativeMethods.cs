@@ -15,6 +15,7 @@ internal static class NativeMethods
     public const int HotkeyPreviousTrack = 1003;
     public const int HotkeyPlayPause = 1004;
     public const int HotkeyNextTrack = 1005;
+    public const int HotkeyCustomLike = 1006;
 
     private const int GwlExstyle = -20;
     private const int WsExToolwindow = 0x00000080;

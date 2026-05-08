@@ -22,6 +22,7 @@ public partial class MainWindow : Window
     private IntPtr _hwnd;
     private bool _isPolling;
     private bool _hotkeysRegistered;
+    private ToastWindow? _toastWindow;
 
     public MainWindow()
     {
@@ -42,7 +43,7 @@ public partial class MainWindow : Window
         RestoreWindowPosition();
         RenderEmpty("Spotify Relay", "Открой настройки и подключи Spotify.", "Не подключено");
         _pollTimer.Start();
-        ApplySafetyMode();
+        ApplyModeSettings();
         await RefreshPlaybackAsync();
     }
 
@@ -53,7 +54,7 @@ public partial class MainWindow : Window
         _source?.AddHook(WndProc);
 
         NativeMethods.HideFromAltTab(_hwnd);
-        ApplySafetyMode();
+        ApplyModeSettings();
     }
 
     private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -75,12 +76,12 @@ public partial class MainWindow : Window
 
     private async void LikeButton_Click(object sender, RoutedEventArgs e)
     {
-        await ToggleLikeAsync();
+        await ToggleLikeAsync(showToast: true);
     }
 
     private async void PreviousButton_Click(object sender, RoutedEventArgs e)
     {
-        await RunPlaybackCommandAsync(() => _spotify.PreviousTrackAsync());
+        await RunPlaybackCommandAsync(() => _spotify.PreviousTrackAsync(), "Предыдущий трек");
     }
 
     private async void PlayPauseButton_Click(object sender, RoutedEventArgs e)
@@ -91,15 +92,27 @@ public partial class MainWindow : Window
             return;
         }
 
-        await RunPlaybackCommandAsync(() => _spotify.TogglePlaybackAsync(snapshot.IsPlaying));
+        await RunPlaybackCommandAsync(
+            () => _spotify.TogglePlaybackAsync(snapshot.IsPlaying),
+            snapshot.IsPlaying ? "Пауза" : "Воспроизведение");
     }
 
     private async void NextButton_Click(object sender, RoutedEventArgs e)
     {
-        await RunPlaybackCommandAsync(() => _spotify.NextTrackAsync());
+        await RunPlaybackCommandAsync(() => _spotify.NextTrackAsync(), "Следующий трек");
     }
 
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        ShowSettingsWindow();
+    }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+
+    private void ShowSettingsWindow()
     {
         if (_settingsWindow is { IsVisible: true })
         {
@@ -110,24 +123,19 @@ public partial class MainWindow : Window
         _settingsWindow = new SettingsWindow(_settings, _auth)
         {
             Owner = this,
-            Topmost = !_settings.Current.SafeMode
+            Topmost = _settings.Current.OverlayEnabled && !_settings.Current.SafeMode
         };
         _settingsWindow.AuthChanged += async (_, _) => await RefreshPlaybackAsync();
         _settingsWindow.SettingsChanged += (_, _) =>
         {
-            ApplySafetyMode();
+            ApplyModeSettings();
             if (_settingsWindow is not null)
             {
-                _settingsWindow.Topmost = !_settings.Current.SafeMode;
+                _settingsWindow.Topmost = _settings.Current.OverlayEnabled && !_settings.Current.SafeMode;
             }
         };
         _settingsWindow.Closed += (_, _) => _settingsWindow = null;
         _settingsWindow.Show();
-    }
-
-    private void CloseButton_Click(object sender, RoutedEventArgs e)
-    {
-        Close();
     }
 
     private async Task RefreshPlaybackAsync()
@@ -165,12 +173,17 @@ public partial class MainWindow : Window
         }
     }
 
-    private async Task ToggleLikeAsync()
+    private async Task ToggleLikeAsync(bool showToast)
     {
         var snapshot = _current;
         if (snapshot?.Track is null)
         {
-            return;
+            await RefreshPlaybackAsync();
+            snapshot = _current;
+            if (snapshot?.Track is null)
+            {
+                return;
+            }
         }
 
         try
@@ -179,6 +192,11 @@ public partial class MainWindow : Window
             var isLiked = await _spotify.ToggleLikeAsync(snapshot.Track, snapshot.IsLiked);
             _current = snapshot with { IsLiked = isLiked };
             RenderPlayback(_current);
+
+            if (showToast)
+            {
+                ShowToast(_current, isLiked ? "Лайкнуто" : "Лайк убран", isLiked ? "Добавлено в избранное" : "Убрано из избранного");
+            }
         }
         catch (Exception ex)
         {
@@ -191,11 +209,15 @@ public partial class MainWindow : Window
         }
     }
 
-    private async Task RunPlaybackCommandAsync(Func<Task> command)
+    private async Task RunPlaybackCommandAsync(Func<Task> command, string toastAction)
     {
         if (_current?.Track is null)
         {
-            return;
+            await RefreshPlaybackAsync();
+            if (_current?.Track is null)
+            {
+                return;
+            }
         }
 
         try
@@ -204,6 +226,10 @@ public partial class MainWindow : Window
             await command();
             await Task.Delay(450);
             await RefreshPlaybackAsync();
+            if (_current is not null)
+            {
+                ShowToast(_current, toastAction);
+            }
         }
         catch (Exception ex)
         {
@@ -285,65 +311,72 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ApplySafetyMode()
+    private void ApplyModeSettings()
     {
-        if (_settings.Current.SafeMode)
+        UnregisterHotkeys();
+
+        if (_settings.Current.OverlayEnabled)
         {
-            _topmostTimer.Stop();
-            Topmost = false;
-            UnregisterHotkeys();
+            if (!IsVisible)
+            {
+                Show();
+            }
+
+            if (_settings.Current.SafeMode)
+            {
+                _topmostTimer.Stop();
+                Topmost = false;
+            }
+            else
+            {
+                Topmost = true;
+                RegisterOverlayHotkeys();
+                if (!_topmostTimer.IsEnabled)
+                {
+                    _topmostTimer.Start();
+                }
+
+                KeepAboveWindows();
+            }
+
             return;
         }
 
-        Topmost = true;
-        RegisterHotkeys();
-        if (!_topmostTimer.IsEnabled)
-        {
-            _topmostTimer.Start();
-        }
-
-        KeepAboveWindows();
+        _topmostTimer.Stop();
+        Topmost = false;
+        RegisterBackgroundHotkey();
+        Hide();
     }
 
-    private void RegisterHotkeys()
+    private void RegisterOverlayHotkeys()
     {
-        if (_settings.Current.SafeMode || _hotkeysRegistered || _hwnd == IntPtr.Zero)
+        if (_hotkeysRegistered || _hwnd == IntPtr.Zero)
         {
             return;
         }
 
-        NativeMethods.RegisterHotKey(
-            _hwnd,
-            NativeMethods.HotkeyToggleLike,
-            NativeMethods.ModControl | NativeMethods.ModAlt,
-            (uint)KeyInterop.VirtualKeyFromKey(Key.L));
-        NativeMethods.RegisterHotKey(
-            _hwnd,
-            NativeMethods.HotkeyToggleVisibility,
-            NativeMethods.ModControl | NativeMethods.ModAlt,
-            (uint)KeyInterop.VirtualKeyFromKey(Key.H));
-        NativeMethods.RegisterHotKey(
-            _hwnd,
-            NativeMethods.HotkeyPreviousTrack,
-            NativeMethods.ModControl | NativeMethods.ModAlt,
-            (uint)KeyInterop.VirtualKeyFromKey(Key.Left));
-        NativeMethods.RegisterHotKey(
-            _hwnd,
-            NativeMethods.HotkeyPlayPause,
-            NativeMethods.ModControl | NativeMethods.ModAlt,
-            (uint)KeyInterop.VirtualKeyFromKey(Key.Space));
-        NativeMethods.RegisterHotKey(
-            _hwnd,
-            NativeMethods.HotkeyNextTrack,
-            NativeMethods.ModControl | NativeMethods.ModAlt,
-            (uint)KeyInterop.VirtualKeyFromKey(Key.Right));
+        NativeMethods.RegisterHotKey(_hwnd, NativeMethods.HotkeyToggleLike, NativeMethods.ModControl | NativeMethods.ModAlt, (uint)KeyInterop.VirtualKeyFromKey(Key.L));
+        NativeMethods.RegisterHotKey(_hwnd, NativeMethods.HotkeyToggleVisibility, NativeMethods.ModControl | NativeMethods.ModAlt, (uint)KeyInterop.VirtualKeyFromKey(Key.H));
+        NativeMethods.RegisterHotKey(_hwnd, NativeMethods.HotkeyPreviousTrack, NativeMethods.ModControl | NativeMethods.ModAlt, (uint)KeyInterop.VirtualKeyFromKey(Key.Left));
+        NativeMethods.RegisterHotKey(_hwnd, NativeMethods.HotkeyPlayPause, NativeMethods.ModControl | NativeMethods.ModAlt, (uint)KeyInterop.VirtualKeyFromKey(Key.Space));
+        NativeMethods.RegisterHotKey(_hwnd, NativeMethods.HotkeyNextTrack, NativeMethods.ModControl | NativeMethods.ModAlt, (uint)KeyInterop.VirtualKeyFromKey(Key.Right));
+        _hotkeysRegistered = true;
+    }
 
+    private void RegisterBackgroundHotkey()
+    {
+        if (_hotkeysRegistered || _hwnd == IntPtr.Zero || _settings.Current.LikeHotkeyVirtualKey == 0)
+        {
+            return;
+        }
+
+        NativeMethods.RegisterHotKey(_hwnd, NativeMethods.HotkeyCustomLike, 0, _settings.Current.LikeHotkeyVirtualKey);
         _hotkeysRegistered = true;
     }
 
     private void UnregisterHotkeys()
     {
-        if (!_hotkeysRegistered || _hwnd == IntPtr.Zero)
+        if (_hwnd == IntPtr.Zero)
         {
             return;
         }
@@ -353,6 +386,7 @@ public partial class MainWindow : Window
         NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyPreviousTrack);
         NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyPlayPause);
         NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyNextTrack);
+        NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyCustomLike);
         _hotkeysRegistered = false;
     }
 
@@ -374,22 +408,23 @@ public partial class MainWindow : Window
         switch (wParam.ToInt32())
         {
             case NativeMethods.HotkeyToggleLike:
-                _ = ToggleLikeAsync();
+            case NativeMethods.HotkeyCustomLike:
+                _ = ToggleLikeAsync(showToast: true);
                 break;
             case NativeMethods.HotkeyToggleVisibility:
                 ToggleVisibility();
                 break;
             case NativeMethods.HotkeyPreviousTrack:
-                _ = RunPlaybackCommandAsync(() => _spotify.PreviousTrackAsync());
+                _ = RunPlaybackCommandAsync(() => _spotify.PreviousTrackAsync(), "Предыдущий трек");
                 break;
             case NativeMethods.HotkeyPlayPause:
                 if (_current is not null)
                 {
-                    _ = RunPlaybackCommandAsync(() => _spotify.TogglePlaybackAsync(_current.IsPlaying));
+                    _ = RunPlaybackCommandAsync(() => _spotify.TogglePlaybackAsync(_current.IsPlaying), _current.IsPlaying ? "Пауза" : "Воспроизведение");
                 }
                 break;
             case NativeMethods.HotkeyNextTrack:
-                _ = RunPlaybackCommandAsync(() => _spotify.NextTrackAsync());
+                _ = RunPlaybackCommandAsync(() => _spotify.NextTrackAsync(), "Следующий трек");
                 break;
         }
 
@@ -398,6 +433,12 @@ public partial class MainWindow : Window
 
     private void BringOverlayToFront()
     {
+        if (!_settings.Current.OverlayEnabled)
+        {
+            ShowSettingsWindow();
+            return;
+        }
+
         if (!IsVisible)
         {
             Show();
@@ -425,9 +466,22 @@ public partial class MainWindow : Window
         KeepAboveWindows();
     }
 
+    private void ShowToast(PlaybackSnapshot snapshot, string action, string? extra = null)
+    {
+        if (!_settings.Current.ToastNotificationsEnabled)
+        {
+            return;
+        }
+
+        _toastWindow?.Close();
+        _toastWindow = new ToastWindow(snapshot, action, extra);
+        _toastWindow.Closed += (_, _) => _toastWindow = null;
+        _toastWindow.Show();
+    }
+
     private void KeepAboveWindows()
     {
-        if (!IsVisible || _settings.Current.SafeMode)
+        if (!IsVisible || !_settings.Current.OverlayEnabled || _settings.Current.SafeMode)
         {
             return;
         }
