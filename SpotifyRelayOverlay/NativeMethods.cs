@@ -1,0 +1,72 @@
+using System.Runtime.InteropServices;
+
+namespace SpotifyRelayOverlay;
+
+internal static class NativeMethods
+{
+    public const int WmHotkey = 0x0312;
+
+    public const uint ModAlt = 0x0001;
+    public const uint ModControl = 0x0002;
+
+    public const int HotkeyToggleLike = 1001;
+    public const int HotkeyToggleVisibility = 1002;
+    public const int HotkeyPreviousTrack = 1003;
+    public const int HotkeyPlayPause = 1004;
+    public const int HotkeyNextTrack = 1005;
+
+    private const int GwlExstyle = -20;
+    private const int WsExToolwindow = 0x00000080;
+    private const uint SwpNomove = 0x0002;
+    private const uint SwpNosize = 0x0001;
+    private const uint SwpNoactivate = 0x0010;
+    private const uint SwpShowwindow = 0x0040;
+
+    private static readonly IntPtr HwndTopmost = new(-1);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+
+    [DllImport("user32.dll", EntryPoint = "SetWindowPos", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetWindowPosNative(
+        IntPtr hWnd,
+        IntPtr hWndInsertAfter,
+        int x,
+        int y,
+        int cx,
+        int cy,
+        uint uFlags);
+
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW", SetLastError = true)]
+    private static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
+
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW", SetLastError = true)]
+    private static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
+    public static void ForceTopmost(IntPtr hWnd)
+    {
+        if (hWnd == IntPtr.Zero)
+        {
+            return;
+        }
+
+        SetWindowPosNative(hWnd, HwndTopmost, 0, 0, 0, 0, SwpNomove | SwpNosize | SwpNoactivate | SwpShowwindow);
+    }
+
+    public static void HideFromAltTab(IntPtr hWnd)
+    {
+        if (hWnd == IntPtr.Zero)
+        {
+            return;
+        }
+
+        var style = GetWindowLongPtr(hWnd, GwlExstyle).ToInt64();
+        SetWindowLongPtr(hWnd, GwlExstyle, new IntPtr(style | WsExToolwindow));
+    }
+}

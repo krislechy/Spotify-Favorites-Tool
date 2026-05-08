@@ -1,0 +1,79 @@
+<Window x:Class="SpotifyRelayOverlay.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Настройки Spotify"
+        Width="520"
+        Height="330"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        Background="#111713"
+        Foreground="#F4F8F5">
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Spotify Client ID"
+                   FontSize="13"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,6" />
+        <TextBox x:Name="ClientIdBox"
+                 Grid.Row="1"
+                 Height="32"
+                 Padding="8,5"
+                 Background="#202A24"
+                 Foreground="#F4F8F5"
+                 BorderBrush="#3D4B42"
+                 CaretBrush="#1ED760" />
+
+        <TextBlock Grid.Row="2"
+                   Text="Redirect URI"
+                   FontSize="13"
+                   FontWeight="SemiBold"
+                   Margin="0,16,0,6" />
+        <TextBox x:Name="RedirectUriBox"
+                 Grid.Row="3"
+                 Height="32"
+                 Padding="8,5"
+                 IsReadOnly="True"
+                 Background="#202A24"
+                 Foreground="#CFE1D5"
+                 BorderBrush="#3D4B42" />
+
+        <TextBlock x:Name="StatusText"
+                   Grid.Row="4"
+                   Margin="0,16,0,0"
+                   Foreground="#9ECFB1"
+                   TextWrapping="Wrap" />
+
+        <StackPanel Grid.Row="5"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button Content="Сохранить"
+                    Width="96"
+                    Height="34"
+                    Margin="0,0,8,0"
+                    Click="SaveButton_Click" />
+            <Button x:Name="LoginButton"
+                    Content="Войти в Spotify"
+                    Width="122"
+                    Height="34"
+                    Margin="0,0,8,0"
+                    Click="LoginButton_Click" />
+            <Button Content="Выйти"
+                    Width="72"
+                    Height="34"
+                    Margin="0,0,8,0"
+                    Click="LogoutButton_Click" />
+            <Button Content="Закрыть"
+                    Width="76"
+                    Height="34"
+                    Click="CloseButton_Click" />
+        </StackPanel>
+    </Grid>
+</Window>
