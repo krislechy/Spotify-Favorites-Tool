@@ -6,19 +6,21 @@
         Height="270"
         MinWidth="430"
         MinHeight="250"
-        ResizeMode="CanMinimize"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
         ShowInTaskbar="True"
-        Background="#101512"
+        Background="Transparent"
         Loaded="Window_Loaded"
         Closing="Window_Closing"
         SourceInitialized="Window_SourceInitialized">
     <Window.Resources>
         <Style x:Key="IconButton" TargetType="Button">
-            <Setter Property="Width" Value="42" />
-            <Setter Property="Height" Value="36" />
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="32" />
             <Setter Property="Margin" Value="0,0,8,0" />
             <Setter Property="Padding" Value="0" />
-            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontSize" Value="14" />
             <Setter Property="Foreground" Value="#F4F8F5" />
             <Setter Property="Background" Value="#202A24" />
             <Setter Property="BorderBrush" Value="#3D4B42" />
@@ -50,85 +52,135 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="TitleButton" BasedOn="{StaticResource IconButton}" TargetType="Button">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
     </Window.Resources>
 
-    <Border Margin="12"
-            Padding="16"
-            CornerRadius="8"
-            Background="#141B17"
+    <Border Margin="8"
+            CornerRadius="12"
+            Background="#101512"
             BorderBrush="#2A3A31"
-            BorderThickness="1">
+            BorderThickness="1"
+            SnapsToDevicePixels="True">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="18"
+                              ShadowDepth="0"
+                              Opacity="0.28"
+                              Color="#000000" />
+        </Border.Effect>
+
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="42" />
                 <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <DockPanel LastChildFill="True">
-                <Border Width="42"
-                        Height="42"
-                        Margin="0,0,12,0"
-                        CornerRadius="8"
+            <Grid x:Name="TitleBar"
+                  Grid.Row="0"
+                  Margin="10,8,10,0"
+                  MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Border Width="28"
+                        Height="28"
+                        CornerRadius="7"
                         Background="#1ED760">
                     <TextBlock Text="♥"
                                Foreground="#0F1511"
-                               FontSize="24"
+                               FontSize="16"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center" />
                 </Border>
 
-                <StackPanel>
+                <StackPanel Grid.Column="1"
+                            Margin="10,0,0,0"
+                            VerticalAlignment="Center">
                     <TextBlock Text="Spotify Избранное"
                                Foreground="#F4F8F5"
-                               FontSize="20"
+                               FontSize="14"
                                FontWeight="SemiBold" />
-                    <TextBlock Text="Одна клавиша для добавления и удаления текущего трека из избранного"
-                               Foreground="#AEBDB4"
-                               FontSize="12"
-                               TextWrapping="Wrap" />
+                    <TextBlock Text="Горячая клавиша для текущего трека"
+                               Foreground="#7F8D84"
+                               FontSize="10" />
                 </StackPanel>
-            </DockPanel>
+
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <Button Style="{StaticResource TitleButton}"
+                            Content="⚙"
+                            Click="SettingsButton_Click"
+                            ToolTip="Настройки" />
+                    <Button Style="{StaticResource TitleButton}"
+                            Content="─"
+                            Click="MinimizeButton_Click"
+                            ToolTip="Свернуть" />
+                    <Button Style="{StaticResource TitleButton}"
+                            Content="×"
+                            Margin="0"
+                            Click="CloseToTrayButton_Click"
+                            ToolTip="Закрыть в трей" />
+                </StackPanel>
+            </Grid>
 
             <Border Grid.Row="1"
-                    Margin="0,14,0,12"
-                    Padding="12"
-                    CornerRadius="8"
-                    Background="#18201B"
-                    BorderBrush="#28362E"
+                    Margin="12,10,12,12"
+                    Padding="16"
+                    CornerRadius="10"
+                    Background="#141B17"
+                    BorderBrush="#25342C"
                     BorderThickness="1">
-                <StackPanel>
-                    <TextBlock x:Name="HotkeyText"
-                               Foreground="#8DE6B1"
-                               FontSize="13"
-                               FontWeight="SemiBold"
-                               TextWrapping="Wrap" />
-                    <TextBlock x:Name="StatusText"
-                               Margin="0,8,0,0"
-                               Foreground="#D7E4DC"
-                               FontSize="12"
-                               TextWrapping="Wrap" />
-                </StackPanel>
-            </Border>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="2"
-                        Orientation="Horizontal"
-                        HorizontalAlignment="Right">
-                <Button Style="{StaticResource IconButton}"
-                        Content="⚙"
-                        Click="SettingsButton_Click"
-                        ToolTip="Настройки" />
-                <Button Style="{StaticResource IconButton}"
-                        Content="—"
-                        Click="HideButton_Click"
-                        ToolTip="Скрыть в трей" />
-                <Button Style="{StaticResource IconButton}"
-                        Content="⏻"
-                        Margin="0"
-                        Click="ExitButton_Click"
-                        ToolTip="Выход" />
-            </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="Одна клавиша для добавления и удаления текущего трека из Избранного"
+                                   Foreground="#D7E4DC"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap" />
+                        <TextBlock Text="Окно можно закрыть в трей через ×. Полный выход остается в меню трея."
+                                   Margin="0,5,0,0"
+                                   Foreground="#AEBDB4"
+                                   FontSize="11"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <Border Grid.Row="1"
+                            Margin="0,14,0,0"
+                            Padding="12"
+                            CornerRadius="8"
+                            Background="#18201B"
+                            BorderBrush="#28362E"
+                            BorderThickness="1">
+                        <StackPanel>
+                            <TextBlock x:Name="HotkeyText"
+                                       Foreground="#8DE6B1"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap" />
+                            <TextBlock x:Name="StatusText"
+                                       Margin="0,8,0,0"
+                                       Foreground="#D7E4DC"
+                                       FontSize="12"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
         </Grid>
     </Border>
 </Window>

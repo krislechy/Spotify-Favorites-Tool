@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Interop;
 using Forms = System.Windows.Forms;
 
@@ -63,14 +64,31 @@ public partial class MainWindow : Window
         ShowSettingsWindow();
     }
 
-    private void HideButton_Click(object sender, RoutedEventArgs e)
+    private void MinimizeButton_Click(object sender, RoutedEventArgs e)
     {
-        Hide();
+        WindowState = WindowState.Minimized;
     }
 
-    private void ExitButton_Click(object sender, RoutedEventArgs e)
+    private void CloseToTrayButton_Click(object sender, RoutedEventArgs e)
     {
-        ExitApplication();
+        Close();
+    }
+
+    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ButtonState != MouseButtonState.Pressed)
+        {
+            return;
+        }
+
+        try
+        {
+            DragMove();
+        }
+        catch (InvalidOperationException)
+        {
+            // DragMove can throw if Windows has already ended the mouse capture.
+        }
     }
 
     private void InitializeTrayIcon()
