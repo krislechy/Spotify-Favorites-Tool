@@ -10,26 +10,7 @@ public sealed class AppSettings
     public DateTimeOffset AccessTokenExpiresAt { get; set; } = DateTimeOffset.MinValue;
     public double? WindowLeft { get; set; }
     public double? WindowTop { get; set; }
-    public bool OverlayEnabled { get; set; } = true;
-    public bool SafeMode { get; set; }
     public uint LikeHotkeyVirtualKey { get; set; } = 0xB3;
-    public bool NotifyOnLikeChange { get; set; } = true;
-    public bool NotifyOnManualTrackChange { get; set; } = true;
-    public bool NotifyOnAutomaticTrackChange { get; set; } = true;
-}
-
-public sealed record PlaybackSnapshot(
-    PlaybackTrack? Track,
-    bool IsPlaying,
-    bool IsLiked,
-    int ProgressMs,
-    int DurationMs,
-    string Status)
-{
-    public static PlaybackSnapshot Empty(string status)
-    {
-        return new PlaybackSnapshot(null, false, false, 0, 0, status);
-    }
 }
 
 public sealed record PlaybackTrack(
@@ -38,6 +19,11 @@ public sealed record PlaybackTrack(
     string Name,
     string Artists,
     string? AlbumImageUrl);
+
+public sealed record FavoriteToggleResult(
+    PlaybackTrack Track,
+    bool IsLiked,
+    string Message);
 
 internal sealed class TokenResponse
 {
@@ -53,12 +39,6 @@ internal sealed class TokenResponse
 
 internal sealed class PlaybackResponse
 {
-    [JsonPropertyName("is_playing")]
-    public bool IsPlaying { get; set; }
-
-    [JsonPropertyName("progress_ms")]
-    public int? ProgressMs { get; set; }
-
     [JsonPropertyName("item")]
     public SpotifyItem? Item { get; set; }
 }

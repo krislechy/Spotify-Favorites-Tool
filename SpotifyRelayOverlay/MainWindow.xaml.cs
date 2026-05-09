@@ -1,9 +1,5 @@
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Threading;
 using Forms = System.Windows.Forms;
 
 namespace SpotifyRelayOverlay;
@@ -13,46 +9,29 @@ public partial class MainWindow : Window
     private readonly SettingsStore _settings = new();
     private readonly SpotifyAuthService _auth;
     private readonly SpotifyClient _spotify;
-    private readonly DispatcherTimer _pollTimer;
-    private readonly DispatcherTimer _topmostTimer;
 
-    private PlaybackSnapshot? _current;
     private SettingsWindow? _settingsWindow;
     private HwndSource? _source;
     private IntPtr _hwnd;
-    private bool _isPolling;
-    private bool _isRunningPlaybackCommand;
-    private bool _isTogglingLike;
-    private bool _hotkeysRegistered;
+    private bool _hotkeyRegistered;
+    private bool _hotkeyRegistrationFailed;
+    private bool _isExecuting;
     private bool _isExiting;
-    private bool _hasSeenPlayback;
-    private string? _lastTrackId;
     private Forms.NotifyIcon? _trayIcon;
     private ToastWindow? _toastWindow;
 
     public MainWindow()
     {
         InitializeComponent();
-
         _auth = new SpotifyAuthService(_settings);
         _spotify = new SpotifyClient(_auth);
-
-        _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
-        _pollTimer.Tick += async (_, _) => await RefreshPlaybackAsync();
-
-        _topmostTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
-        _topmostTimer.Tick += (_, _) => KeepAboveWindows();
-
         InitializeTrayIcon();
     }
 
-    private async void Window_Loaded(object sender, RoutedEventArgs e)
+    private void Window_Loaded(object sender, RoutedEventArgs e)
     {
         RestoreWindowPosition();
-        RenderEmpty("Spotify Relay", "Открой настройки и подключи Spotify.", "Не подключено");
-        _pollTimer.Start();
-        ApplyModeSettings();
-        await RefreshPlaybackAsync(allowAutomaticTrackToast: false);
+        UpdateStatus();
     }
 
     private void Window_SourceInitialized(object? sender, EventArgs e)
@@ -60,7 +39,7 @@ public partial class MainWindow : Window
         _hwnd = new WindowInteropHelper(this).Handle;
         _source = HwndSource.FromHwnd(_hwnd);
         _source?.AddHook(WndProc);
-        ApplyModeSettings();
+        RegisterFavoriteHotkey();
     }
 
     private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -73,46 +52,10 @@ public partial class MainWindow : Window
         }
 
         SaveWindowPosition();
-        _pollTimer.Stop();
-        _topmostTimer.Stop();
-        UnregisterHotkeys();
+        UnregisterFavoriteHotkey();
         _source?.RemoveHook(WndProc);
         _trayIcon?.Dispose();
         _toastWindow?.Close();
-    }
-
-    private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.ButtonState == MouseButtonState.Pressed && !IsInsideButton(e.OriginalSource as DependencyObject))
-        {
-            DragMove();
-        }
-    }
-
-    private async void LikeButton_Click(object sender, RoutedEventArgs e)
-    {
-        await ToggleLikeAsync();
-    }
-
-    private async void PreviousButton_Click(object sender, RoutedEventArgs e)
-    {
-        await RunTrackSwitchCommandAsync(() => _spotify.PreviousTrackAsync(), "Предыдущий трек");
-    }
-
-    private async void PlayPauseButton_Click(object sender, RoutedEventArgs e)
-    {
-        var snapshot = _current;
-        if (snapshot is null)
-        {
-            return;
-        }
-
-        await RunPlaybackCommandAsync(() => _spotify.TogglePlaybackAsync(snapshot.IsPlaying));
-    }
-
-    private async void NextButton_Click(object sender, RoutedEventArgs e)
-    {
-        await RunTrackSwitchCommandAsync(() => _spotify.NextTrackAsync(), "Следующий трек");
     }
 
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
@@ -120,9 +63,14 @@ public partial class MainWindow : Window
         ShowSettingsWindow();
     }
 
-    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    private void HideButton_Click(object sender, RoutedEventArgs e)
     {
-        Close();
+        Hide();
+    }
+
+    private void ExitButton_Click(object sender, RoutedEventArgs e)
+    {
+        ExitApplication();
     }
 
     private void InitializeTrayIcon()
@@ -136,7 +84,7 @@ public partial class MainWindow : Window
         _trayIcon = new Forms.NotifyIcon
         {
             Icon = LoadTrayIcon(),
-            Text = "Spotify Relay Overlay",
+            Text = "Spotify Favorite Hotkey",
             Visible = true,
             ContextMenuStrip = menu
         };
@@ -156,12 +104,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ExitApplication()
-    {
-        _isExiting = true;
-        Close();
-    }
-
     private void ShowSettingsWindow()
     {
         BringMainWindowToFront();
@@ -174,314 +116,82 @@ public partial class MainWindow : Window
 
         _settingsWindow = new SettingsWindow(_settings, _auth)
         {
-            Owner = this,
-            Topmost = _settings.Current.OverlayEnabled && !_settings.Current.SafeMode
+            Owner = this
         };
-        _settingsWindow.AuthChanged += async (_, _) => await RefreshPlaybackAsync(allowAutomaticTrackToast: false);
+        _settingsWindow.AuthChanged += (_, _) => UpdateStatus();
         _settingsWindow.SettingsChanged += (_, _) =>
         {
-            ApplyModeSettings();
-            if (_settingsWindow is not null)
-            {
-                _settingsWindow.Topmost = _settings.Current.OverlayEnabled && !_settings.Current.SafeMode;
-            }
+            RegisterFavoriteHotkey();
+            UpdateStatus("Настройки сохранены.");
         };
         _settingsWindow.Closed += (_, _) => _settingsWindow = null;
         _settingsWindow.Show();
     }
 
-    private async Task RefreshPlaybackAsync(bool allowAutomaticTrackToast = true)
+    private async Task ToggleFavoriteAsync()
     {
-        if (_isPolling || _isRunningPlaybackCommand)
+        if (_isExecuting)
         {
             return;
         }
 
-        _isPolling = true;
+        _isExecuting = true;
         try
         {
-            if (!_auth.HasClientId)
-            {
-                RenderEmpty("Нужен Spotify Client ID", "Открой настройки и вставь Client ID.", "Не настроено");
-                return;
-            }
-
-            if (!_auth.HasAnyToken)
-            {
-                RenderEmpty("Spotify не подключен", "Открой настройки и войди в аккаунт.", "Ожидает входа");
-                return;
-            }
-
-            var snapshot = await _spotify.GetPlaybackAsync();
-            _current = snapshot;
-            RenderPlayback(snapshot);
-            TrackAutomaticChange(snapshot, allowAutomaticTrackToast);
+            StatusText.Text = "Получаю текущий трек...";
+            var result = await _spotify.ToggleCurrentTrackFavoriteAsync();
+            StatusText.Text = $"{result.Message}: {result.Track.Name}";
+            ShowToast(result);
         }
         catch (Exception ex)
         {
-            RenderEmpty("Ошибка Spotify", Shorten(ex.Message, 88), "Ошибка");
+            StatusText.Text = Shorten(ex.Message, 140);
         }
         finally
         {
-            _isPolling = false;
+            _isExecuting = false;
         }
     }
 
-    private async Task ToggleLikeAsync()
+    private void ShowToast(FavoriteToggleResult result)
     {
-        if (_isTogglingLike)
-        {
-            return;
-        }
-
-        _isTogglingLike = true;
-        try
-        {
-            LikeButton.IsEnabled = false;
-
-            var snapshot = _current;
-            if (snapshot?.Track is null)
-            {
-                return;
-            }
-
-            var isLiked = await _spotify.ToggleLikeAsync(snapshot.Track, snapshot.IsLiked);
-            _current = snapshot with { IsLiked = isLiked };
-            RenderPlayback(_current);
-            TrackAutomaticChange(_current, allowAutomaticTrackToast: false);
-
-            ShowToastIfEnabled(
-                ToastKind.Like,
-                _current,
-                isLiked ? "Лайкнуто" : "Лайк убран",
-                isLiked ? "Добавлено в избранное" : "Убрано из избранного");
-        }
-        catch (Exception ex)
-        {
-            StatusText.Text = "Лайк не изменен";
-            LikedText.Text = Shorten(ex.Message, 72);
-        }
-        finally
-        {
-            LikeButton.IsEnabled = _current?.Track is not null;
-            _isTogglingLike = false;
-        }
+        _toastWindow?.Close();
+        _toastWindow = new ToastWindow(result);
+        _toastWindow.Closed += (_, _) => _toastWindow = null;
+        _toastWindow.Show();
     }
 
-    private async Task RunTrackSwitchCommandAsync(Func<Task> command, string toastAction)
-    {
-        if (_isRunningPlaybackCommand)
-        {
-            return;
-        }
-
-        _isRunningPlaybackCommand = true;
-        try
-        {
-            SetPlaybackButtonsEnabled(false);
-            await command();
-            await Task.Delay(750);
-            await RefreshPlaybackAsync(allowAutomaticTrackToast: false);
-            if (_current is not null)
-            {
-                ShowToastIfEnabled(ToastKind.ManualTrack, _current, toastAction);
-            }
-        }
-        catch (Exception ex)
-        {
-            StatusText.Text = "Команда не выполнена";
-            LikedText.Text = Shorten(ex.Message, 84);
-        }
-        finally
-        {
-            SetPlaybackButtonsEnabled(_current?.Track is not null);
-            _isRunningPlaybackCommand = false;
-        }
-    }
-
-    private async Task RunPlaybackCommandAsync(Func<Task> command)
-    {
-        if (_isRunningPlaybackCommand)
-        {
-            return;
-        }
-
-        _isRunningPlaybackCommand = true;
-        try
-        {
-            SetPlaybackButtonsEnabled(false);
-            await command();
-            await Task.Delay(750);
-            await RefreshPlaybackAsync(allowAutomaticTrackToast: false);
-        }
-        catch (Exception ex)
-        {
-            StatusText.Text = "Команда не выполнена";
-            LikedText.Text = Shorten(ex.Message, 84);
-        }
-        finally
-        {
-            SetPlaybackButtonsEnabled(_current?.Track is not null);
-            _isRunningPlaybackCommand = false;
-        }
-    }
-
-    private void TrackAutomaticChange(PlaybackSnapshot snapshot, bool allowAutomaticTrackToast)
-    {
-        var newTrackId = snapshot.Track?.Id;
-        var hadPreviousTrack = _hasSeenPlayback && !string.IsNullOrWhiteSpace(_lastTrackId);
-        var changedTrack = !string.IsNullOrWhiteSpace(newTrackId)
-            && !string.Equals(_lastTrackId, newTrackId, StringComparison.Ordinal);
-
-        _hasSeenPlayback = true;
-        _lastTrackId = newTrackId;
-
-        if (allowAutomaticTrackToast && hadPreviousTrack && changedTrack)
-        {
-            ShowToastIfEnabled(ToastKind.AutomaticTrack, snapshot, "Сейчас играет");
-        }
-    }
-
-    private void RenderPlayback(PlaybackSnapshot snapshot)
-    {
-        if (snapshot.Track is null)
-        {
-            RenderEmpty("Нет трека", "Запусти трек в Spotify.", snapshot.Status);
-            return;
-        }
-
-        SetAlbumArt(snapshot.Track.AlbumImageUrl);
-        StatusText.Text = snapshot.Status;
-        TrackTitle.Text = snapshot.Track.Name;
-        ArtistText.Text = snapshot.Track.Artists;
-        Progress.Value = snapshot.DurationMs > 0
-            ? Math.Clamp(snapshot.ProgressMs * 100.0 / snapshot.DurationMs, 0, 100)
-            : 0;
-        LikedText.Text = snapshot.IsLiked ? "Лайкнуто" : "Не лайкнуто";
-        LikeButton.Content = snapshot.IsLiked ? "\u2665" : "\u2661";
-        LikeButton.ToolTip = snapshot.IsLiked ? "Убрать лайк" : "Лайкнуть текущий трек";
-        LikeButton.IsEnabled = true;
-        PlayPauseButton.Content = snapshot.IsPlaying ? "\u23F8" : "\u25B6";
-        PlayPauseButton.ToolTip = snapshot.IsPlaying ? "Пауза" : "Продолжить";
-        SetPlaybackButtonsEnabled(true);
-    }
-
-    private void RenderEmpty(string title, string subtitle, string status)
-    {
-        _current = null;
-        AlbumArt.Source = null;
-        AlbumPlaceholder.Visibility = Visibility.Visible;
-        StatusText.Text = status;
-        TrackTitle.Text = title;
-        ArtistText.Text = subtitle;
-        Progress.Value = 0;
-        LikedText.Text = string.Empty;
-        LikeButton.Content = "\u2661";
-        LikeButton.IsEnabled = false;
-        PlayPauseButton.Content = "\u25B6";
-        PlayPauseButton.ToolTip = "Пауза / продолжить";
-        SetPlaybackButtonsEnabled(false);
-    }
-
-    private void SetAlbumArt(string? imageUrl)
-    {
-        if (string.IsNullOrWhiteSpace(imageUrl))
-        {
-            AlbumArt.Source = null;
-            AlbumPlaceholder.Visibility = Visibility.Visible;
-            return;
-        }
-
-        try
-        {
-            var image = new BitmapImage();
-            image.BeginInit();
-            image.CacheOption = BitmapCacheOption.OnLoad;
-            image.UriSource = new Uri(imageUrl, UriKind.Absolute);
-            image.EndInit();
-            image.Freeze();
-
-            AlbumArt.Source = image;
-            AlbumPlaceholder.Visibility = Visibility.Collapsed;
-        }
-        catch
-        {
-            AlbumArt.Source = null;
-            AlbumPlaceholder.Visibility = Visibility.Visible;
-        }
-    }
-
-    private void ApplyModeSettings()
-    {
-        UnregisterHotkeys();
-
-        if (!IsVisible)
-        {
-            Show();
-        }
-
-        if (_settings.Current.OverlayEnabled && !_settings.Current.SafeMode)
-        {
-            Topmost = true;
-            RegisterOverlayHotkeys();
-            if (!_topmostTimer.IsEnabled)
-            {
-                _topmostTimer.Start();
-            }
-
-            KeepAboveWindows();
-            return;
-        }
-
-        _topmostTimer.Stop();
-        Topmost = false;
-
-        if (!_settings.Current.OverlayEnabled)
-        {
-            RegisterBackgroundHotkey();
-        }
-    }
-
-    private void RegisterOverlayHotkeys()
-    {
-        if (_hotkeysRegistered || _hwnd == IntPtr.Zero)
-        {
-            return;
-        }
-
-        NativeMethods.RegisterHotKey(_hwnd, NativeMethods.HotkeyToggleLike, NativeMethods.ModControl | NativeMethods.ModAlt, (uint)KeyInterop.VirtualKeyFromKey(Key.L));
-        NativeMethods.RegisterHotKey(_hwnd, NativeMethods.HotkeyToggleVisibility, NativeMethods.ModControl | NativeMethods.ModAlt, (uint)KeyInterop.VirtualKeyFromKey(Key.H));
-        NativeMethods.RegisterHotKey(_hwnd, NativeMethods.HotkeyPreviousTrack, NativeMethods.ModControl | NativeMethods.ModAlt, (uint)KeyInterop.VirtualKeyFromKey(Key.Left));
-        NativeMethods.RegisterHotKey(_hwnd, NativeMethods.HotkeyPlayPause, NativeMethods.ModControl | NativeMethods.ModAlt, (uint)KeyInterop.VirtualKeyFromKey(Key.Space));
-        NativeMethods.RegisterHotKey(_hwnd, NativeMethods.HotkeyNextTrack, NativeMethods.ModControl | NativeMethods.ModAlt, (uint)KeyInterop.VirtualKeyFromKey(Key.Right));
-        _hotkeysRegistered = true;
-    }
-
-    private void RegisterBackgroundHotkey()
-    {
-        if (_hotkeysRegistered || _hwnd == IntPtr.Zero || _settings.Current.LikeHotkeyVirtualKey == 0)
-        {
-            return;
-        }
-
-        NativeMethods.RegisterHotKey(_hwnd, NativeMethods.HotkeyCustomLike, 0, _settings.Current.LikeHotkeyVirtualKey);
-        _hotkeysRegistered = true;
-    }
-
-    private void UnregisterHotkeys()
+    private void RegisterFavoriteHotkey()
     {
         if (_hwnd == IntPtr.Zero)
         {
             return;
         }
 
-        NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyToggleLike);
-        NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyToggleVisibility);
-        NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyPreviousTrack);
-        NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyPlayPause);
-        NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyNextTrack);
-        NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyCustomLike);
-        _hotkeysRegistered = false;
+        UnregisterFavoriteHotkey();
+        if (_settings.Current.LikeHotkeyVirtualKey == 0)
+        {
+            return;
+        }
+
+        _hotkeyRegistered = NativeMethods.RegisterHotKey(
+            _hwnd,
+            NativeMethods.HotkeyToggleFavorite,
+            0,
+            _settings.Current.LikeHotkeyVirtualKey);
+        _hotkeyRegistrationFailed = !_hotkeyRegistered;
+    }
+
+    private void UnregisterFavoriteHotkey()
+    {
+        if (_hwnd == IntPtr.Zero || !_hotkeyRegistered)
+        {
+            return;
+        }
+
+        NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyToggleFavorite);
+        _hotkeyRegistered = false;
+        _hotkeyRegistrationFailed = false;
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -493,33 +203,10 @@ public partial class MainWindow : Window
             return IntPtr.Zero;
         }
 
-        if (msg != NativeMethods.WmHotkey)
+        if (msg == NativeMethods.WmHotkey && wParam.ToInt32() == NativeMethods.HotkeyToggleFavorite)
         {
-            return IntPtr.Zero;
-        }
-
-        handled = true;
-        switch (wParam.ToInt32())
-        {
-            case NativeMethods.HotkeyToggleLike:
-            case NativeMethods.HotkeyCustomLike:
-                _ = ToggleLikeAsync();
-                break;
-            case NativeMethods.HotkeyToggleVisibility:
-                ToggleVisibility();
-                break;
-            case NativeMethods.HotkeyPreviousTrack:
-                _ = RunTrackSwitchCommandAsync(() => _spotify.PreviousTrackAsync(), "Предыдущий трек");
-                break;
-            case NativeMethods.HotkeyPlayPause:
-                if (_current is not null)
-                {
-                    _ = RunPlaybackCommandAsync(() => _spotify.TogglePlaybackAsync(_current.IsPlaying));
-                }
-                break;
-            case NativeMethods.HotkeyNextTrack:
-                _ = RunTrackSwitchCommandAsync(() => _spotify.NextTrackAsync(), "Следующий трек");
-                break;
+            handled = true;
+            _ = ToggleFavoriteAsync();
         }
 
         return IntPtr.Zero;
@@ -539,58 +226,27 @@ public partial class MainWindow : Window
 
         Activate();
         NativeMethods.BringWindowToFront(_hwnd);
-        KeepAboveWindows();
     }
 
-    private void ToggleVisibility()
+    private void UpdateStatus(string? prefix = null)
     {
-        if (IsVisible)
-        {
-            Hide();
-            return;
-        }
+        var hotkey = _settings.Current.LikeHotkeyVirtualKey == 0
+            ? "не назначена"
+            : $"0x{_settings.Current.LikeHotkeyVirtualKey:X2}";
+        HotkeyText.Text = $"Клавиша лайк/анлайк: {hotkey}";
 
-        BringMainWindowToFront();
+        var account = _auth.HasRefreshToken ? "Spotify подключен." : "Spotify не подключен.";
+        var registration = _hotkeyRegistrationFailed ? " Клавиша занята или недоступна." : string.Empty;
+        var hint = $"По нажатию клавиши приложение проверит текущий трек, переключит избранное и покажет уведомление.{registration}";
+        StatusText.Text = string.IsNullOrWhiteSpace(prefix)
+            ? $"{account} {hint}"
+            : $"{prefix} {account} {hint}";
     }
 
-    private void ShowToastIfEnabled(ToastKind kind, PlaybackSnapshot snapshot, string action, string? extra = null)
+    private void ExitApplication()
     {
-        if (_settings.Current.OverlayEnabled)
-        {
-            return;
-        }
-
-        var enabled = kind switch
-        {
-            ToastKind.Like => _settings.Current.NotifyOnLikeChange,
-            ToastKind.ManualTrack => _settings.Current.NotifyOnManualTrackChange,
-            ToastKind.AutomaticTrack => _settings.Current.NotifyOnAutomaticTrackChange,
-            _ => false
-        };
-
-        if (!enabled)
-        {
-            return;
-        }
-
-        _toastWindow?.Close();
-        _toastWindow = new ToastWindow(snapshot, action, extra);
-        _toastWindow.Closed += (_, _) => _toastWindow = null;
-        _toastWindow.Show();
-    }
-
-    private void KeepAboveWindows()
-    {
-        if (!IsVisible || !_settings.Current.OverlayEnabled || _settings.Current.SafeMode)
-        {
-            return;
-        }
-
-        Topmost = true;
-        if (_hwnd != IntPtr.Zero)
-        {
-            NativeMethods.ForceTopmost(_hwnd);
-        }
+        _isExiting = true;
+        Close();
     }
 
     private void RestoreWindowPosition()
@@ -624,28 +280,6 @@ public partial class MainWindow : Window
             && top <= SystemParameters.VirtualScreenTop + SystemParameters.VirtualScreenHeight - 60;
     }
 
-    private void SetPlaybackButtonsEnabled(bool isEnabled)
-    {
-        PreviousButton.IsEnabled = isEnabled;
-        PlayPauseButton.IsEnabled = isEnabled;
-        NextButton.IsEnabled = isEnabled;
-    }
-
-    private static bool IsInsideButton(DependencyObject? source)
-    {
-        while (source is not null)
-        {
-            if (source is System.Windows.Controls.Button)
-            {
-                return true;
-            }
-
-            source = VisualTreeHelper.GetParent(source);
-        }
-
-        return false;
-    }
-
     private static string Shorten(string value, int maxLength)
     {
         if (value.Length <= maxLength)
@@ -654,12 +288,5 @@ public partial class MainWindow : Window
         }
 
         return value[..Math.Max(0, maxLength - 1)] + "...";
-    }
-
-    private enum ToastKind
-    {
-        Like,
-        ManualTrack,
-        AutomaticTrack
     }
 }

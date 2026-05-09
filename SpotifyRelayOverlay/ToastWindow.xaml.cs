@@ -1,38 +1,36 @@
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Media.Imaging;
-using System.Windows.Threading;
 
 namespace SpotifyRelayOverlay;
 
 public partial class ToastWindow : Window
 {
-    private readonly DispatcherTimer _closeTimer = new() { Interval = TimeSpan.FromSeconds(2.8) };
-
-    public ToastWindow(PlaybackSnapshot snapshot, string action, string? extra = null)
+    public ToastWindow(FavoriteToggleResult result)
     {
         InitializeComponent();
-        _closeTimer.Tick += (_, _) => Close();
 
-        ActionText.Text = action;
-        ExtraText.Text = extra ?? string.Empty;
-
-        if (snapshot.Track is null)
-        {
-            TrackTitle.Text = "Spotify";
-            ArtistText.Text = snapshot.Status;
-            return;
-        }
-
-        TrackTitle.Text = snapshot.Track.Name;
-        ArtistText.Text = snapshot.Track.Artists;
-        SetAlbumArt(snapshot.Track.AlbumImageUrl);
+        ActionText.Text = result.Message;
+        TrackTitle.Text = result.Track.Name;
+        ArtistText.Text = result.Track.Artists;
+        HeartText.Text = result.IsLiked ? "♥" : "♡";
+        SetAlbumArt(result.Track.AlbumImageUrl);
     }
 
-    private void Window_Loaded(object sender, RoutedEventArgs e)
+    private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
-        Left = SystemParameters.WorkArea.Left + 18;
-        Top = SystemParameters.WorkArea.Top + 18;
-        _closeTimer.Start();
+        var workArea = SystemParameters.WorkArea;
+        Left = workArea.Left + 18;
+        Top = workArea.Top + 18;
+
+        var hwnd = new WindowInteropHelper(this).Handle;
+        NativeMethods.ForceTopmost(hwnd);
+
+        await Task.Delay(TimeSpan.FromSeconds(3.2));
+        if (IsVisible)
+        {
+            Close();
+        }
     }
 
     private void SetAlbumArt(string? imageUrl)

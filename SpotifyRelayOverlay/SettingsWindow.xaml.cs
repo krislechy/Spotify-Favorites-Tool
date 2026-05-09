@@ -15,13 +15,7 @@ public partial class SettingsWindow : Window
         _auth = auth;
         ClientIdBox.Text = _settings.Current.ClientId;
         RedirectUriBox.Text = SpotifyAuthService.RedirectUri;
-        OverlayEnabledBox.IsChecked = _settings.Current.OverlayEnabled;
-        SafeModeBox.IsChecked = _settings.Current.SafeMode;
         LikeHotkeyBox.Text = $"0x{_settings.Current.LikeHotkeyVirtualKey:X2}";
-        NotifyLikeBox.IsChecked = _settings.Current.NotifyOnLikeChange;
-        NotifyManualTrackBox.IsChecked = _settings.Current.NotifyOnManualTrackChange;
-        NotifyAutomaticTrackBox.IsChecked = _settings.Current.NotifyOnAutomaticTrackChange;
-        RefreshModePanels();
         UpdateStatus();
     }
 
@@ -59,7 +53,7 @@ public partial class SettingsWindow : Window
         catch (Exception ex)
         {
             UpdateStatus("Spotify не подключен.");
-            System.Windows.MessageBox.Show(this, ex.Message, "Spotify Relay Overlay", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, ex.Message, "Spotify Favorite Hotkey", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         finally
         {
@@ -79,49 +73,26 @@ public partial class SettingsWindow : Window
         Close();
     }
 
-    private void OverlayEnabledBox_Changed(object sender, RoutedEventArgs e)
-    {
-        RefreshModePanels();
-    }
-
     private bool SaveSettings()
     {
         if (!TryParseVirtualKey(LikeHotkeyBox.Text, out var likeKey))
         {
-            System.Windows.MessageBox.Show(this, "Код кнопки должен быть числом: например 0xB3 или 179.", "Spotify Relay Overlay", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, "Код клавиши должен быть числом: например 0xB3 или 179.", "Spotify Favorite Hotkey", MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
 
         _settings.Current.ClientId = ClientIdBox.Text.Trim();
-        _settings.Current.OverlayEnabled = OverlayEnabledBox.IsChecked == true;
-        _settings.Current.SafeMode = SafeModeBox.IsChecked == true;
         _settings.Current.LikeHotkeyVirtualKey = likeKey;
-        _settings.Current.NotifyOnLikeChange = NotifyLikeBox.IsChecked == true;
-        _settings.Current.NotifyOnManualTrackChange = NotifyManualTrackBox.IsChecked == true;
-        _settings.Current.NotifyOnAutomaticTrackChange = NotifyAutomaticTrackBox.IsChecked == true;
         _settings.Save();
         return true;
     }
 
-    private void RefreshModePanels()
-    {
-        var overlayEnabled = OverlayEnabledBox.IsChecked == true;
-        OverlayOptionsPanel.IsEnabled = overlayEnabled;
-        OverlayOptionsPanel.Opacity = overlayEnabled ? 1 : 0.45;
-        BackgroundModePanel.IsEnabled = !overlayEnabled;
-        BackgroundModePanel.Opacity = overlayEnabled ? 0.45 : 1;
-        NotificationOptionsPanel.IsEnabled = !overlayEnabled;
-        NotificationOptionsPanel.Opacity = overlayEnabled ? 0.45 : 1;
-    }
-
     private void UpdateStatus(string? prefix = null)
     {
-        var authState = _auth.HasRefreshToken ? "Аккаунт подключен." : "Аккаунт не подключен.";
-        var modeState = _settings.Current.OverlayEnabled ? "Оверлей включен." : "Фоновый режим включен.";
-        var toastState = _settings.Current.OverlayEnabled ? "Уведомления скрыты для режима оверлея." : "Уведомления настраиваются ниже.";
+        var account = _auth.HasRefreshToken ? "Аккаунт подключен." : "Аккаунт не подключен.";
         StatusText.Text = string.IsNullOrWhiteSpace(prefix)
-            ? $"{authState} {modeState} {toastState}"
-            : $"{prefix} {authState} {modeState} {toastState}";
+            ? account
+            : $"{prefix} {account}";
     }
 
     private static bool TryParseVirtualKey(string value, out uint virtualKey)

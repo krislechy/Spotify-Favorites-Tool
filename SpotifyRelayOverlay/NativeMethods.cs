@@ -5,20 +5,10 @@ namespace SpotifyRelayOverlay;
 internal static class NativeMethods
 {
     public const int WmHotkey = 0x0312;
+    public const int HotkeyToggleFavorite = 1001;
+
     public static readonly uint ShowExistingWindowMessage = RegisterWindowMessage("SpotifyRelayOverlay.ShowExistingWindow");
 
-    public const uint ModAlt = 0x0001;
-    public const uint ModControl = 0x0002;
-
-    public const int HotkeyToggleLike = 1001;
-    public const int HotkeyToggleVisibility = 1002;
-    public const int HotkeyPreviousTrack = 1003;
-    public const int HotkeyPlayPause = 1004;
-    public const int HotkeyNextTrack = 1005;
-    public const int HotkeyCustomLike = 1006;
-
-    private const int GwlExstyle = -20;
-    private const int WsExToolwindow = 0x00000080;
     private const uint SwpNomove = 0x0002;
     private const uint SwpNosize = 0x0001;
     private const uint SwpNoactivate = 0x0010;
@@ -62,22 +52,6 @@ internal static class NativeMethods
         int cy,
         uint uFlags);
 
-    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW", SetLastError = true)]
-    private static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
-
-    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW", SetLastError = true)]
-    private static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
-
-    public static void ForceTopmost(IntPtr hWnd)
-    {
-        if (hWnd == IntPtr.Zero)
-        {
-            return;
-        }
-
-        SetWindowPosNative(hWnd, HwndTopmost, 0, 0, 0, 0, SwpNomove | SwpNosize | SwpNoactivate | SwpShowwindow);
-    }
-
     public static void SignalExistingInstance()
     {
         if (ShowExistingWindowMessage != 0)
@@ -97,14 +71,13 @@ internal static class NativeMethods
         SetForegroundWindow(hWnd);
     }
 
-    public static void HideFromAltTab(IntPtr hWnd)
+    public static void ForceTopmost(IntPtr hWnd)
     {
         if (hWnd == IntPtr.Zero)
         {
             return;
         }
 
-        var style = GetWindowLongPtr(hWnd, GwlExstyle).ToInt64();
-        SetWindowLongPtr(hWnd, GwlExstyle, new IntPtr(style | WsExToolwindow));
+        SetWindowPosNative(hWnd, HwndTopmost, 0, 0, 0, 0, SwpNomove | SwpNosize | SwpNoactivate | SwpShowwindow);
     }
 }

@@ -16,7 +16,6 @@ public sealed class SpotifyClient
     };
 
     private readonly SpotifyAuthService _auth;
-    private readonly Dictionary<string, bool> _likedCache = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _requestGate = new(1, 1);
 
     public SpotifyClient(SpotifyAuthService auth)
@@ -24,7 +23,18 @@ public sealed class SpotifyClient
         _auth = auth;
     }
 
-    public async Task<PlaybackSnapshot> GetPlaybackAsync(CancellationToken cancellationToken = default)
+    public async Task<FavoriteToggleResult> ToggleCurrentTrackFavoriteAsync(CancellationToken cancellationToken = default)
+    {
+        var track = await GetCurrentTrackAsync(cancellationToken);
+        var isLiked = await IsTrackLikedAsync(track.Id, cancellationToken);
+        var nextLiked = !isLiked;
+
+        await SetTrackLikedAsync(track.Id, nextLiked, cancellationToken);
+        var message = nextLiked ? "Добавлено в избраное" : "Удалено из избранного";
+        return new FavoriteToggleResult(track, nextLiked, message);
+    }
+
+    private async Task<PlaybackTrack> GetCurrentTrackAsync(CancellationToken cancellationToken)
     {
         var response = await SendAsync(
             HttpMethod.Get,
@@ -33,61 +43,37 @@ public sealed class SpotifyClient
 
         if (response.StatusCode == HttpStatusCode.NoContent)
         {
-            return PlaybackSnapshot.Empty("Spotify сейчас ничего не играет");
+            throw new InvalidOperationException("Spotify сейчас ничего не играет.");
         }
 
         var playback = JsonSerializer.Deserialize<PlaybackResponse>(response.Body, JsonOptions);
         var item = playback?.Item;
         if (item?.Id is null || item.Uri is null || item.Name is null)
         {
-            return PlaybackSnapshot.Empty("Spotify сейчас ничего не играет");
+            throw new InvalidOperationException("Не удалось получить текущий трек Spotify.");
         }
 
         if (!string.Equals(item.Type, "track", StringComparison.OrdinalIgnoreCase))
         {
-            return new PlaybackSnapshot(null, playback?.IsPlaying == true, false, 0, 0, "Сейчас играет не трек");
+            throw new InvalidOperationException("Сейчас играет не трек.");
         }
 
-        var track = CreateTrack(item);
-        return new PlaybackSnapshot(
-            track,
-            playback?.IsPlaying == true,
-            GetCachedLike(track.Uri),
-            playback?.ProgressMs ?? 0,
-            item.DurationMs,
-            playback?.IsPlaying == true ? "Сейчас играет" : "Пауза");
+        return CreateTrack(item);
     }
 
-    public async Task<bool> ToggleLikeAsync(PlaybackTrack track, bool currentlyLiked, CancellationToken cancellationToken = default)
+    private async Task<bool> IsTrackLikedAsync(string trackId, CancellationToken cancellationToken)
     {
-        var uri = Uri.EscapeDataString(track.Uri);
-        var method = currentlyLiked ? HttpMethod.Delete : HttpMethod.Put;
-        await SendAsync(method, $"{ApiRoot}/me/library?uris={uri}", cancellationToken);
-
-        var isLiked = !currentlyLiked;
-        _likedCache[track.Uri] = isLiked;
-        return isLiked;
+        var id = Uri.EscapeDataString(trackId);
+        var response = await SendAsync(HttpMethod.Get, $"{ApiRoot}/me/tracks/contains?ids={id}", cancellationToken);
+        var values = JsonSerializer.Deserialize<bool[]>(response.Body, JsonOptions);
+        return values is { Length: > 0 } && values[0];
     }
 
-    public async Task TogglePlaybackAsync(bool isPlaying, CancellationToken cancellationToken = default)
+    private async Task SetTrackLikedAsync(string trackId, bool isLiked, CancellationToken cancellationToken)
     {
-        var action = isPlaying ? "pause" : "play";
-        await SendAsync(HttpMethod.Put, $"{ApiRoot}/me/player/{action}", cancellationToken);
-    }
-
-    public async Task NextTrackAsync(CancellationToken cancellationToken = default)
-    {
-        await SendAsync(HttpMethod.Post, $"{ApiRoot}/me/player/next", cancellationToken);
-    }
-
-    public async Task PreviousTrackAsync(CancellationToken cancellationToken = default)
-    {
-        await SendAsync(HttpMethod.Post, $"{ApiRoot}/me/player/previous", cancellationToken);
-    }
-
-    private bool GetCachedLike(string spotifyUri)
-    {
-        return _likedCache.TryGetValue(spotifyUri, out var isLiked) && isLiked;
+        var id = Uri.EscapeDataString(trackId);
+        var method = isLiked ? HttpMethod.Put : HttpMethod.Delete;
+        await SendAsync(method, $"{ApiRoot}/me/tracks?ids={id}", cancellationToken);
     }
 
     private static PlaybackTrack CreateTrack(SpotifyItem item)
@@ -140,9 +126,9 @@ public sealed class SpotifyClient
             HttpStatusCode.Unauthorized => new InvalidOperationException(
                 "Spotify вернул 401. Открой настройки, нажми «Выйти», потом «Войти в Spotify» и выдай новые права."),
             HttpStatusCode.Forbidden => new InvalidOperationException(
-                "Spotify отказал в управлении. Заново войди в настройках для новых прав; для play/pause/skip обычно нужен Premium и активное устройство Spotify."),
+                "Spotify отказал в доступе. Заново войди в настройках для прав на чтение и изменение избранных треков."),
             (HttpStatusCode)429 => new InvalidOperationException(
-                "Spotify временно ограничил запросы. Подожди немного и не нажимай команды подряд."),
+                "Spotify временно ограничил запросы. Подожди немного перед следующим нажатием."),
             _ => new SpotifyApiException(statusCode, body)
         };
     }
