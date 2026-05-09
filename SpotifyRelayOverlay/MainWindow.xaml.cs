@@ -10,6 +10,13 @@ namespace SpotifyRelayOverlay;
 
 public partial class MainWindow : Window
 {
+    private static readonly TimeSpan NormalPollInterval = TimeSpan.FromSeconds(6);
+    private static readonly TimeSpan IdlePollInterval = TimeSpan.FromSeconds(15);
+    private static readonly TimeSpan NearTrackEndPollInterval = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan TrackEndLookahead = TimeSpan.FromSeconds(12);
+    private static readonly TimeSpan InitialRateLimitBackoff = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan MaxRateLimitBackoff = TimeSpan.FromMinutes(5);
+
     private readonly SettingsStore _settings = new();
     private readonly SpotifyAuthService _auth;
     private readonly SpotifyClient _spotify;
@@ -26,6 +33,8 @@ public partial class MainWindow : Window
     private bool _hotkeysRegistered;
     private bool _isExiting;
     private bool _hasSeenPlayback;
+    private TimeSpan _rateLimitBackoff = TimeSpan.Zero;
+    private DateTimeOffset _apiPausedUntil = DateTimeOffset.MinValue;
     private string? _lastTrackId;
     private Forms.NotifyIcon? _trayIcon;
     private ToastWindow? _toastWindow;
@@ -37,7 +46,7 @@ public partial class MainWindow : Window
         _auth = new SpotifyAuthService(_settings);
         _spotify = new SpotifyClient(_auth);
 
-        _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _pollTimer = new DispatcherTimer { Interval = NormalPollInterval };
         _pollTimer.Tick += async (_, _) => await RefreshPlaybackAsync();
 
         _topmostTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
@@ -212,14 +221,27 @@ public partial class MainWindow : Window
                 return;
             }
 
+            if (IsApiBackoffActive())
+            {
+                return;
+            }
+
             var snapshot = await _spotify.GetPlaybackAsync();
             _current = snapshot;
+            _rateLimitBackoff = TimeSpan.Zero;
+            _apiPausedUntil = DateTimeOffset.MinValue;
+            UpdatePollingInterval(snapshot);
             RenderPlayback(snapshot);
             TrackAutomaticChange(snapshot, allowAutomaticTrackToast);
+        }
+        catch (SpotifyRateLimitException ex)
+        {
+            HandleRateLimit(ex);
         }
         catch (Exception ex)
         {
             RenderEmpty("Ошибка Spotify", Shorten(ex.Message, 88), "Ошибка");
+            SetPollingInterval(IdlePollInterval);
         }
         finally
         {
@@ -237,6 +259,11 @@ public partial class MainWindow : Window
         _isTogglingLike = true;
         try
         {
+            if (IsApiBackoffActive())
+            {
+                return;
+            }
+
             LikeButton.IsEnabled = false;
 
             var snapshot = _current;
@@ -255,6 +282,10 @@ public partial class MainWindow : Window
                 _current,
                 isLiked ? "Лайкнуто" : "Лайк убран",
                 isLiked ? "Добавлено в избранное" : "Убрано из избранного");
+        }
+        catch (SpotifyRateLimitException ex)
+        {
+            HandleRateLimit(ex);
         }
         catch (Exception ex)
         {
@@ -278,6 +309,11 @@ public partial class MainWindow : Window
         _isRunningPlaybackCommand = true;
         try
         {
+            if (IsApiBackoffActive())
+            {
+                return;
+            }
+
             SetPlaybackButtonsEnabled(false);
             await command();
             await Task.Delay(750);
@@ -286,6 +322,10 @@ public partial class MainWindow : Window
             {
                 ShowToastIfEnabled(ToastKind.ManualTrack, _current, toastAction);
             }
+        }
+        catch (SpotifyRateLimitException ex)
+        {
+            HandleRateLimit(ex);
         }
         catch (Exception ex)
         {
@@ -309,10 +349,19 @@ public partial class MainWindow : Window
         _isRunningPlaybackCommand = true;
         try
         {
+            if (IsApiBackoffActive())
+            {
+                return;
+            }
+
             SetPlaybackButtonsEnabled(false);
             await command();
             await Task.Delay(750);
             await RefreshPlaybackAsync(allowAutomaticTrackToast: false, force: true);
+        }
+        catch (SpotifyRateLimitException ex)
+        {
+            HandleRateLimit(ex);
         }
         catch (Exception ex)
         {
@@ -324,6 +373,68 @@ public partial class MainWindow : Window
             SetPlaybackButtonsEnabled(_current?.Track is not null);
             _isRunningPlaybackCommand = false;
         }
+    }
+
+    private void HandleRateLimit(SpotifyRateLimitException ex)
+    {
+        _rateLimitBackoff = _rateLimitBackoff == TimeSpan.Zero
+            ? InitialRateLimitBackoff
+            : TimeSpan.FromSeconds(Math.Min(MaxRateLimitBackoff.TotalSeconds, _rateLimitBackoff.TotalSeconds * 2));
+
+        _apiPausedUntil = DateTimeOffset.UtcNow.Add(_rateLimitBackoff);
+        SetPollingInterval(_rateLimitBackoff);
+        ShowApiPausedStatus(ex.Message, _rateLimitBackoff);
+    }
+
+    private bool IsApiBackoffActive()
+    {
+        var remaining = _apiPausedUntil - DateTimeOffset.UtcNow;
+        if (remaining <= TimeSpan.Zero)
+        {
+            return false;
+        }
+
+        ShowApiPausedStatus("Spotify временно ограничил запросы.", remaining);
+        return true;
+    }
+
+    private void ShowApiPausedStatus(string message, TimeSpan remaining)
+    {
+        if (_current?.Track is null)
+        {
+            RenderEmpty("Spotify ограничил запросы", $"Повтор через {FormatDelay(remaining)}.", "Пауза API");
+            return;
+        }
+
+        StatusText.Text = $"{message} Повтор через {FormatDelay(remaining)}.";
+    }
+
+    private void UpdatePollingInterval(PlaybackSnapshot snapshot)
+    {
+        if (snapshot.Track is null || !snapshot.IsPlaying)
+        {
+            SetPollingInterval(IdlePollInterval);
+            return;
+        }
+
+        var remainingMs = snapshot.DurationMs - snapshot.ProgressMs;
+        var remaining = TimeSpan.FromMilliseconds(Math.Max(0, remainingMs));
+        SetPollingInterval(remaining <= TrackEndLookahead ? NearTrackEndPollInterval : NormalPollInterval);
+    }
+
+    private void SetPollingInterval(TimeSpan interval)
+    {
+        if (_pollTimer.Interval != interval)
+        {
+            _pollTimer.Interval = interval;
+        }
+    }
+
+    private static string FormatDelay(TimeSpan delay)
+    {
+        return delay >= TimeSpan.FromMinutes(1)
+            ? $"{Math.Ceiling(delay.TotalMinutes):0} мин"
+            : $"{Math.Ceiling(delay.TotalSeconds):0} сек";
     }
 
     private void TrackAutomaticChange(PlaybackSnapshot snapshot, bool allowAutomaticTrackToast)

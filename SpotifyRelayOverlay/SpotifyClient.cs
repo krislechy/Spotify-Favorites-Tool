@@ -154,8 +154,8 @@ public sealed class SpotifyClient
                 "Spotify вернул 401. Открой настройки, нажми «Выйти», потом «Войти в Spotify» и выдай новые права."),
             HttpStatusCode.Forbidden => new InvalidOperationException(
                 "Spotify отказал в управлении. Заново войди в настройках для новых прав; для play/pause/skip обычно нужен Premium и активное устройство Spotify."),
-            (HttpStatusCode)429 => new InvalidOperationException(
-                "Spotify временно ограничил запросы. Подожди немного и не нажимай команды подряд."),
+            (HttpStatusCode)429 => new SpotifyRateLimitException(
+                "Spotify временно ограничил запросы."),
             _ => new SpotifyApiException(statusCode, body)
         };
     }
@@ -174,4 +174,12 @@ public sealed class SpotifyApiException : Exception
 
     public HttpStatusCode StatusCode { get; }
     public string Body { get; }
+}
+
+public sealed class SpotifyRateLimitException : Exception
+{
+    public SpotifyRateLimitException(string message)
+        : base(message)
+    {
+    }
 }
