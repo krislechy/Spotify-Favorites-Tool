@@ -16,7 +16,7 @@ public sealed class SpotifyAuthService
 
     private const string AuthorizeEndpoint = "https://accounts.spotify.com/authorize";
     private const string TokenEndpoint = "https://accounts.spotify.com/api/token";
-    private const string Scopes = "user-read-currently-playing user-modify-playback-state user-library-modify";
+    private const string Scopes = "user-read-currently-playing user-library-read user-modify-playback-state user-library-modify";
 
     private static readonly HttpClient Http = new();
     private readonly SettingsStore _settings;

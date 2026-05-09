@@ -37,7 +37,7 @@ public partial class MainWindow : Window
         _auth = new SpotifyAuthService(_settings);
         _spotify = new SpotifyClient(_auth);
 
-        _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
+        _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
         _pollTimer.Tick += async (_, _) => await RefreshPlaybackAsync();
 
         _topmostTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
@@ -190,9 +190,9 @@ public partial class MainWindow : Window
         _settingsWindow.Show();
     }
 
-    private async Task RefreshPlaybackAsync(bool allowAutomaticTrackToast = true)
+    private async Task RefreshPlaybackAsync(bool allowAutomaticTrackToast = true, bool force = false)
     {
-        if (_isPolling || _isRunningPlaybackCommand)
+        if (_isPolling || (!force && _isRunningPlaybackCommand))
         {
             return;
         }
@@ -281,7 +281,7 @@ public partial class MainWindow : Window
             SetPlaybackButtonsEnabled(false);
             await command();
             await Task.Delay(750);
-            await RefreshPlaybackAsync(allowAutomaticTrackToast: false);
+            await RefreshPlaybackAsync(allowAutomaticTrackToast: false, force: true);
             if (_current is not null)
             {
                 ShowToastIfEnabled(ToastKind.ManualTrack, _current, toastAction);
@@ -312,7 +312,7 @@ public partial class MainWindow : Window
             SetPlaybackButtonsEnabled(false);
             await command();
             await Task.Delay(750);
-            await RefreshPlaybackAsync(allowAutomaticTrackToast: false);
+            await RefreshPlaybackAsync(allowAutomaticTrackToast: false, force: true);
         }
         catch (Exception ex)
         {
@@ -362,7 +362,7 @@ public partial class MainWindow : Window
         LikeButton.ToolTip = snapshot.IsLiked ? "Убрать лайк" : "Лайкнуть текущий трек";
         LikeButton.IsEnabled = true;
         PlayPauseButton.Content = snapshot.IsPlaying ? "\u23F8" : "\u25B6";
-        PlayPauseButton.ToolTip = snapshot.IsPlaying ? "Пауза" : "Продолжить";
+        PlayPauseButton.ToolTip = snapshot.IsPlaying ? "Пауза" : "Плей";
         SetPlaybackButtonsEnabled(true);
     }
 
@@ -379,7 +379,7 @@ public partial class MainWindow : Window
         LikeButton.Content = "\u2661";
         LikeButton.IsEnabled = false;
         PlayPauseButton.Content = "\u25B6";
-        PlayPauseButton.ToolTip = "Пауза / продолжить";
+        PlayPauseButton.ToolTip = "Пауза / плей";
         SetPlaybackButtonsEnabled(false);
     }
 
