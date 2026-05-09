@@ -8,6 +8,7 @@ public partial class SettingsWindow : Window
     private readonly SettingsStore _settings;
     private readonly SpotifyAuthService _auth;
     private uint _favoriteHotkeyVirtualKey;
+    private string _favoriteHotkeyDisplayName;
 
     public SettingsWindow(SettingsStore settings, SpotifyAuthService auth)
     {
@@ -15,10 +16,11 @@ public partial class SettingsWindow : Window
         _settings = settings;
         _auth = auth;
         _favoriteHotkeyVirtualKey = _settings.Current.LikeHotkeyVirtualKey;
+        _favoriteHotkeyDisplayName = GetHotkeyDisplayName(_favoriteHotkeyVirtualKey, _settings.Current.LikeHotkeyDisplayName);
 
         ClientIdBox.Text = _settings.Current.ClientId;
         RedirectUriBox.Text = SpotifyAuthService.RedirectUri;
-        FavoriteHotkeyBox.Text = FormatVirtualKey(_favoriteHotkeyVirtualKey);
+        FavoriteHotkeyBox.Text = _favoriteHotkeyDisplayName;
         UpdateStatus();
     }
 
@@ -76,7 +78,7 @@ public partial class SettingsWindow : Window
         Close();
     }
 
-    private void FavoriteHotkeyBox_GotKeyboardFocus(object sender, System.Windows.Input.KeyboardFocusChangedEventArgs e)
+    private void FavoriteHotkeyBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
     {
         FavoriteHotkeyBox.Text = "Нажми нужную клавишу...";
     }
@@ -100,19 +102,22 @@ public partial class SettingsWindow : Window
         }
 
         _favoriteHotkeyVirtualKey = virtualKey;
-        FavoriteHotkeyBox.Text = $"{key} ({FormatVirtualKey(virtualKey)})";
+        _favoriteHotkeyDisplayName = HotkeyFormatter.Format(virtualKey);
+        FavoriteHotkeyBox.Text = _favoriteHotkeyDisplayName;
     }
 
     private void ClearHotkeyButton_Click(object sender, RoutedEventArgs e)
     {
         _favoriteHotkeyVirtualKey = 0;
-        FavoriteHotkeyBox.Text = "Не назначена";
+        _favoriteHotkeyDisplayName = HotkeyFormatter.Format(0);
+        FavoriteHotkeyBox.Text = _favoriteHotkeyDisplayName;
     }
 
     private bool SaveSettings()
     {
         _settings.Current.ClientId = ClientIdBox.Text.Trim();
         _settings.Current.LikeHotkeyVirtualKey = _favoriteHotkeyVirtualKey;
+        _settings.Current.LikeHotkeyDisplayName = GetHotkeyDisplayName(_favoriteHotkeyVirtualKey, _favoriteHotkeyDisplayName);
         _settings.Save();
         return true;
     }
@@ -130,20 +135,13 @@ public partial class SettingsWindow : Window
             : $"{prefix} {account}";
     }
 
-    private static string FormatVirtualKey(uint virtualKey)
+    private static string GetHotkeyDisplayName(uint virtualKey, string savedDisplayName)
     {
-        if (virtualKey == 0)
+        if (!string.IsNullOrWhiteSpace(savedDisplayName))
         {
-            return "Не назначена";
+            return savedDisplayName;
         }
 
-        return virtualKey switch
-        {
-            0xB0 => "VK_MEDIA_NEXT_TRACK (0xB0)",
-            0xB1 => "VK_MEDIA_PREV_TRACK (0xB1)",
-            0xB2 => "VK_MEDIA_STOP (0xB2)",
-            0xB3 => "VK_MEDIA_PLAY_PAUSE (0xB3)",
-            _ => $"0x{virtualKey:X2}"
-        };
+        return HotkeyFormatter.Format(virtualKey);
     }
 }

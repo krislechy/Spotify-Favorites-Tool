@@ -262,9 +262,9 @@ public partial class MainWindow : Window
 
     private void UpdateStatus(string? prefix = null)
     {
-        var hotkey = _settings.Current.LikeHotkeyVirtualKey == 0
-            ? "не назначена"
-            : $"0x{_settings.Current.LikeHotkeyVirtualKey:X2}";
+        var hotkey = !string.IsNullOrWhiteSpace(_settings.Current.LikeHotkeyDisplayName)
+            ? _settings.Current.LikeHotkeyDisplayName
+            : HotkeyFormatter.Format(_settings.Current.LikeHotkeyVirtualKey);
         HotkeyText.Text = $"Клавиша Избранного: {hotkey}";
 
         var account = _auth.HasRefreshToken ? "Spotify подключен." : "Spotify не подключен.";
