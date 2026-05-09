@@ -103,9 +103,9 @@
                                 ToolTip="Предыдущий трек" />
                         <Button x:Name="PlayPauseButton"
                                 Style="{StaticResource OverlayButton}"
-                                Content="&#x23EF;"
+                                Content="&#x25B6;"
                                 Click="PlayPauseButton_Click"
-                                ToolTip="Пауза / плей" />
+                                ToolTip="Пауза / продолжить" />
                         <Button x:Name="NextButton"
                                 Style="{StaticResource OverlayButton}"
                                 Content="&#x23ED;"

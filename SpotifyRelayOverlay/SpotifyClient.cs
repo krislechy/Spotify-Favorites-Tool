@@ -16,9 +16,8 @@ public sealed class SpotifyClient
     };
 
     private readonly SpotifyAuthService _auth;
+    private readonly Dictionary<string, bool> _likedCache = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _requestGate = new(1, 1);
-    private string? _likedStateTrackUri;
-    private bool _likedState;
 
     public SpotifyClient(SpotifyAuthService auth)
     {
@@ -53,7 +52,7 @@ public sealed class SpotifyClient
         return new PlaybackSnapshot(
             track,
             playback?.IsPlaying == true,
-            await GetLikedStateAsync(track.Uri, cancellationToken),
+            GetCachedLike(track.Uri),
             playback?.ProgressMs ?? 0,
             item.DurationMs,
             playback?.IsPlaying == true ? "Сейчас играет" : "Пауза");
@@ -66,8 +65,7 @@ public sealed class SpotifyClient
         await SendAsync(method, $"{ApiRoot}/me/library?uris={uri}", cancellationToken);
 
         var isLiked = !currentlyLiked;
-        _likedStateTrackUri = track.Uri;
-        _likedState = isLiked;
+        _likedCache[track.Uri] = isLiked;
         return isLiked;
     }
 
@@ -87,20 +85,9 @@ public sealed class SpotifyClient
         await SendAsync(HttpMethod.Post, $"{ApiRoot}/me/player/previous", cancellationToken);
     }
 
-    private async Task<bool> GetLikedStateAsync(string spotifyUri, CancellationToken cancellationToken)
+    private bool GetCachedLike(string spotifyUri)
     {
-        if (string.Equals(_likedStateTrackUri, spotifyUri, StringComparison.Ordinal))
-        {
-            return _likedState;
-        }
-
-        var uri = Uri.EscapeDataString(spotifyUri);
-        var response = await SendAsync(HttpMethod.Get, $"{ApiRoot}/me/library/contains?uris={uri}", cancellationToken);
-        var values = JsonSerializer.Deserialize<bool[]>(response.Body, JsonOptions);
-
-        _likedStateTrackUri = spotifyUri;
-        _likedState = values is { Length: > 0 } && values[0];
-        return _likedState;
+        return _likedCache.TryGetValue(spotifyUri, out var isLiked) && isLiked;
     }
 
     private static PlaybackTrack CreateTrack(SpotifyItem item)
