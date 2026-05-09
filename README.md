@@ -1,6 +1,8 @@
-# Spotify Relay Overlay
+# Spotify Избранное
 
-Мини-приложение для Windows: прозрачный topmost-оверлей показывает текущий трек Spotify, статус лайка и позволяет лайкнуть/убрать лайк.
+Небольшое Windows-приложение для Spotify: по горячей клавише оно получает текущий трек, проверяет, есть ли он в Избранном, добавляет или убирает его и показывает компактное уведомление поверх окон.
+
+Приложение больше не опрашивает Spotify в фоне: запросы уходят только по нажатию выбранной клавиши и при авторизации.
 
 ## Запуск
 
@@ -18,74 +20,36 @@ http://127.0.0.1:53154/callback/
 ```
 
 3. Скопируй `Client ID`.
-4. Запусти оверлей, нажми `⚙`, вставь `Client ID`, нажми `Сохранить`, затем `Войти в Spotify`.
+4. Запусти приложение, открой настройки, вставь `Client ID`, нажми `Сохранить`, затем `Войти в Spotify`.
 
-Приложение использует OAuth Authorization Code with PKCE и scopes:
+Используемые scopes:
 
 ```text
-user-read-currently-playing user-read-playback-state user-modify-playback-state user-library-read user-library-modify
+user-read-currently-playing user-library-read user-library-modify
 ```
 
-Если приложение уже было подключено до добавления кнопок управления треками, нажми `Выйти`, затем `Войти в Spotify`, чтобы выдать новый scope `user-modify-playback-state`.
+## Горячая клавиша
 
-Если при переключении треков или паузе появляется `401`, это значит, что сохраненный токен Spotify больше не подходит для управления playback. Открой `⚙`, нажми `Выйти`, затем снова `Войти в Spotify`.
+Клавиша Избранного задается прямо в настройках приложения. Нажми поле `Клавиша Избранного`, затем нажми нужную кнопку на клавиатуре, включая медиа-кнопки, если Windows отдает их как обычный virtual key.
 
-## Определение клавиш
+При срабатывании:
 
-В репозитории есть мини-консоль `KeyInspector`, которая показывает, какую клавишу нажала Windows. Она слушает low-level keyboard hook и raw input, поэтому полезна для медиа-кнопок, нестандартных кнопок и HID consumer controls.
+- если трека нет в Избранном, приложение добавит его и покажет `Добавлено в Избранное`;
+- если трек уже есть в Избранном, приложение уберет его и покажет `Убрано из Избранного`.
 
-```powershell
-dotnet run --project .\KeyInspector\KeyInspector.csproj
-```
+## 429 Too Many Requests
 
-Нажми нужную кнопку и смотри строки `HOOK`, `RAWK` и `RAWH`. Для медиа-кнопок чаще всего нужны значения вроде `VK_MEDIA_PLAY_PAUSE`, `VK_MEDIA_NEXT_TRACK`, `VK_VOLUME_UP` или HID usage `0x00CD Play/Pause`. Выход из консоли: `Ctrl+C`.
+Spotify может ограничивать разные endpoints отдельно. Поэтому получение текущего трека может проходить успешно, а `me/tracks/contains` для проверки Избранного в это же время может вернуть `429 Too Many Requests`.
 
-Если часть клавиш не отображается, попробуй запустить консоль от администратора. Если клавишу полностью перехватывает фирменная программа клавиатуры или она уходит как vendor-specific HID без события клавиатуры/consumer control, Windows может не отдавать ее обычному приложению.
+Приложение реализует backoff-retry стратегию по рекомендации Spotify:
 
-## Управление
+- учитывает заголовок `Retry-After`, если Spotify его прислал;
+- автоматически повторяет только короткие задержки;
+- если Spotify прислал очень большой `Retry-After`, показывает уведомление с причиной и не ждет часами в фоне;
+- кэширует состояние Избранного для текущего трека после проверки или изменения, чтобы не делать повторную проверку без необходимости.
 
-- Перетащи оверлей мышью за любую пустую область.
-- `♡` / `♥` лайкает или убирает лайк с текущего трека.
-- `⏮` / `▶` / `⏸` / `⏭` переключают треки и паузу.
-- `Ctrl+Alt+L` лайкает/убирает лайк без клика по оверлею.
-- `Ctrl+Alt+Left`, `Ctrl+Alt+Space`, `Ctrl+Alt+Right` управляют предыдущим треком, паузой и следующим треком.
-- `Ctrl+Alt+H` скрывает/показывает оверлей.
-
-Управление play/pause/skip через Spotify Web API обычно требует Spotify Premium и активное устройство Spotify.
-
-## Режимы
-
-В настройках есть галочка `Показывать постоянный оверлей`.
-
-- В режиме оверлея показывается постоянное компактное окно. Для него доступен `Безопасный режим для игр`.
-- В фоновом режиме окно остается обычным окном на панели задач, но перестает быть topmost-оверлеем. Лайк/анлайк вешается на указанный `VK`-код кнопки из `KeyInspector`.
-- Уведомления в фоновом режиме настраиваются отдельно: лайк/анлайк, ручное переключение трека, автоматическое переключение трека.
-- В режиме оверлея всплывающие уведомления не показываются, потому что сам оверлей уже показывает состояние.
-
-Повторный запуск приложения не создает вторую копию, а выводит уже запущенное окно на передний план.
+Документация Spotify: [Web API rate limits](https://developer.spotify.com/documentation/web-api/concepts/rate-limits).
 
 ## Трей
 
-Приложение ведет себя как обычное desktop-приложение: пока окно открыто, оно видно на панели задач. Кнопка закрытия не завершает процесс, а прячет окно в системный трей. Двойной клик по значку в трее возвращает окно, правый клик открывает меню `Открыть`, `Настройки`, `Выход`.
-
-## Безопасный режим
-
-В настройках есть переключатель `Безопасный режим для игр`. Он отключает глобальные хоткеи, `Topmost` и повторное принудительное поднятие окна через Win32. Это снижает количество сигналов, которые могут не понравиться античитам, но оверлей может скрываться за полноэкранной игрой.
-
-## Важное ограничение
-
-Оверлей принудительно держится `Topmost` и переустанавливает topmost-режим каждые 2 секунды. Это работает поверх обычных окон и обычно поверх borderless/windowed fullscreen.
-
-Поверх эксклюзивного fullscreen, некоторых DirectX/Vulkan игр и игр с античитом обычное desktop-приложение может не отображаться. Для такого уровня нужны специальные overlay API, Game Bar widget или инжект в графический процесс, что небезопасно и часто нарушает правила игр.
-
-## Ссылки на Spotify API
-
-- [Authorization Code with PKCE](https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow)
-- [Get Currently Playing Track](https://developer.spotify.com/documentation/web-api/reference/get-the-users-currently-playing-track)
-- [Pause Playback](https://developer.spotify.com/documentation/web-api/reference/pause-a-users-playback)
-- [Start/Resume Playback](https://developer.spotify.com/documentation/web-api/reference/start-a-users-playback)
-- [Skip To Previous](https://developer.spotify.com/documentation/web-api/reference/skip-users-playback-to-previous-track)
-- [Skip To Next](https://developer.spotify.com/documentation/web-api/reference/skip-users-playback-to-next-track)
-- [Check User's Saved Items](https://developer.spotify.com/documentation/web-api/reference/check-library-contains)
-- [Save Items to Library](https://developer.spotify.com/documentation/web-api/reference/save-library-items)
-- [Remove Items from Library](https://developer.spotify.com/documentation/web-api/reference/remove-library-items)
+Приложение ведет себя как обычное desktop-приложение: пока главное окно открыто, оно видно на панели задач. Закрытие окна прячет его в системный трей. Двойной клик по значку возвращает окно, правый клик открывает меню `Открыть`, `Настройки`, `Выход`.

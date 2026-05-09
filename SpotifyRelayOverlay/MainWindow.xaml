@@ -1,18 +1,63 @@
 <Window x:Class="SpotifyRelayOverlay.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Spotify Favorite Hotkey"
-        Width="420"
-        Height="190"
-        MinWidth="380"
-        MinHeight="170"
+        Title="Spotify Избранное"
+        Width="500"
+        Height="270"
+        MinWidth="430"
+        MinHeight="250"
         ResizeMode="CanMinimize"
         ShowInTaskbar="True"
+        Background="#101512"
         Loaded="Window_Loaded"
         Closing="Window_Closing"
         SourceInitialized="Window_SourceInitialized">
-    <Border Background="#111713"
-            Padding="18">
+    <Window.Resources>
+        <Style x:Key="IconButton" TargetType="Button">
+            <Setter Property="Width" Value="42" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="Foreground" Value="#F4F8F5" />
+            <Setter Property="Background" Value="#202A24" />
+            <Setter Property="BorderBrush" Value="#3D4B42" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#2B3A32" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#4E6357" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#1ED760" />
+                                <Setter Property="Foreground" Value="#0F1511" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border Margin="12"
+            Padding="16"
+            CornerRadius="8"
+            Background="#141B17"
+            BorderBrush="#2A3A31"
+            BorderThickness="1">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -20,41 +65,69 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <TextBlock Text="Spotify Favorite Hotkey"
-                       Foreground="#F4F8F5"
-                       FontSize="18"
-                       FontWeight="SemiBold" />
+            <DockPanel LastChildFill="True">
+                <Border Width="42"
+                        Height="42"
+                        Margin="0,0,12,0"
+                        CornerRadius="8"
+                        Background="#1ED760">
+                    <TextBlock Text="♥"
+                               Foreground="#0F1511"
+                               FontSize="24"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+                </Border>
 
-            <StackPanel Grid.Row="1"
-                        Margin="0,16,0,0">
-                <TextBlock x:Name="HotkeyText"
-                           Foreground="#9ECFB1"
-                           FontSize="13"
-                           TextWrapping="Wrap" />
-                <TextBlock x:Name="StatusText"
-                           Margin="0,10,0,0"
-                           Foreground="#CFE1D5"
-                           FontSize="12"
-                           TextWrapping="Wrap" />
-            </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="Spotify Избранное"
+                               Foreground="#F4F8F5"
+                               FontSize="20"
+                               FontWeight="SemiBold" />
+                    <TextBlock Text="Одна клавиша для добавления и удаления текущего трека из избранного"
+                               Foreground="#AEBDB4"
+                               FontSize="12"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </DockPanel>
+
+            <Border Grid.Row="1"
+                    Margin="0,14,0,12"
+                    Padding="12"
+                    CornerRadius="8"
+                    Background="#18201B"
+                    BorderBrush="#28362E"
+                    BorderThickness="1">
+                <StackPanel>
+                    <TextBlock x:Name="HotkeyText"
+                               Foreground="#8DE6B1"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               TextWrapping="Wrap" />
+                    <TextBlock x:Name="StatusText"
+                               Margin="0,8,0,0"
+                               Foreground="#D7E4DC"
+                               FontSize="12"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
 
             <StackPanel Grid.Row="2"
                         Orientation="Horizontal"
                         HorizontalAlignment="Right">
-                <Button Content="Настройки"
-                        Width="104"
-                        Height="34"
-                        Margin="0,0,8,0"
-                        Click="SettingsButton_Click" />
-                <Button Content="Скрыть"
-                        Width="86"
-                        Height="34"
-                        Margin="0,0,8,0"
-                        Click="HideButton_Click" />
-                <Button Content="Выход"
-                        Width="76"
-                        Height="34"
-                        Click="ExitButton_Click" />
+                <Button Style="{StaticResource IconButton}"
+                        Content="⚙"
+                        Click="SettingsButton_Click"
+                        ToolTip="Настройки" />
+                <Button Style="{StaticResource IconButton}"
+                        Content="—"
+                        Click="HideButton_Click"
+                        ToolTip="Скрыть в трей" />
+                <Button Style="{StaticResource IconButton}"
+                        Content="⏻"
+                        Margin="0"
+                        Click="ExitButton_Click"
+                        ToolTip="Выход" />
             </StackPanel>
         </Grid>
     </Border>

@@ -84,7 +84,7 @@ public partial class MainWindow : Window
         _trayIcon = new Forms.NotifyIcon
         {
             Icon = LoadTrayIcon(),
-            Text = "Spotify Favorite Hotkey",
+            Text = "Spotify Избранное",
             Visible = true,
             ContextMenuStrip = menu
         };
@@ -138,14 +138,20 @@ public partial class MainWindow : Window
         _isExecuting = true;
         try
         {
-            StatusText.Text = "Получаю текущий трек...";
+            StatusText.Text = "Проверяю текущий трек...";
             var result = await _spotify.ToggleCurrentTrackFavoriteAsync();
             StatusText.Text = $"{result.Message}: {result.Track.Name}";
             ShowToast(result);
         }
+        catch (SpotifyRateLimitException ex)
+        {
+            StatusText.Text = Shorten(ex.Message, 160);
+            ShowErrorToast("Spotify ограничил запросы", ex.Message);
+        }
         catch (Exception ex)
         {
             StatusText.Text = Shorten(ex.Message, 140);
+            ShowErrorToast("Избранное недоступно", ex.Message);
         }
         finally
         {
@@ -157,6 +163,14 @@ public partial class MainWindow : Window
     {
         _toastWindow?.Close();
         _toastWindow = new ToastWindow(result);
+        _toastWindow.Closed += (_, _) => _toastWindow = null;
+        _toastWindow.Show();
+    }
+
+    private void ShowErrorToast(string title, string message)
+    {
+        _toastWindow?.Close();
+        _toastWindow = new ToastWindow(title, message);
         _toastWindow.Closed += (_, _) => _toastWindow = null;
         _toastWindow.Show();
     }
@@ -233,11 +247,11 @@ public partial class MainWindow : Window
         var hotkey = _settings.Current.LikeHotkeyVirtualKey == 0
             ? "не назначена"
             : $"0x{_settings.Current.LikeHotkeyVirtualKey:X2}";
-        HotkeyText.Text = $"Клавиша лайк/анлайк: {hotkey}";
+        HotkeyText.Text = $"Клавиша Избранного: {hotkey}";
 
         var account = _auth.HasRefreshToken ? "Spotify подключен." : "Spotify не подключен.";
         var registration = _hotkeyRegistrationFailed ? " Клавиша занята или недоступна." : string.Empty;
-        var hint = $"По нажатию клавиши приложение проверит текущий трек, переключит избранное и покажет уведомление.{registration}";
+        var hint = $"По нажатию клавиши приложение проверит текущий трек, изменит Избранное и покажет уведомление.{registration}";
         StatusText.Text = string.IsNullOrWhiteSpace(prefix)
             ? $"{account} {hint}"
             : $"{prefix} {account} {hint}";

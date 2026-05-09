@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace SpotifyRelayOverlay;
@@ -14,7 +15,21 @@ public partial class ToastWindow : Window
         TrackTitle.Text = result.Track.Name;
         ArtistText.Text = result.Track.Artists;
         HeartText.Text = result.IsLiked ? "♥" : "♡";
+        HeartText.Foreground = result.IsLiked
+            ? new SolidColorBrush(System.Windows.Media.Color.FromRgb(30, 215, 96))
+            : new SolidColorBrush(System.Windows.Media.Color.FromRgb(213, 231, 220));
         SetAlbumArt(result.Track.AlbumImageUrl);
+    }
+
+    public ToastWindow(string title, string message)
+    {
+        InitializeComponent();
+
+        ActionText.Text = title;
+        TrackTitle.Text = message;
+        ArtistText.Text = "Spotify Избранное";
+        HeartText.Text = "!";
+        HeartText.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 196, 87));
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -23,8 +38,7 @@ public partial class ToastWindow : Window
         Left = workArea.Left + 18;
         Top = workArea.Top + 18;
 
-        var hwnd = new WindowInteropHelper(this).Handle;
-        NativeMethods.ForceTopmost(hwnd);
+        NativeMethods.ForceTopmost(new WindowInteropHelper(this).Handle);
 
         await Task.Delay(TimeSpan.FromSeconds(3.2));
         if (IsVisible)
