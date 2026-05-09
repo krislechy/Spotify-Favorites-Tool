@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -7,6 +8,8 @@ namespace SpotifyRelayOverlay;
 
 public partial class ToastWindow : Window
 {
+    private readonly TimeSpan _visibleDuration = TimeSpan.FromSeconds(3.2);
+
     public ToastWindow(FavoriteToggleResult result)
     {
         InitializeComponent();
@@ -24,12 +27,14 @@ public partial class ToastWindow : Window
     public ToastWindow(string title, string message)
     {
         InitializeComponent();
+        ConfigureErrorLayout();
 
         ActionText.Text = title;
         TrackTitle.Text = message;
-        ArtistText.Text = "Spotify Избранное";
+        ArtistText.Text = string.Empty;
         HeartText.Text = "!";
         HeartText.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 196, 87));
+        _visibleDuration = TimeSpan.FromSeconds(9);
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -40,11 +45,31 @@ public partial class ToastWindow : Window
 
         NativeMethods.ForceTopmost(new WindowInteropHelper(this).Handle);
 
-        await Task.Delay(TimeSpan.FromSeconds(3.2));
+        await Task.Delay(_visibleDuration);
         if (IsVisible)
         {
             Close();
         }
+    }
+
+    private void ConfigureErrorLayout()
+    {
+        Width = Math.Min(820, SystemParameters.WorkArea.Width - 36);
+        Height = Math.Min(320, SystemParameters.WorkArea.Height - 36);
+
+        ArtworkColumn.Width = new GridLength(0);
+        IconColumn.Width = new GridLength(42);
+        ArtworkFrame.Visibility = Visibility.Collapsed;
+        AlbumPlaceholder.Visibility = Visibility.Collapsed;
+        AlbumArt.Visibility = Visibility.Collapsed;
+        ArtistText.Visibility = Visibility.Collapsed;
+        FooterText.Visibility = Visibility.Collapsed;
+
+        TrackTitle.FontSize = 13;
+        TrackTitle.FontWeight = FontWeights.SemiBold;
+        TrackTitle.TextWrapping = TextWrapping.Wrap;
+        TrackTitle.TextTrimming = TextTrimming.None;
+        Grid.SetRowSpan(TrackTitle, 3);
     }
 
     private void SetAlbumArt(string? imageUrl)

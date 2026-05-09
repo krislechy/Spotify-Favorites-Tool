@@ -8,10 +8,7 @@ namespace SpotifyRelayOverlay;
 public sealed class SpotifyClient
 {
     private const string ApiRoot = "https://api.spotify.com/v1";
-    private const int MaxRateLimitAttempts = 3;
     private static readonly HttpClient Http = new();
-    private static readonly TimeSpan DefaultRateLimitDelay = TimeSpan.FromSeconds(2);
-    private static readonly TimeSpan MaxAutomaticRateLimitDelay = TimeSpan.FromSeconds(8);
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -126,35 +123,22 @@ public sealed class SpotifyClient
                 throw new InvalidOperationException("Spotify не подключен. Открой настройки и войди в аккаунт.");
             }
 
-            for (var attempt = 1; attempt <= MaxRateLimitAttempts; attempt++)
+            using var request = new HttpRequestMessage(method, url);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            using var response = await Http.SendAsync(request, cancellationToken);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (response.StatusCode == (HttpStatusCode)429)
             {
-                using var request = new HttpRequestMessage(method, url);
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-                using var response = await Http.SendAsync(request, cancellationToken);
-                var body = await response.Content.ReadAsStringAsync(cancellationToken);
-                if (response.StatusCode == (HttpStatusCode)429)
-                {
-                    var delay = GetRateLimitDelay(response, attempt);
-                    var canRetry = attempt < MaxRateLimitAttempts && delay <= MaxAutomaticRateLimitDelay;
-                    if (canRetry)
-                    {
-                        await Task.Delay(delay, cancellationToken);
-                        continue;
-                    }
-
-                    throw new SpotifyRateLimitException(delay, DescribeEndpoint(url));
-                }
-
-                if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NoContent)
-                {
-                    throw CreateApiException(response.StatusCode, body, url);
-                }
-
-                return new ApiResponse(response.StatusCode, body);
+                throw new SpotifyRateLimitException(GetRetryAfter(response), DescribeEndpoint(url), body);
             }
 
-            throw new SpotifyRateLimitException(MaxAutomaticRateLimitDelay, DescribeEndpoint(url));
+            if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NoContent)
+            {
+                throw CreateApiException(response.StatusCode, body, url);
+            }
+
+            return new ApiResponse(response.StatusCode, body);
         }
         finally
         {
@@ -169,7 +153,7 @@ public sealed class SpotifyClient
             HttpStatusCode.Unauthorized => new InvalidOperationException(
                 "Spotify вернул 401. Открой настройки, нажми «Выйти», потом «Войти в Spotify» и выдай новые права."),
             HttpStatusCode.Forbidden => new InvalidOperationException(
-                $"{BuildScopeError()} Endpoint: {DescribeEndpoint(url)}. Ответ Spotify: {TrimBody(body)}"),
+                $"{BuildScopeError()} Endpoint: {DescribeEndpoint(url)}. Ответ Spotify: {FormatBody(body)}"),
             _ => new SpotifyApiException(statusCode, body)
         };
     }
@@ -180,25 +164,21 @@ public sealed class SpotifyClient
             "Открой настройки, нажми «Выйти», затем «Войти в Spotify» и подтверди доступ.";
     }
 
-    private static TimeSpan GetRateLimitDelay(HttpResponseMessage response, int attempt)
+    private static TimeSpan? GetRetryAfter(HttpResponseMessage response)
     {
         var retryAfter = response.Headers.RetryAfter;
         if (retryAfter?.Delta is { } delta)
         {
-            return ClampRateLimitDelay(delta);
+            return delta < TimeSpan.Zero ? TimeSpan.Zero : delta;
         }
 
         if (retryAfter?.Date is { } date)
         {
-            return ClampRateLimitDelay(date - DateTimeOffset.UtcNow);
+            var delay = date - DateTimeOffset.UtcNow;
+            return delay < TimeSpan.Zero ? TimeSpan.Zero : delay;
         }
 
-        return TimeSpan.FromSeconds(DefaultRateLimitDelay.TotalSeconds * Math.Pow(2, attempt - 1));
-    }
-
-    private static TimeSpan ClampRateLimitDelay(TimeSpan delay)
-    {
-        return delay < TimeSpan.FromSeconds(1) ? TimeSpan.FromSeconds(1) : delay;
+        return null;
     }
 
     private static string DescribeEndpoint(string url)
@@ -221,14 +201,9 @@ public sealed class SpotifyClient
         return "Spotify API";
     }
 
-    private static string TrimBody(string body)
+    private static string FormatBody(string body)
     {
-        if (string.IsNullOrWhiteSpace(body))
-        {
-            return "пустой ответ";
-        }
-
-        return body.Length <= 220 ? body : body[..219] + "...";
+        return string.IsNullOrWhiteSpace(body) ? "пустой ответ" : body;
     }
 
     private sealed record ApiResponse(HttpStatusCode StatusCode, string Body);
@@ -249,25 +224,32 @@ public sealed class SpotifyApiException : Exception
 
 public sealed class SpotifyRateLimitException : Exception
 {
-    public SpotifyRateLimitException(TimeSpan retryAfter, string endpoint)
-        : base(BuildMessage(retryAfter, endpoint))
+    public SpotifyRateLimitException(TimeSpan? retryAfter, string endpoint, string body)
+        : base(BuildMessage(retryAfter, endpoint, body))
     {
         RetryAfter = retryAfter;
         Endpoint = endpoint;
+        Body = body;
     }
 
-    public TimeSpan RetryAfter { get; }
+    public TimeSpan? RetryAfter { get; }
     public string Endpoint { get; }
+    public string Body { get; }
 
-    private static string BuildMessage(TimeSpan retryAfter, string endpoint)
+    private static string BuildMessage(TimeSpan? retryAfter, string endpoint, string body)
     {
-        var wait = FormatDelay(retryAfter);
-        if (retryAfter > TimeSpan.FromMinutes(15))
+        var message = $"Spotify вернул 429 Too Many Requests ({endpoint}). Автоповторов нет.";
+        if (retryAfter is { } delay)
         {
-            return $"Spotify ограничил запросы ({endpoint}) и прислал Retry-After около {wait}. Это необычно долго, автоповтор остановлен.";
+            message += $" Подожди {FormatDelay(delay)}.";
         }
 
-        return $"Spotify ограничил запросы ({endpoint}). Повтори через {wait}.";
+        if (!string.IsNullOrWhiteSpace(body))
+        {
+            message += $" Ответ Spotify: {body}";
+        }
+
+        return message;
     }
 
     private static string FormatDelay(TimeSpan delay)

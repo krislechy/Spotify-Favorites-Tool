@@ -19,12 +19,13 @@
             SnapsToDevicePixels="True">
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="74" />
+                <ColumnDefinition x:Name="ArtworkColumn" Width="74" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="66" />
+                <ColumnDefinition x:Name="IconColumn" Width="66" />
             </Grid.ColumnDefinitions>
 
-            <Border Width="64"
+            <Border x:Name="ArtworkFrame"
+                    Width="64"
                     Height="64"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Top"
@@ -70,7 +71,8 @@
                            Foreground="#B9C4BE"
                            FontSize="12"
                            TextTrimming="CharacterEllipsis" />
-                <TextBlock Text="Spotify Избранное"
+                <TextBlock x:Name="FooterText"
+                           Text="Spotify Избранное"
                            Grid.Row="3"
                            Foreground="#7F8D84"
                            FontSize="10"
