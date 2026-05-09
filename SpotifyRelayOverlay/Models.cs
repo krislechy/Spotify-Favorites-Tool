@@ -24,7 +24,13 @@ public sealed record PlaybackSnapshot(
     bool IsLiked,
     int ProgressMs,
     int DurationMs,
-    string Status);
+    string Status)
+{
+    public static PlaybackSnapshot Empty(string status)
+    {
+        return new PlaybackSnapshot(null, false, false, 0, 0, status);
+    }
+}
 
 public sealed record PlaybackTrack(
     string Id,

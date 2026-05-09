@@ -239,18 +239,14 @@ public partial class MainWindow : Window
         {
             LikeButton.IsEnabled = false;
 
-            var freshSnapshot = await _spotify.GetPlaybackAsync();
-            if (freshSnapshot.Track is null)
+            var snapshot = _current;
+            if (snapshot?.Track is null)
             {
-                _current = freshSnapshot;
-                RenderPlayback(freshSnapshot);
-                TrackAutomaticChange(freshSnapshot, allowAutomaticTrackToast: false);
                 return;
             }
 
-            var realIsLiked = await _spotify.IsTrackLikedAsync(freshSnapshot.Track);
-            var isLiked = await _spotify.ToggleLikeAsync(freshSnapshot.Track, realIsLiked);
-            _current = freshSnapshot with { IsLiked = isLiked };
+            var isLiked = await _spotify.ToggleLikeAsync(snapshot.Track, snapshot.IsLiked);
+            _current = snapshot with { IsLiked = isLiked };
             RenderPlayback(_current);
             TrackAutomaticChange(_current, allowAutomaticTrackToast: false);
 
@@ -274,15 +270,6 @@ public partial class MainWindow : Window
 
     private async Task RunTrackSwitchCommandAsync(Func<Task> command, string toastAction)
     {
-        if (_current?.Track is null)
-        {
-            await RefreshPlaybackAsync(allowAutomaticTrackToast: false);
-            if (_current?.Track is null)
-            {
-                return;
-            }
-        }
-
         if (_isRunningPlaybackCommand)
         {
             return;
@@ -314,15 +301,6 @@ public partial class MainWindow : Window
 
     private async Task RunPlaybackCommandAsync(Func<Task> command)
     {
-        if (_current?.Track is null)
-        {
-            await RefreshPlaybackAsync(allowAutomaticTrackToast: false);
-            if (_current?.Track is null)
-            {
-                return;
-            }
-        }
-
         if (_isRunningPlaybackCommand)
         {
             return;
