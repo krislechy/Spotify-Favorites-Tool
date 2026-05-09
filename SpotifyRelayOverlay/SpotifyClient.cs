@@ -238,15 +238,16 @@ public sealed class SpotifyRateLimitException : Exception
 
     private static string BuildMessage(TimeSpan? retryAfter, string endpoint, string body)
     {
-        var message = $"Spotify вернул 429 Too Many Requests ({endpoint}). Автоповторов нет.";
+        var message = $"Spotify вернул 429 ({endpoint}).";
+
         if (retryAfter is { } delay)
         {
-            message += $" Подожди {FormatDelay(delay)}.";
+            message += Environment.NewLine + $"Reset after: {FormatDelay(delay)}.";
         }
 
         if (!string.IsNullOrWhiteSpace(body))
         {
-            message += $" Ответ Spotify: {body}";
+            message += Environment.NewLine + $"Детали: {body}";
         }
 
         return message;
@@ -254,13 +255,23 @@ public sealed class SpotifyRateLimitException : Exception
 
     private static string FormatDelay(TimeSpan delay)
     {
-        if (delay >= TimeSpan.FromHours(1))
+        var parts = new List<string>();
+
+        if (delay.Hours > 0)
         {
-            return $"{Math.Ceiling(delay.TotalHours):0} ч";
+            parts.Add($"{delay.Hours} ч");
         }
 
-        return delay >= TimeSpan.FromMinutes(1)
-            ? $"{Math.Ceiling(delay.TotalMinutes):0} мин"
-            : $"{Math.Ceiling(delay.TotalSeconds):0} сек";
+        if (delay.Minutes > 0)
+        {
+            parts.Add($"{delay.Minutes} мин");
+        }
+
+        if (delay.Seconds > 0 || parts.Count == 0)
+        {
+            parts.Add($"{delay.Seconds} сек");
+        }
+
+        return string.Join(' ', parts);
     }
 }

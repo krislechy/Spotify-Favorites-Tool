@@ -54,8 +54,8 @@ public partial class ToastWindow : Window
 
     private void ConfigureErrorLayout()
     {
-        Width = Math.Min(820, SystemParameters.WorkArea.Width - 36);
-        Height = Math.Min(320, SystemParameters.WorkArea.Height - 36);
+        Width = Math.Min(420, SystemParameters.WorkArea.Width - 36);
+        Height = Math.Min(120, SystemParameters.WorkArea.Height - 36);
 
         ArtworkColumn.Width = new GridLength(0);
         IconColumn.Width = new GridLength(42);
