@@ -7,6 +7,7 @@ public sealed class AppSettings
     public string ClientId { get; set; } = string.Empty;
     public string AccessToken { get; set; } = string.Empty;
     public string RefreshToken { get; set; } = string.Empty;
+    public string GrantedScopes { get; set; } = string.Empty;
     public DateTimeOffset AccessTokenExpiresAt { get; set; } = DateTimeOffset.MinValue;
     public double? WindowLeft { get; set; }
     public double? WindowTop { get; set; }
@@ -32,6 +33,9 @@ internal sealed class TokenResponse
 
     [JsonPropertyName("refresh_token")]
     public string? RefreshToken { get; set; }
+
+    [JsonPropertyName("scope")]
+    public string? Scope { get; set; }
 
     [JsonPropertyName("expires_in")]
     public int ExpiresIn { get; set; }

@@ -13,12 +13,13 @@ public sealed class SpotifyAuthService
 {
     public const int RedirectPort = 53154;
     public const string RedirectUri = "http://127.0.0.1:53154/callback/";
+    public const string RequiredScopes = "user-read-currently-playing user-library-read user-library-modify";
 
     private const string AuthorizeEndpoint = "https://accounts.spotify.com/authorize";
     private const string TokenEndpoint = "https://accounts.spotify.com/api/token";
-    private const string Scopes = "user-read-currently-playing user-library-read user-library-modify";
-
+    private static readonly string[] RequiredScopeItems = RequiredScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries);
     private static readonly HttpClient Http = new();
+
     private readonly SettingsStore _settings;
 
     public SpotifyAuthService(SettingsStore settings)
@@ -29,6 +30,8 @@ public sealed class SpotifyAuthService
     public bool HasClientId => !string.IsNullOrWhiteSpace(_settings.Current.ClientId);
     public bool HasRefreshToken => !string.IsNullOrWhiteSpace(_settings.Current.RefreshToken);
     public bool HasAnyToken => !string.IsNullOrWhiteSpace(_settings.Current.AccessToken) || HasRefreshToken;
+    public bool KnowsGrantedScopes => !string.IsNullOrWhiteSpace(_settings.Current.GrantedScopes);
+    public bool HasRequiredScopes => HasScopes(_settings.Current.GrantedScopes, RequiredScopeItems);
 
     public async Task LoginAsync(CancellationToken cancellationToken = default)
     {
@@ -103,7 +106,8 @@ public sealed class SpotifyAuthService
             ["client_id"] = _settings.Current.ClientId.Trim(),
             ["response_type"] = "code",
             ["redirect_uri"] = RedirectUri,
-            ["scope"] = Scopes,
+            ["scope"] = RequiredScopes,
+            ["show_dialog"] = "true",
             ["code_challenge_method"] = "S256",
             ["code_challenge"] = codeChallenge,
             ["state"] = state
@@ -163,8 +167,33 @@ public sealed class SpotifyAuthService
             _settings.Current.RefreshToken = token.RefreshToken ?? string.Empty;
         }
 
+        if (!string.IsNullOrWhiteSpace(token.Scope))
+        {
+            _settings.Current.GrantedScopes = token.Scope;
+        }
+
         _settings.Current.AccessTokenExpiresAt = DateTimeOffset.UtcNow.AddSeconds(Math.Max(60, token.ExpiresIn - 30));
         _settings.Save();
+
+        if (KnowsGrantedScopes && !HasRequiredScopes)
+        {
+            _settings.ClearTokens();
+            throw new InvalidOperationException(
+                $"Spotify выдал токен без нужных прав. Нужны scopes: {RequiredScopes}. " +
+                "Открой настройки, нажми «Выйти», затем «Войти в Spotify» и подтверди доступ.");
+        }
+    }
+
+    private static bool HasScopes(string grantedScopes, IEnumerable<string> requiredScopes)
+    {
+        if (string.IsNullOrWhiteSpace(grantedScopes))
+        {
+            return false;
+        }
+
+        var granted = grantedScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToHashSet(StringComparer.Ordinal);
+        return requiredScopes.All(granted.Contains);
     }
 
     private static async Task<CallbackResult> ReadCallbackAsync(TcpClient client, CancellationToken cancellationToken)
@@ -199,8 +228,8 @@ public sealed class SpotifyAuthService
     {
         var title = success ? "Spotify подключен" : "Не удалось подключить Spotify";
         var message = success
-            ? "Можно закрыть эту вкладку и вернуться к оверлею."
-            : "Вернись к оверлею и попробуй еще раз.";
+            ? "Можно закрыть эту вкладку и вернуться к приложению."
+            : "Вернись к приложению и попробуй еще раз.";
         var html = $"""
             <!doctype html>
             <html lang="ru">

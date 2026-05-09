@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using System.Threading;
 
 namespace SpotifyRelayOverlay;
 
@@ -20,7 +19,7 @@ public sealed class SpotifyClient
 
     private readonly SpotifyAuthService _auth;
     private readonly SemaphoreSlim _requestGate = new(1, 1);
-    private string? _lastTrackId;
+    private string? _lastTrackUri;
     private bool _lastTrackLiked;
 
     public SpotifyClient(SpotifyAuthService auth)
@@ -31,12 +30,13 @@ public sealed class SpotifyClient
     public async Task<FavoriteToggleResult> ToggleCurrentTrackFavoriteAsync(CancellationToken cancellationToken = default)
     {
         var track = await GetCurrentTrackAsync(cancellationToken);
-        var isLiked = await GetLikedStateAsync(track.Id, cancellationToken);
+        var isLiked = await GetLikedStateAsync(track, cancellationToken);
         var nextLiked = !isLiked;
 
-        await SetTrackLikedAsync(track.Id, nextLiked, cancellationToken);
-        _lastTrackId = track.Id;
+        await SetTrackLikedAsync(track, nextLiked, cancellationToken);
+        _lastTrackUri = track.Uri;
         _lastTrackLiked = nextLiked;
+
         var message = nextLiked ? "Добавлено в Избранное" : "Убрано из Избранного";
         return new FavoriteToggleResult(track, nextLiked, message);
     }
@@ -68,32 +68,37 @@ public sealed class SpotifyClient
         return CreateTrack(item);
     }
 
-    private async Task<bool> GetLikedStateAsync(string trackId, CancellationToken cancellationToken)
+    private async Task<bool> GetLikedStateAsync(PlaybackTrack track, CancellationToken cancellationToken)
     {
-        if (string.Equals(_lastTrackId, trackId, StringComparison.Ordinal))
+        if (string.Equals(_lastTrackUri, track.Uri, StringComparison.Ordinal))
         {
             return _lastTrackLiked;
         }
 
-        return await IsTrackLikedAsync(trackId, cancellationToken);
+        return await IsTrackLikedAsync(track, cancellationToken);
     }
 
-    private async Task<bool> IsTrackLikedAsync(string trackId, CancellationToken cancellationToken)
+    private async Task<bool> IsTrackLikedAsync(PlaybackTrack track, CancellationToken cancellationToken)
     {
-        var id = Uri.EscapeDataString(trackId);
-        var response = await SendAsync(HttpMethod.Get, $"{ApiRoot}/me/tracks/contains?ids={id}", cancellationToken);
+        var uri = Uri.EscapeDataString(track.Uri);
+        var response = await SendAsync(HttpMethod.Get, $"{ApiRoot}/me/library/contains?uris={uri}", cancellationToken);
         var values = JsonSerializer.Deserialize<bool[]>(response.Body, JsonOptions);
         var isLiked = values is { Length: > 0 } && values[0];
-        _lastTrackId = trackId;
+        _lastTrackUri = track.Uri;
         _lastTrackLiked = isLiked;
         return isLiked;
     }
 
-    private async Task SetTrackLikedAsync(string trackId, bool isLiked, CancellationToken cancellationToken)
+    private async Task SetTrackLikedAsync(PlaybackTrack track, bool isLiked, CancellationToken cancellationToken)
     {
-        var id = Uri.EscapeDataString(trackId);
+        if (_auth.KnowsGrantedScopes && !_auth.HasRequiredScopes)
+        {
+            throw new InvalidOperationException(BuildScopeError());
+        }
+
+        var uri = Uri.EscapeDataString(track.Uri);
         var method = isLiked ? HttpMethod.Put : HttpMethod.Delete;
-        await SendAsync(method, $"{ApiRoot}/me/tracks?ids={id}", cancellationToken);
+        await SendAsync(method, $"{ApiRoot}/me/library?uris={uri}", cancellationToken);
     }
 
     private static PlaybackTrack CreateTrack(SpotifyItem item)
@@ -143,7 +148,7 @@ public sealed class SpotifyClient
 
                 if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NoContent)
                 {
-                    throw CreateApiException(response.StatusCode, body);
+                    throw CreateApiException(response.StatusCode, body, url);
                 }
 
                 return new ApiResponse(response.StatusCode, body);
@@ -157,16 +162,22 @@ public sealed class SpotifyClient
         }
     }
 
-    private static Exception CreateApiException(HttpStatusCode statusCode, string body)
+    private static Exception CreateApiException(HttpStatusCode statusCode, string body, string url)
     {
         return statusCode switch
         {
             HttpStatusCode.Unauthorized => new InvalidOperationException(
                 "Spotify вернул 401. Открой настройки, нажми «Выйти», потом «Войти в Spotify» и выдай новые права."),
             HttpStatusCode.Forbidden => new InvalidOperationException(
-                "Spotify отказал в доступе. Заново войди в настройках для прав на чтение и изменение избранных треков."),
+                $"{BuildScopeError()} Endpoint: {DescribeEndpoint(url)}. Ответ Spotify: {TrimBody(body)}"),
             _ => new SpotifyApiException(statusCode, body)
         };
+    }
+
+    private static string BuildScopeError()
+    {
+        return $"Spotify вернул 403 Forbidden. Для Избранного нужны права {SpotifyAuthService.RequiredScopes}. " +
+            "Открой настройки, нажми «Выйти», затем «Войти в Spotify» и подтверди доступ.";
     }
 
     private static TimeSpan GetRateLimitDelay(HttpResponseMessage response, int attempt)
@@ -192,14 +203,14 @@ public sealed class SpotifyClient
 
     private static string DescribeEndpoint(string url)
     {
-        if (url.Contains("/me/tracks/contains", StringComparison.OrdinalIgnoreCase))
+        if (url.Contains("/me/library/contains", StringComparison.OrdinalIgnoreCase))
         {
-            return "проверка избранного";
+            return "проверка Избранного";
         }
 
-        if (url.Contains("/me/tracks", StringComparison.OrdinalIgnoreCase))
+        if (url.Contains("/me/library", StringComparison.OrdinalIgnoreCase))
         {
-            return "изменение избранного";
+            return "изменение Избранного";
         }
 
         if (url.Contains("/me/player/currently-playing", StringComparison.OrdinalIgnoreCase))
@@ -208,6 +219,16 @@ public sealed class SpotifyClient
         }
 
         return "Spotify API";
+    }
+
+    private static string TrimBody(string body)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return "пустой ответ";
+        }
+
+        return body.Length <= 220 ? body : body[..219] + "...";
     }
 
     private sealed record ApiResponse(HttpStatusCode StatusCode, string Body);

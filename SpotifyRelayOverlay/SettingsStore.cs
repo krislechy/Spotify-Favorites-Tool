@@ -33,6 +33,7 @@ public sealed class SettingsStore
     {
         Current.AccessToken = string.Empty;
         Current.RefreshToken = string.Empty;
+        Current.GrantedScopes = string.Empty;
         Current.AccessTokenExpiresAt = DateTimeOffset.MinValue;
         Save();
     }

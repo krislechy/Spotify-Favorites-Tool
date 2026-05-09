@@ -250,6 +250,11 @@ public partial class MainWindow : Window
         HotkeyText.Text = $"Клавиша Избранного: {hotkey}";
 
         var account = _auth.HasRefreshToken ? "Spotify подключен." : "Spotify не подключен.";
+        if (_auth.KnowsGrantedScopes && !_auth.HasRequiredScopes)
+        {
+            account += " Не хватает прав на Избранное: открой настройки, нажми «Выйти», затем «Войти в Spotify».";
+        }
+
         var registration = _hotkeyRegistrationFailed ? " Клавиша занята или недоступна." : string.Empty;
         var hint = $"По нажатию клавиши приложение проверит текущий трек, изменит Избранное и покажет уведомление.{registration}";
         StatusText.Text = string.IsNullOrWhiteSpace(prefix)

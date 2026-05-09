@@ -120,6 +120,11 @@ public partial class SettingsWindow : Window
     private void UpdateStatus(string? prefix = null)
     {
         var account = _auth.HasRefreshToken ? "Аккаунт подключен." : "Аккаунт не подключен.";
+        if (_auth.KnowsGrantedScopes && !_auth.HasRequiredScopes)
+        {
+            account += " Не хватает прав на Избранное: нажми «Выйти», затем «Войти в Spotify».";
+        }
+
         StatusText.Text = string.IsNullOrWhiteSpace(prefix)
             ? account
             : $"{prefix} {account}";
