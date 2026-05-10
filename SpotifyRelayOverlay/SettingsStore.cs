@@ -82,6 +82,12 @@ public sealed class SettingsStore
                 shouldSave = true;
             }
 
+            if (string.IsNullOrWhiteSpace(settings.FavoriteStatusHotkeyDisplayName))
+            {
+                settings.FavoriteStatusHotkeyDisplayName = HotkeyFormatter.Format(settings.FavoriteStatusHotkeyVirtualKey);
+                shouldSave = true;
+            }
+
             return settings;
         }
         catch

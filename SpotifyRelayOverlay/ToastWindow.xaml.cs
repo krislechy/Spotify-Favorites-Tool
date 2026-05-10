@@ -26,6 +26,19 @@ public partial class ToastWindow : Window
         InitializeComponent();
 
         ActionText.Text = isLiked ? "Сейчас играет · В Избранном" : "Сейчас играет · Не в Избранном";
+        ConfigureTrackLayout(track, isLiked);
+    }
+
+    public ToastWindow(PlaybackTrack track, bool isLiked, string actionText)
+    {
+        InitializeComponent();
+
+        ActionText.Text = actionText;
+        ConfigureTrackLayout(track, isLiked);
+    }
+
+    private void ConfigureTrackLayout(PlaybackTrack track, bool isLiked)
+    {
         TrackTitle.Text = track.Name;
         ArtistText.Text = track.Artists;
         SetHeart(isLiked);

@@ -17,6 +17,8 @@ public sealed class AppSettings
     public double? WindowTop { get; set; }
     public uint LikeHotkeyVirtualKey { get; set; } = 0xB3;
     public string LikeHotkeyDisplayName { get; set; } = string.Empty;
+    public uint FavoriteStatusHotkeyVirtualKey { get; set; }
+    public string FavoriteStatusHotkeyDisplayName { get; set; } = string.Empty;
 }
 
 public sealed record PlaybackTrack(

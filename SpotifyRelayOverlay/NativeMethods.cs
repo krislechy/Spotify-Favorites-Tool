@@ -6,6 +6,7 @@ internal static class NativeMethods
 {
     public const int WmHotkey = 0x0312;
     public const int HotkeyToggleFavorite = 1001;
+    public const int HotkeyShowFavoriteStatus = 1002;
 
     public static readonly uint ShowExistingWindowMessage = RegisterWindowMessage("SpotifyRelayOverlay.ShowExistingWindow");
 

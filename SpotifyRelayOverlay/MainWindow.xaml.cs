@@ -17,11 +17,15 @@ public partial class MainWindow : Window
     private SettingsWindow? _settingsWindow;
     private HwndSource? _source;
     private IntPtr _hwnd;
-    private bool _hotkeyRegistered;
-    private bool _hotkeyRegistrationFailed;
+    private bool _favoriteHotkeyRegistered;
+    private bool _favoriteHotkeyRegistrationFailed;
+    private bool _statusHotkeyRegistered;
+    private bool _statusHotkeyRegistrationFailed;
     private bool _isExecuting;
     private bool _isCheckingTrack;
     private bool _isExiting;
+    private PlaybackTrack? _cachedTrack;
+    private bool _cachedTrackIsLiked;
     private string? _lastObservedTrackUri;
     private DispatcherTimer? _trackMonitorTimer;
     private Forms.NotifyIcon? _trayIcon;
@@ -47,7 +51,7 @@ public partial class MainWindow : Window
         _hwnd = new WindowInteropHelper(this).Handle;
         _source = HwndSource.FromHwnd(_hwnd);
         _source?.AddHook(WndProc);
-        RegisterFavoriteHotkey();
+        RegisterHotkeys();
     }
 
     private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -61,7 +65,7 @@ public partial class MainWindow : Window
 
         StopTrackMonitor(clearCache: false);
         SaveWindowPosition();
-        UnregisterFavoriteHotkey();
+        UnregisterHotkeys();
         _source?.RemoveHook(WndProc);
         _trayIcon?.Dispose();
         _toastWindow?.Close();
@@ -152,7 +156,7 @@ public partial class MainWindow : Window
         };
         _settingsWindow.SettingsChanged += (_, _) =>
         {
-            RegisterFavoriteHotkey();
+            RegisterHotkeys();
             StartTrackMonitorIfReady();
             UpdateStatus("Настройки сохранены.");
         };
@@ -172,7 +176,7 @@ public partial class MainWindow : Window
         {
             StatusText.Text = "Проверяю текущий трек...";
             var result = await _spotify.ToggleCurrentTrackFavoriteAsync();
-            _lastObservedTrackUri = result.Track.Uri;
+            CacheTrackState(result.Track, result.IsLiked);
             StatusText.Text = $"{result.Message}: {result.Track.Name}";
             ShowToast(result);
         }
@@ -191,6 +195,23 @@ public partial class MainWindow : Window
         {
             _isExecuting = false;
         }
+    }
+
+    private void ShowCachedFavoriteStatus()
+    {
+        if (_cachedTrack is null)
+        {
+            ShowErrorToast(
+                "Статус Избранного неизвестен",
+                "Кеш еще пуст. Дождись уведомления о смене трека или один раз измени Избранное горячей клавишей.");
+            return;
+        }
+
+        var message = _cachedTrackIsLiked ? "Уже в Избранном" : "Не в Избранном";
+        _toastWindow?.Close();
+        _toastWindow = new ToastWindow(_cachedTrack, _cachedTrackIsLiked, message);
+        _toastWindow.Closed += (_, _) => _toastWindow = null;
+        _toastWindow.Show();
     }
 
     private void StartTrackMonitorIfReady()
@@ -224,6 +245,8 @@ public partial class MainWindow : Window
         if (clearCache)
         {
             _lastObservedTrackUri = null;
+            _cachedTrack = null;
+            _cachedTrackIsLiked = false;
         }
     }
 
@@ -255,7 +278,7 @@ public partial class MainWindow : Window
             }
 
             var isLiked = await _spotify.GetTrackLikedStateAsync(track);
-            _lastObservedTrackUri = track.Uri;
+            CacheTrackState(track, isLiked);
             ShowTrackChangedToast(track, isLiked);
         }
         catch (SpotifyRateLimitException ex)
@@ -273,6 +296,13 @@ public partial class MainWindow : Window
         {
             _isCheckingTrack = false;
         }
+    }
+
+    private void CacheTrackState(PlaybackTrack track, bool isLiked)
+    {
+        _cachedTrack = track;
+        _cachedTrackIsLiked = isLiked;
+        _lastObservedTrackUri = track.Uri;
     }
 
     private void ShowToast(FavoriteToggleResult result)
@@ -299,37 +329,69 @@ public partial class MainWindow : Window
         _toastWindow.Show();
     }
 
-    private void RegisterFavoriteHotkey()
+    private void RegisterHotkeys()
     {
         if (_hwnd == IntPtr.Zero)
         {
             return;
         }
 
-        UnregisterFavoriteHotkey();
+        UnregisterHotkeys();
+        RegisterFavoriteHotkey();
+        RegisterStatusHotkey();
+    }
+
+    private void RegisterFavoriteHotkey()
+    {
         if (_settings.Current.LikeHotkeyVirtualKey == 0)
         {
             return;
         }
 
-        _hotkeyRegistered = NativeMethods.RegisterHotKey(
+        _favoriteHotkeyRegistered = NativeMethods.RegisterHotKey(
             _hwnd,
             NativeMethods.HotkeyToggleFavorite,
             0,
             _settings.Current.LikeHotkeyVirtualKey);
-        _hotkeyRegistrationFailed = !_hotkeyRegistered;
+        _favoriteHotkeyRegistrationFailed = !_favoriteHotkeyRegistered;
     }
 
-    private void UnregisterFavoriteHotkey()
+    private void RegisterStatusHotkey()
     {
-        if (_hwnd == IntPtr.Zero || !_hotkeyRegistered)
+        if (_settings.Current.FavoriteStatusHotkeyVirtualKey == 0)
         {
             return;
         }
 
-        NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyToggleFavorite);
-        _hotkeyRegistered = false;
-        _hotkeyRegistrationFailed = false;
+        _statusHotkeyRegistered = NativeMethods.RegisterHotKey(
+            _hwnd,
+            NativeMethods.HotkeyShowFavoriteStatus,
+            0,
+            _settings.Current.FavoriteStatusHotkeyVirtualKey);
+        _statusHotkeyRegistrationFailed = !_statusHotkeyRegistered;
+    }
+
+    private void UnregisterHotkeys()
+    {
+        if (_hwnd == IntPtr.Zero)
+        {
+            return;
+        }
+
+        if (_favoriteHotkeyRegistered)
+        {
+            NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyToggleFavorite);
+            _favoriteHotkeyRegistered = false;
+        }
+
+        if (_statusHotkeyRegistered)
+        {
+            NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyShowFavoriteStatus);
+            _statusHotkeyRegistered = false;
+        }
+
+        _favoriteHotkeyRegistrationFailed = false;
+        _statusHotkeyRegistrationFailed = false;
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -341,10 +403,22 @@ public partial class MainWindow : Window
             return IntPtr.Zero;
         }
 
-        if (msg == NativeMethods.WmHotkey && wParam.ToInt32() == NativeMethods.HotkeyToggleFavorite)
+        if (msg != NativeMethods.WmHotkey)
+        {
+            return IntPtr.Zero;
+        }
+
+        if (wParam.ToInt32() == NativeMethods.HotkeyToggleFavorite)
         {
             handled = true;
             _ = ToggleFavoriteAsync();
+            return IntPtr.Zero;
+        }
+
+        if (wParam.ToInt32() == NativeMethods.HotkeyShowFavoriteStatus)
+        {
+            handled = true;
+            ShowCachedFavoriteStatus();
         }
 
         return IntPtr.Zero;
@@ -368,10 +442,13 @@ public partial class MainWindow : Window
 
     private void UpdateStatus(string? prefix = null)
     {
-        var hotkey = !string.IsNullOrWhiteSpace(_settings.Current.LikeHotkeyDisplayName)
+        var favoriteHotkey = !string.IsNullOrWhiteSpace(_settings.Current.LikeHotkeyDisplayName)
             ? _settings.Current.LikeHotkeyDisplayName
             : HotkeyFormatter.Format(_settings.Current.LikeHotkeyVirtualKey);
-        HotkeyText.Text = $"Клавиша Избранного: {hotkey}";
+        var statusHotkey = !string.IsNullOrWhiteSpace(_settings.Current.FavoriteStatusHotkeyDisplayName)
+            ? _settings.Current.FavoriteStatusHotkeyDisplayName
+            : HotkeyFormatter.Format(_settings.Current.FavoriteStatusHotkeyVirtualKey);
+        HotkeyText.Text = $"Избранное: {favoriteHotkey} · Статус: {statusHotkey}";
 
         var account = _auth.HasRefreshToken ? "Spotify подключен." : "Spotify не подключен.";
         if (_auth.KnowsGrantedScopes && !_auth.HasRequiredScopes)
@@ -379,12 +456,28 @@ public partial class MainWindow : Window
             account += " Не хватает прав на Избранное: открой настройки, нажми «Выйти», затем «Войти в Spotify».";
         }
 
-        var registration = _hotkeyRegistrationFailed ? " Клавиша занята или недоступна." : string.Empty;
+        var registration = GetHotkeyRegistrationMessage();
         var monitor = _trackMonitorTimer?.IsEnabled == true ? " Мониторинг трека: каждые 8 секунд." : string.Empty;
-        var hint = $"По нажатию клавиши приложение проверит текущий трек, изменит Избранное и покажет уведомление.{monitor}{registration}";
+        var hint = $"Клавиша статуса показывает только кеш и не делает запросов к Spotify.{monitor}{registration}";
         StatusText.Text = string.IsNullOrWhiteSpace(prefix)
             ? $"{account} {hint}"
             : $"{prefix} {account} {hint}";
+    }
+
+    private string GetHotkeyRegistrationMessage()
+    {
+        var parts = new List<string>();
+        if (_favoriteHotkeyRegistrationFailed)
+        {
+            parts.Add("клавиша Избранного занята или недоступна");
+        }
+
+        if (_statusHotkeyRegistrationFailed)
+        {
+            parts.Add("клавиша статуса занята или недоступна");
+        }
+
+        return parts.Count == 0 ? string.Empty : $" {string.Join("; ", parts)}.";
     }
 
     private void ExitApplication()

@@ -9,6 +9,8 @@ public partial class SettingsWindow : Window
     private readonly SpotifyAuthService _auth;
     private uint _favoriteHotkeyVirtualKey;
     private string _favoriteHotkeyDisplayName;
+    private uint _favoriteStatusHotkeyVirtualKey;
+    private string _favoriteStatusHotkeyDisplayName;
 
     public SettingsWindow(SettingsStore settings, SpotifyAuthService auth)
     {
@@ -17,10 +19,13 @@ public partial class SettingsWindow : Window
         _auth = auth;
         _favoriteHotkeyVirtualKey = _settings.Current.LikeHotkeyVirtualKey;
         _favoriteHotkeyDisplayName = GetHotkeyDisplayName(_favoriteHotkeyVirtualKey, _settings.Current.LikeHotkeyDisplayName);
+        _favoriteStatusHotkeyVirtualKey = _settings.Current.FavoriteStatusHotkeyVirtualKey;
+        _favoriteStatusHotkeyDisplayName = GetHotkeyDisplayName(_favoriteStatusHotkeyVirtualKey, _settings.Current.FavoriteStatusHotkeyDisplayName);
 
         ClientIdBox.Text = _settings.Current.ClientId;
         RedirectUriBox.Text = SpotifyAuthService.RedirectUri;
         FavoriteHotkeyBox.Text = _favoriteHotkeyDisplayName;
+        FavoriteStatusHotkeyBox.Text = _favoriteStatusHotkeyDisplayName;
         UpdateStatus();
     }
 
@@ -80,30 +85,38 @@ public partial class SettingsWindow : Window
 
     private void FavoriteHotkeyBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
     {
-        FavoriteHotkeyBox.Text = "Нажми нужную клавишу...";
+        FavoriteHotkeyBox.Text = "Нажми клавишу Избранного...";
     }
 
     private void FavoriteHotkeyBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
-        e.Handled = true;
-
-        var key = e.Key switch
-        {
-            Key.System => e.SystemKey,
-            Key.ImeProcessed => e.ImeProcessedKey,
-            _ => e.Key
-        };
-
-        var virtualKey = (uint)KeyInterop.VirtualKeyFromKey(key);
-        if (virtualKey == 0)
+        if (!TryCaptureHotkey(e, out var virtualKey, out var displayName))
         {
             FavoriteHotkeyBox.Text = "Эту клавишу не удалось распознать";
             return;
         }
 
         _favoriteHotkeyVirtualKey = virtualKey;
-        _favoriteHotkeyDisplayName = HotkeyFormatter.Format(virtualKey);
+        _favoriteHotkeyDisplayName = displayName;
         FavoriteHotkeyBox.Text = _favoriteHotkeyDisplayName;
+    }
+
+    private void FavoriteStatusHotkeyBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        FavoriteStatusHotkeyBox.Text = "Нажми клавишу статуса...";
+    }
+
+    private void FavoriteStatusHotkeyBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (!TryCaptureHotkey(e, out var virtualKey, out var displayName))
+        {
+            FavoriteStatusHotkeyBox.Text = "Эту клавишу не удалось распознать";
+            return;
+        }
+
+        _favoriteStatusHotkeyVirtualKey = virtualKey;
+        _favoriteStatusHotkeyDisplayName = displayName;
+        FavoriteStatusHotkeyBox.Text = _favoriteStatusHotkeyDisplayName;
     }
 
     private void ClearHotkeyButton_Click(object sender, RoutedEventArgs e)
@@ -113,11 +126,32 @@ public partial class SettingsWindow : Window
         FavoriteHotkeyBox.Text = _favoriteHotkeyDisplayName;
     }
 
+    private void ClearStatusHotkeyButton_Click(object sender, RoutedEventArgs e)
+    {
+        _favoriteStatusHotkeyVirtualKey = 0;
+        _favoriteStatusHotkeyDisplayName = HotkeyFormatter.Format(0);
+        FavoriteStatusHotkeyBox.Text = _favoriteStatusHotkeyDisplayName;
+    }
+
     private bool SaveSettings()
     {
+        if (_favoriteHotkeyVirtualKey != 0
+            && _favoriteHotkeyVirtualKey == _favoriteStatusHotkeyVirtualKey)
+        {
+            System.Windows.MessageBox.Show(
+                this,
+                "Клавиша Избранного и клавиша статуса должны отличаться.",
+                "Spotify Избранное",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return false;
+        }
+
         _settings.Current.ClientId = ClientIdBox.Text.Trim();
         _settings.Current.LikeHotkeyVirtualKey = _favoriteHotkeyVirtualKey;
         _settings.Current.LikeHotkeyDisplayName = GetHotkeyDisplayName(_favoriteHotkeyVirtualKey, _favoriteHotkeyDisplayName);
+        _settings.Current.FavoriteStatusHotkeyVirtualKey = _favoriteStatusHotkeyVirtualKey;
+        _settings.Current.FavoriteStatusHotkeyDisplayName = GetHotkeyDisplayName(_favoriteStatusHotkeyVirtualKey, _favoriteStatusHotkeyDisplayName);
         _settings.Save();
         return true;
     }
@@ -133,6 +167,22 @@ public partial class SettingsWindow : Window
         StatusText.Text = string.IsNullOrWhiteSpace(prefix)
             ? account
             : $"{prefix} {account}";
+    }
+
+    private static bool TryCaptureHotkey(System.Windows.Input.KeyEventArgs e, out uint virtualKey, out string displayName)
+    {
+        e.Handled = true;
+
+        var key = e.Key switch
+        {
+            Key.System => e.SystemKey,
+            Key.ImeProcessed => e.ImeProcessedKey,
+            _ => e.Key
+        };
+
+        virtualKey = (uint)KeyInterop.VirtualKeyFromKey(key);
+        displayName = HotkeyFormatter.Format(virtualKey);
+        return virtualKey != 0;
     }
 
     private static string GetHotkeyDisplayName(uint virtualKey, string savedDisplayName)
