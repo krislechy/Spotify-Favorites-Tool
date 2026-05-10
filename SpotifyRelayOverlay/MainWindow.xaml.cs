@@ -24,8 +24,6 @@ public partial class MainWindow : Window
     private bool _isExecuting;
     private bool _isCheckingTrack;
     private bool _isExiting;
-    private PlaybackTrack? _cachedTrack;
-    private bool _cachedTrackIsLiked;
     private string? _lastObservedTrackUri;
     private DispatcherTimer? _trackMonitorTimer;
     private Forms.NotifyIcon? _trayIcon;
@@ -176,7 +174,7 @@ public partial class MainWindow : Window
         {
             StatusText.Text = "Проверяю текущий трек...";
             var result = await _spotify.ToggleCurrentTrackFavoriteAsync();
-            CacheTrackState(result.Track, result.IsLiked);
+            _lastObservedTrackUri = result.Track.Uri;
             StatusText.Text = $"{result.Message}: {result.Track.Name}";
             ShowToast(result);
         }
@@ -197,21 +195,47 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ShowCachedFavoriteStatus()
+    private async Task ShowCurrentFavoriteStatusAsync()
     {
-        if (_cachedTrack is null)
+        if (_isExecuting)
         {
-            ShowErrorToast(
-                "Статус Избранного неизвестен",
-                "Кеш еще пуст. Дождись уведомления о смене трека или один раз измени Избранное горячей клавишей.");
             return;
         }
 
-        var message = _cachedTrackIsLiked ? "Уже в Избранном" : "Не в Избранном";
-        _toastWindow?.Close();
-        _toastWindow = new ToastWindow(_cachedTrack, _cachedTrackIsLiked, message);
-        _toastWindow.Closed += (_, _) => _toastWindow = null;
-        _toastWindow.Show();
+        _isExecuting = true;
+        try
+        {
+            StatusText.Text = "Проверяю статус Избранного...";
+            var track = await _spotify.GetCurrentTrackOrNullAsync();
+            if (track is null)
+            {
+                StatusText.Text = "Spotify сейчас ничего не играет.";
+                ShowErrorToast("Статус Избранного неизвестен", "Spotify сейчас ничего не играет.");
+                return;
+            }
+
+            var isLiked = await _spotify.RefreshTrackLikedStateAsync(track);
+            _lastObservedTrackUri = track.Uri;
+
+            var message = isLiked ? "Уже в Избранном" : "Не в Избранном";
+            StatusText.Text = $"{message}: {track.Name}";
+            ShowFavoriteStatusToast(track, isLiked, message);
+        }
+        catch (SpotifyRateLimitException ex)
+        {
+            StopTrackMonitor(clearCache: false);
+            StatusText.Text = Shorten(ex.Message, 160);
+            ShowErrorToast("Spotify ограничил запросы", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = Shorten(ex.Message, 140);
+            ShowErrorToast("Статус Избранного недоступен", ex.Message);
+        }
+        finally
+        {
+            _isExecuting = false;
+        }
     }
 
     private void StartTrackMonitorIfReady()
@@ -245,8 +269,6 @@ public partial class MainWindow : Window
         if (clearCache)
         {
             _lastObservedTrackUri = null;
-            _cachedTrack = null;
-            _cachedTrackIsLiked = false;
         }
     }
 
@@ -278,7 +300,7 @@ public partial class MainWindow : Window
             }
 
             var isLiked = await _spotify.GetTrackLikedStateAsync(track);
-            CacheTrackState(track, isLiked);
+            _lastObservedTrackUri = track.Uri;
             ShowTrackChangedToast(track, isLiked);
         }
         catch (SpotifyRateLimitException ex)
@@ -298,17 +320,18 @@ public partial class MainWindow : Window
         }
     }
 
-    private void CacheTrackState(PlaybackTrack track, bool isLiked)
-    {
-        _cachedTrack = track;
-        _cachedTrackIsLiked = isLiked;
-        _lastObservedTrackUri = track.Uri;
-    }
-
     private void ShowToast(FavoriteToggleResult result)
     {
         _toastWindow?.Close();
         _toastWindow = new ToastWindow(result);
+        _toastWindow.Closed += (_, _) => _toastWindow = null;
+        _toastWindow.Show();
+    }
+
+    private void ShowFavoriteStatusToast(PlaybackTrack track, bool isLiked, string message)
+    {
+        _toastWindow?.Close();
+        _toastWindow = new ToastWindow(track, isLiked, message);
         _toastWindow.Closed += (_, _) => _toastWindow = null;
         _toastWindow.Show();
     }
@@ -418,7 +441,7 @@ public partial class MainWindow : Window
         if (wParam.ToInt32() == NativeMethods.HotkeyShowFavoriteStatus)
         {
             handled = true;
-            ShowCachedFavoriteStatus();
+            _ = ShowCurrentFavoriteStatusAsync();
         }
 
         return IntPtr.Zero;
@@ -458,7 +481,7 @@ public partial class MainWindow : Window
 
         var registration = GetHotkeyRegistrationMessage();
         var monitor = _trackMonitorTimer?.IsEnabled == true ? " Мониторинг трека: каждые 8 секунд." : string.Empty;
-        var hint = $"Клавиша статуса показывает только кеш и не делает запросов к Spotify.{monitor}{registration}";
+        var hint = $"Клавиша статуса по нажатию запрашивает текущий трек и актуальный статус Избранного через Spotify API без повторов.{monitor}{registration}";
         StatusText.Text = string.IsNullOrWhiteSpace(prefix)
             ? $"{account} {hint}"
             : $"{prefix} {account} {hint}";
