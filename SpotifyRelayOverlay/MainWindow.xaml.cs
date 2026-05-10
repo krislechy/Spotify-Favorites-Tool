@@ -174,7 +174,15 @@ public partial class MainWindow : Window
         try
         {
             StatusText.Text = "Проверяю текущий трек...";
-            var result = await _spotify.ToggleCurrentTrackFavoriteAsync();
+            var track = await _spotify.GetCurrentTrackOrNullAsync()
+                ?? throw new InvalidOperationException("Spotify сейчас ничего не играет.");
+            var trackWithStatus = await GetTrackWithFavoriteStatusAsync(track);
+            var nextLiked = trackWithStatus.IsLiked != true;
+
+            await _spotify.SetTrackFavoriteAsync(trackWithStatus, nextLiked);
+            var updatedTrack = trackWithStatus.WithFavoriteStatus(nextLiked);
+            var message = nextLiked ? "Добавлено в Избранное" : "Убрано из Избранного";
+            var result = new FavoriteToggleResult(updatedTrack, message);
             CacheTrackState(result.Track);
             StatusText.Text = $"{result.Message}: {result.Track.Name}";
             ShowToast(result);

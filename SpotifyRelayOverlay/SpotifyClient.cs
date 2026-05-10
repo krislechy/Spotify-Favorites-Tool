@@ -16,28 +16,10 @@ public sealed class SpotifyClient
 
     private readonly SpotifyAuthService _auth;
     private readonly SemaphoreSlim _requestGate = new(1, 1);
-    private string? _lastTrackUri;
-    private bool _lastTrackLiked;
 
     public SpotifyClient(SpotifyAuthService auth)
     {
         _auth = auth;
-    }
-
-    public async Task<FavoriteToggleResult> ToggleCurrentTrackFavoriteAsync(CancellationToken cancellationToken = default)
-    {
-        var track = await GetCurrentTrackOrNullAsync(cancellationToken)
-            ?? throw new InvalidOperationException("Spotify сейчас ничего не играет.");
-        var isLiked = await GetLikedStateAsync(track, cancellationToken);
-        var nextLiked = !isLiked;
-
-        await SetTrackLikedAsync(track, nextLiked, cancellationToken);
-        var updatedTrack = track.WithFavoriteStatus(nextLiked);
-        _lastTrackUri = updatedTrack.Uri;
-        _lastTrackLiked = nextLiked;
-
-        var message = nextLiked ? "Добавлено в Избранное" : "Убрано из Избранного";
-        return new FavoriteToggleResult(updatedTrack, message);
     }
 
     public async Task<PlaybackTrack?> GetCurrentTrackOrNullAsync(CancellationToken cancellationToken = default)
@@ -69,17 +51,12 @@ public sealed class SpotifyClient
 
     public async Task<bool> GetTrackLikedStateAsync(PlaybackTrack track, CancellationToken cancellationToken = default)
     {
-        return await GetLikedStateAsync(track, cancellationToken);
+        return await IsTrackLikedAsync(track, cancellationToken);
     }
 
-    private async Task<bool> GetLikedStateAsync(PlaybackTrack track, CancellationToken cancellationToken)
+    public async Task SetTrackFavoriteAsync(PlaybackTrack track, bool isLiked, CancellationToken cancellationToken = default)
     {
-        if (string.Equals(_lastTrackUri, track.Uri, StringComparison.Ordinal))
-        {
-            return _lastTrackLiked;
-        }
-
-        return await IsTrackLikedAsync(track, cancellationToken);
+        await SetTrackLikedAsync(track, isLiked, cancellationToken);
     }
 
     private async Task<bool> IsTrackLikedAsync(PlaybackTrack track, CancellationToken cancellationToken)
@@ -87,10 +64,7 @@ public sealed class SpotifyClient
         var uri = Uri.EscapeDataString(track.Uri);
         var response = await SendAsync(HttpMethod.Get, $"{ApiRoot}/me/library/contains?uris={uri}", cancellationToken);
         var values = JsonSerializer.Deserialize<bool[]>(response.Body, JsonOptions);
-        var isLiked = values is { Length: > 0 } && values[0];
-        _lastTrackUri = track.Uri;
-        _lastTrackLiked = isLiked;
-        return isLiked;
+        return values is { Length: > 0 } && values[0];
     }
 
     private async Task SetTrackLikedAsync(PlaybackTrack track, bool isLiked, CancellationToken cancellationToken)
