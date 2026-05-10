@@ -15,33 +15,31 @@ public partial class ToastWindow : Window
         InitializeComponent();
 
         ActionText.Text = result.Message;
-        TrackTitle.Text = result.Track.Name;
-        ArtistText.Text = result.Track.Artists;
-        SetHeart(result.IsLiked);
-        SetAlbumArt(result.Track.AlbumImageUrl);
+        ConfigureTrackLayout(result.Track);
     }
 
-    public ToastWindow(PlaybackTrack track, bool isLiked)
+    public ToastWindow(PlaybackTrack track)
     {
         InitializeComponent();
 
+        var isLiked = track.IsLiked == true;
         ActionText.Text = isLiked ? "Сейчас играет · В Избранном" : "Сейчас играет · Не в Избранном";
-        ConfigureTrackLayout(track, isLiked);
+        ConfigureTrackLayout(track);
     }
 
-    public ToastWindow(PlaybackTrack track, bool isLiked, string actionText)
+    public ToastWindow(PlaybackTrack track, string actionText)
     {
         InitializeComponent();
 
         ActionText.Text = actionText;
-        ConfigureTrackLayout(track, isLiked);
+        ConfigureTrackLayout(track);
     }
 
-    private void ConfigureTrackLayout(PlaybackTrack track, bool isLiked)
+    private void ConfigureTrackLayout(PlaybackTrack track)
     {
         TrackTitle.Text = track.Name;
         ArtistText.Text = track.Artists;
-        SetHeart(isLiked);
+        SetHeart(track.IsLiked == true);
         SetAlbumArt(track.AlbumImageUrl);
     }
 

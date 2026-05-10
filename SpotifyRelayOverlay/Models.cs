@@ -26,12 +26,21 @@ public sealed record PlaybackTrack(
     string Uri,
     string Name,
     string Artists,
-    string? AlbumImageUrl);
+    string? AlbumImageUrl,
+    bool? IsLiked = null)
+{
+    public PlaybackTrack WithFavoriteStatus(bool isLiked)
+    {
+        return this with { IsLiked = isLiked };
+    }
+}
 
 public sealed record FavoriteToggleResult(
     PlaybackTrack Track,
-    bool IsLiked,
-    string Message);
+    string Message)
+{
+    public bool IsLiked => Track.IsLiked == true;
+}
 
 internal sealed class TokenResponse
 {

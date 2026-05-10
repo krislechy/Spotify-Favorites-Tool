@@ -32,11 +32,12 @@ public sealed class SpotifyClient
         var nextLiked = !isLiked;
 
         await SetTrackLikedAsync(track, nextLiked, cancellationToken);
-        _lastTrackUri = track.Uri;
+        var updatedTrack = track.WithFavoriteStatus(nextLiked);
+        _lastTrackUri = updatedTrack.Uri;
         _lastTrackLiked = nextLiked;
 
         var message = nextLiked ? "Добавлено в Избранное" : "Убрано из Избранного";
-        return new FavoriteToggleResult(track, nextLiked, message);
+        return new FavoriteToggleResult(updatedTrack, message);
     }
 
     public async Task<PlaybackTrack?> GetCurrentTrackOrNullAsync(CancellationToken cancellationToken = default)
