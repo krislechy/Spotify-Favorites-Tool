@@ -13,29 +13,29 @@ public partial class MainWindow : Window
     private readonly SettingsStore _settings = new();
     private readonly SpotifyAuthService _auth;
     private readonly SpotifyClient _spotify;
-    private readonly Dictionary<string, PlaybackTrack> _trackCache = new(StringComparer.Ordinal);
+    private readonly FavoriteTrackService _favorites;
+    private readonly ActivityLog _activityLog = new();
+    private readonly HotkeyManager _hotkeys = new();
+    private readonly ToastPresenter _toasts = new();
+    private readonly AsyncActionGate _userActionGate = new();
+    private readonly AsyncActionGate _trackMonitorGate = new();
 
     private SettingsWindow? _settingsWindow;
     private HwndSource? _source;
     private IntPtr _hwnd;
-    private bool _favoriteHotkeyRegistered;
-    private bool _favoriteHotkeyRegistrationFailed;
-    private bool _statusHotkeyRegistered;
-    private bool _statusHotkeyRegistrationFailed;
-    private bool _isExecuting;
-    private bool _isCheckingTrack;
     private bool _isExiting;
-    private string? _lastObservedTrackUri;
     private DispatcherTimer? _trackMonitorTimer;
-    private Forms.NotifyIcon? _trayIcon;
-    private ToastWindow? _toastWindow;
+    private TrayIconController? _trayIcon;
 
     public MainWindow()
     {
         InitializeComponent();
         _auth = new SpotifyAuthService(_settings);
         _spotify = new SpotifyClient(_auth);
-        InitializeTrayIcon();
+        _favorites = new FavoriteTrackService(_spotify);
+        ActivityLogList.ItemsSource = _activityLog.Entries;
+        _trayIcon = new TrayIconController(Dispatcher, BringMainWindowToFront, ShowSettingsWindow, ExitApplication);
+        Log("Приложение запущено.");
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -59,15 +59,16 @@ public partial class MainWindow : Window
         {
             e.Cancel = true;
             Hide();
+            Log("Окно скрыто в трей.");
             return;
         }
 
         StopTrackMonitor(clearCache: false);
         SaveWindowPosition();
-        UnregisterHotkeys();
+        _hotkeys.Unregister();
         _source?.RemoveHook(WndProc);
         _trayIcon?.Dispose();
-        _toastWindow?.Close();
+        _toasts.Dispose();
     }
 
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
@@ -78,6 +79,7 @@ public partial class MainWindow : Window
     private void MinimizeButton_Click(object sender, RoutedEventArgs e)
     {
         WindowState = WindowState.Minimized;
+        Log("Окно свернуто.");
     }
 
     private void CloseToTrayButton_Click(object sender, RoutedEventArgs e)
@@ -102,37 +104,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private void InitializeTrayIcon()
-    {
-        var menu = new Forms.ContextMenuStrip();
-        menu.Items.Add("Открыть", null, (_, _) => Dispatcher.Invoke(BringMainWindowToFront));
-        menu.Items.Add("Настройки", null, (_, _) => Dispatcher.Invoke(ShowSettingsWindow));
-        menu.Items.Add(new Forms.ToolStripSeparator());
-        menu.Items.Add("Выход", null, (_, _) => Dispatcher.Invoke(ExitApplication));
-
-        _trayIcon = new Forms.NotifyIcon
-        {
-            Icon = LoadTrayIcon(),
-            Text = "Spotify Избранное",
-            Visible = true,
-            ContextMenuStrip = menu
-        };
-        _trayIcon.DoubleClick += (_, _) => Dispatcher.Invoke(BringMainWindowToFront);
-    }
-
-    private static System.Drawing.Icon LoadTrayIcon()
-    {
-        try
-        {
-            return System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath ?? string.Empty)
-                ?? System.Drawing.SystemIcons.Application;
-        }
-        catch
-        {
-            return System.Drawing.SystemIcons.Application;
-        }
-    }
-
     private void ShowSettingsWindow()
     {
         BringMainWindowToFront();
@@ -140,24 +111,28 @@ public partial class MainWindow : Window
         if (_settingsWindow is { IsVisible: true })
         {
             _settingsWindow.Activate();
+            Log("Окно настроек уже открыто.");
             return;
         }
 
+        Log("Открыты настройки.");
         _settingsWindow = new SettingsWindow(_settings, _auth)
         {
             Owner = this
         };
         _settingsWindow.AuthChanged += (_, _) =>
         {
-            _lastObservedTrackUri = null;
+            _favorites.ClearCache();
             StartTrackMonitorIfReady();
             UpdateStatus();
+            Log(_auth.HasRefreshToken ? "Spotify подключен, кеш треков очищен." : "Spotify отключен, кеш треков очищен.");
         };
         _settingsWindow.SettingsChanged += (_, _) =>
         {
             RegisterHotkeys();
             StartTrackMonitorIfReady();
             UpdateStatus("Настройки сохранены.");
+            Log("Настройки сохранены.");
         };
         _settingsWindow.Closed += (_, _) => _settingsWindow = null;
         _settingsWindow.Show();
@@ -165,90 +140,76 @@ public partial class MainWindow : Window
 
     private async Task ToggleFavoriteAsync()
     {
-        if (_isExecuting)
+        if (!_userActionGate.TryEnter(out var action))
         {
             return;
         }
 
-        _isExecuting = true;
-        try
+        using (action)
         {
-            StatusText.Text = "Проверяю текущий трек...";
-            var track = await _spotify.GetCurrentTrackOrNullAsync()
-                ?? throw new InvalidOperationException("Spotify сейчас ничего не играет.");
-            var trackWithStatus = await GetTrackWithFavoriteStatusAsync(track);
-            var nextLiked = trackWithStatus.IsLiked != true;
-
-            await _spotify.SetTrackFavoriteAsync(trackWithStatus, nextLiked);
-            var updatedTrack = trackWithStatus.WithFavoriteStatus(nextLiked);
-            var message = nextLiked ? "Добавлено в Избранное" : "Убрано из Избранного";
-            var result = new FavoriteToggleResult(updatedTrack, message);
-            CacheTrackState(result.Track);
-            StatusText.Text = $"{result.Message}: {result.Track.Name}";
-            ShowToast(result);
-        }
-        catch (SpotifyRateLimitException ex)
-        {
-            StopTrackMonitor(clearCache: false);
-            StatusText.Text = Shorten(ex.Message, 160);
-            ShowErrorToast("Spotify ограничил запросы", ex.Message);
-        }
-        catch (Exception ex)
-        {
-            StatusText.Text = Shorten(ex.Message, 140);
-            ShowErrorToast("Избранное недоступно", ex.Message);
-        }
-        finally
-        {
-            _isExecuting = false;
+            try
+            {
+                StatusText.Text = "Проверяю текущий трек...";
+                Log("Нажата клавиша Избранного: получаю текущий трек.");
+                var result = await _favorites.ToggleCurrentTrackAsync();
+                StatusText.Text = $"{result.Message}: {result.Track.Name}";
+                _toasts.Show(result);
+                Log($"{result.Message}: {result.Track.Name}.");
+            }
+            catch (SpotifyRateLimitException ex)
+            {
+                StopTrackMonitor(clearCache: false);
+                StatusText.Text = Shorten(ex.Message, 160);
+                _toasts.ShowError("Spotify ограничил запросы", ex.Message);
+                Log($"Spotify вернул 429: {ex.Endpoint}.");
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = Shorten(ex.Message, 140);
+                _toasts.ShowError("Избранное недоступно", ex.Message);
+                Log($"Ошибка Избранного: {Shorten(ex.Message, 90)}");
+            }
         }
     }
 
     private async Task ShowFavoriteStatusAsync()
     {
-        if (_isExecuting)
+        if (!_userActionGate.TryEnter(out var action))
         {
             return;
         }
 
-        _isExecuting = true;
-        try
+        using (action)
         {
-            StatusText.Text = "Проверяю текущий трек...";
-            var track = await _spotify.GetCurrentTrackOrNullAsync();
-            if (track is null)
+            try
             {
-                StatusText.Text = "Spotify сейчас ничего не играет.";
-                ShowErrorToast("Статус Избранного неизвестен", "Spotify сейчас ничего не играет.");
-                return;
-            }
+                StatusText.Text = "Проверяю текущий трек...";
+                Log("Нажата клавиша статуса: получаю текущий трек.");
+                var track = await _favorites.GetCurrentTrackWithFavoriteStatusAsync();
+                if (track is null)
+                {
+                    StatusText.Text = "Spotify сейчас ничего не играет.";
+                    _toasts.ShowError("Статус Избранного неизвестен", "Spotify сейчас ничего не играет.");
+                    Log("Статус не показан: Spotify сейчас ничего не играет.");
+                    return;
+                }
 
-            if (TryGetCachedTrack(track.Uri, out var cachedTrack))
+                ShowFavoriteStatusToast(track);
+                Log($"Показан статус Избранного: {track.Name}.");
+            }
+            catch (SpotifyRateLimitException ex)
             {
-                var trackWithCachedStatus = track.WithFavoriteStatus(cachedTrack.IsLiked!.Value);
-                CacheTrackState(trackWithCachedStatus);
-                ShowFavoriteStatusToast(trackWithCachedStatus);
-                return;
+                StopTrackMonitor(clearCache: false);
+                StatusText.Text = Shorten(ex.Message, 160);
+                _toasts.ShowError("Spotify ограничил запросы", ex.Message);
+                Log($"Spotify вернул 429: {ex.Endpoint}.");
             }
-
-            StatusText.Text = "Трек сменился, проверяю Избранное...";
-            var trackWithStatus = await GetTrackWithFavoriteStatusAsync(track);
-            ShowFavoriteStatusToast(trackWithStatus);
-        }
-        catch (SpotifyRateLimitException ex)
-        {
-            StopTrackMonitor(clearCache: false);
-            StatusText.Text = Shorten(ex.Message, 160);
-            ShowErrorToast("Spotify ограничил запросы", ex.Message);
-        }
-        catch (Exception ex)
-        {
-            StatusText.Text = Shorten(ex.Message, 140);
-            ShowErrorToast("Статус Избранного недоступен", ex.Message);
-        }
-        finally
-        {
-            _isExecuting = false;
+            catch (Exception ex)
+            {
+                StatusText.Text = Shorten(ex.Message, 140);
+                _toasts.ShowError("Статус Избранного недоступен", ex.Message);
+                Log($"Ошибка статуса: {Shorten(ex.Message, 90)}");
+            }
         }
     }
 
@@ -264,6 +225,7 @@ public partial class MainWindow : Window
         if (!_trackMonitorTimer.IsEnabled)
         {
             _trackMonitorTimer.Start();
+            Log("Мониторинг трека запущен.");
         }
     }
 
@@ -279,11 +241,16 @@ public partial class MainWindow : Window
 
     private void StopTrackMonitor(bool clearCache)
     {
+        var wasEnabled = _trackMonitorTimer?.IsEnabled == true;
         _trackMonitorTimer?.Stop();
         if (clearCache)
         {
-            _lastObservedTrackUri = null;
-            _trackCache.Clear();
+            _favorites.ClearCache();
+        }
+
+        if (wasEnabled)
+        {
+            Log(clearCache ? "Мониторинг трека остановлен, кеш очищен." : "Мониторинг трека остановлен.");
         }
     }
 
@@ -294,85 +261,36 @@ public partial class MainWindow : Window
 
     private async Task CheckTrackChangeAsync()
     {
-        if (_isCheckingTrack || !_auth.HasRefreshToken)
+        if (!_auth.HasRefreshToken || !_trackMonitorGate.TryEnter(out var action))
         {
             return;
         }
 
-        _isCheckingTrack = true;
-        try
+        using (action)
         {
-            var track = await _spotify.GetCurrentTrackOrNullAsync();
-            if (track is null)
+            try
             {
-                _lastObservedTrackUri = null;
-                return;
+                var track = await _favorites.GetChangedTrackWithFavoriteStatusAsync();
+                if (track is not null)
+                {
+                    ShowTrackChangedToast(track);
+                    Log($"Трек сменился: {track.Name}.");
+                }
             }
-
-            if (string.Equals(_lastObservedTrackUri, track.Uri, StringComparison.Ordinal))
+            catch (SpotifyRateLimitException ex)
             {
-                return;
+                StopTrackMonitor(clearCache: false);
+                StatusText.Text = Shorten(ex.Message, 160);
+                _toasts.ShowError("Spotify ограничил запросы", ex.Message);
+                Log($"Мониторинг остановлен: Spotify вернул 429 ({ex.Endpoint}).");
             }
-
-            var trackWithStatus = await GetTrackWithFavoriteStatusAsync(track);
-            ShowTrackChangedToast(trackWithStatus);
+            catch (Exception ex)
+            {
+                StopTrackMonitor(clearCache: false);
+                StatusText.Text = Shorten($"Мониторинг трека остановлен: {ex.Message}", 160);
+                Log($"Мониторинг остановлен: {Shorten(ex.Message, 90)}");
+            }
         }
-        catch (SpotifyRateLimitException ex)
-        {
-            StopTrackMonitor(clearCache: false);
-            StatusText.Text = Shorten(ex.Message, 160);
-            ShowErrorToast("Spotify ограничил запросы", ex.Message);
-        }
-        catch (Exception ex)
-        {
-            StopTrackMonitor(clearCache: false);
-            StatusText.Text = Shorten($"Мониторинг трека остановлен: {ex.Message}", 160);
-        }
-        finally
-        {
-            _isCheckingTrack = false;
-        }
-    }
-
-    private async Task<PlaybackTrack> GetTrackWithFavoriteStatusAsync(PlaybackTrack track)
-    {
-        if (TryGetCachedTrack(track.Uri, out var cachedTrack))
-        {
-            var trackWithCachedStatus = track.WithFavoriteStatus(cachedTrack.IsLiked!.Value);
-            CacheTrackState(trackWithCachedStatus);
-            return trackWithCachedStatus;
-        }
-
-        var isLiked = await _spotify.GetTrackLikedStateAsync(track);
-        var checkedTrack = track.WithFavoriteStatus(isLiked);
-        CacheTrackState(checkedTrack);
-        return checkedTrack;
-    }
-
-    private bool TryGetCachedTrack(string uri, out PlaybackTrack track)
-    {
-        if (_trackCache.TryGetValue(uri, out var cachedTrack) && cachedTrack.IsLiked.HasValue)
-        {
-            track = cachedTrack;
-            return true;
-        }
-
-        track = null!;
-        return false;
-    }
-
-    private void CacheTrackState(PlaybackTrack track)
-    {
-        _trackCache[track.Uri] = track;
-        _lastObservedTrackUri = track.Uri;
-    }
-
-    private void ShowToast(FavoriteToggleResult result)
-    {
-        _toastWindow?.Close();
-        _toastWindow = new ToastWindow(result);
-        _toastWindow.Closed += (_, _) => _toastWindow = null;
-        _toastWindow.Show();
     }
 
     private void ShowFavoriteStatusToast(PlaybackTrack track)
@@ -380,26 +298,12 @@ public partial class MainWindow : Window
         var isLiked = track.IsLiked == true;
         var message = isLiked ? "Уже в Избранном" : "Не в Избранном";
         StatusText.Text = $"{message}: {track.Name}";
-        _toastWindow?.Close();
-        _toastWindow = new ToastWindow(track, message);
-        _toastWindow.Closed += (_, _) => _toastWindow = null;
-        _toastWindow.Show();
+        _toasts.ShowFavoriteStatus(track);
     }
 
     private void ShowTrackChangedToast(PlaybackTrack track)
     {
-        _toastWindow?.Close();
-        _toastWindow = new ToastWindow(track);
-        _toastWindow.Closed += (_, _) => _toastWindow = null;
-        _toastWindow.Show();
-    }
-
-    private void ShowErrorToast(string title, string message)
-    {
-        _toastWindow?.Close();
-        _toastWindow = new ToastWindow(title, message);
-        _toastWindow.Closed += (_, _) => _toastWindow = null;
-        _toastWindow.Show();
+        _toasts.ShowTrackChanged(track);
     }
 
     private void RegisterHotkeys()
@@ -409,62 +313,11 @@ public partial class MainWindow : Window
             return;
         }
 
-        UnregisterHotkeys();
-        RegisterFavoriteHotkey();
-        RegisterStatusHotkey();
-    }
-
-    private void RegisterFavoriteHotkey()
-    {
-        if (_settings.Current.LikeHotkeyVirtualKey == 0)
-        {
-            return;
-        }
-
-        _favoriteHotkeyRegistered = NativeMethods.RegisterHotKey(
-            _hwnd,
-            NativeMethods.HotkeyToggleFavorite,
-            0,
-            _settings.Current.LikeHotkeyVirtualKey);
-        _favoriteHotkeyRegistrationFailed = !_favoriteHotkeyRegistered;
-    }
-
-    private void RegisterStatusHotkey()
-    {
-        if (_settings.Current.FavoriteStatusHotkeyVirtualKey == 0)
-        {
-            return;
-        }
-
-        _statusHotkeyRegistered = NativeMethods.RegisterHotKey(
-            _hwnd,
-            NativeMethods.HotkeyShowFavoriteStatus,
-            0,
-            _settings.Current.FavoriteStatusHotkeyVirtualKey);
-        _statusHotkeyRegistrationFailed = !_statusHotkeyRegistered;
-    }
-
-    private void UnregisterHotkeys()
-    {
-        if (_hwnd == IntPtr.Zero)
-        {
-            return;
-        }
-
-        if (_favoriteHotkeyRegistered)
-        {
-            NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyToggleFavorite);
-            _favoriteHotkeyRegistered = false;
-        }
-
-        if (_statusHotkeyRegistered)
-        {
-            NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HotkeyShowFavoriteStatus);
-            _statusHotkeyRegistered = false;
-        }
-
-        _favoriteHotkeyRegistrationFailed = false;
-        _statusHotkeyRegistrationFailed = false;
+        _hotkeys.Register(_hwnd, _settings.Current);
+        var registration = _hotkeys.GetRegistrationMessage();
+        Log(string.IsNullOrWhiteSpace(registration)
+            ? "Горячие клавиши зарегистрированы."
+            : $"Горячие клавиши зарегистрированы с предупреждением:{registration}");
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -481,17 +334,20 @@ public partial class MainWindow : Window
             return IntPtr.Zero;
         }
 
-        if (wParam.ToInt32() == NativeMethods.HotkeyToggleFavorite)
+        if (!_hotkeys.TryGetAction(wParam, out var action))
         {
-            handled = true;
-            _ = ToggleFavoriteAsync();
             return IntPtr.Zero;
         }
 
-        if (wParam.ToInt32() == NativeMethods.HotkeyShowFavoriteStatus)
+        handled = true;
+        switch (action)
         {
-            handled = true;
-            _ = ShowFavoriteStatusAsync();
+            case HotkeyAction.ToggleFavorite:
+                _ = ToggleFavoriteAsync();
+                break;
+            case HotkeyAction.ShowFavoriteStatus:
+                _ = ShowFavoriteStatusAsync();
+                break;
         }
 
         return IntPtr.Zero;
@@ -502,6 +358,7 @@ public partial class MainWindow : Window
         if (!IsVisible)
         {
             Show();
+            Log("Окно восстановлено из трея.");
         }
 
         if (WindowState == WindowState.Minimized)
@@ -529,7 +386,7 @@ public partial class MainWindow : Window
             account += " Не хватает прав на Избранное: открой настройки, нажми «Выйти», затем «Войти в Spotify».";
         }
 
-        var registration = GetHotkeyRegistrationMessage();
+        var registration = _hotkeys.GetRegistrationMessage();
         var monitor = _trackMonitorTimer?.IsEnabled == true ? " Мониторинг трека: каждые 8 секунд." : string.Empty;
         var hint = $"Клавиша статуса получает текущий трек через Spotify API; Избранное проверяется только если трека еще нет в кеше.{monitor}{registration}";
         StatusText.Text = string.IsNullOrWhiteSpace(prefix)
@@ -537,24 +394,9 @@ public partial class MainWindow : Window
             : $"{prefix} {account} {hint}";
     }
 
-    private string GetHotkeyRegistrationMessage()
-    {
-        var parts = new List<string>();
-        if (_favoriteHotkeyRegistrationFailed)
-        {
-            parts.Add("клавиша Избранного занята или недоступна");
-        }
-
-        if (_statusHotkeyRegistrationFailed)
-        {
-            parts.Add("клавиша статуса занята или недоступна");
-        }
-
-        return parts.Count == 0 ? string.Empty : $" {string.Join("; ", parts)}.";
-    }
-
     private void ExitApplication()
     {
+        Log("Выход из приложения.");
         _isExiting = true;
         Close();
     }
@@ -598,5 +440,10 @@ public partial class MainWindow : Window
         }
 
         return value[..Math.Max(0, maxLength - 1)] + "...";
+    }
+
+    private void Log(string message)
+    {
+        _activityLog.Add(message);
     }
 }

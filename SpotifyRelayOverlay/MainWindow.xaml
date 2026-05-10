@@ -2,10 +2,10 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Spotify Избранное"
-        Width="600"
-        Height="270"
-        MinWidth="430"
-        MinHeight="250"
+        Width="720"
+        Height="540"
+        MinWidth="540"
+        MinHeight="420"
         WindowStyle="None"
         ResizeMode="NoResize"
         AllowsTransparency="True"
@@ -143,16 +143,15 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <StackPanel>
-                        <TextBlock Text="Одна клавиша для добавления и удаления текущего трека из Избранного"
-                                   Foreground="#D7E4DC"
-                                   FontSize="13"
-                                   FontWeight="SemiBold"
-                                   TextWrapping="Wrap" />
-                    </StackPanel>
+                    <TextBlock Text="Одна клавиша для добавления и удаления текущего трека из Избранного"
+                               Foreground="#D7E4DC"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               TextWrapping="Wrap" />
 
                     <Border Grid.Row="1"
                             Margin="0,14,0,0"
@@ -174,6 +173,75 @@
                                        TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
+
+                    <Grid Grid.Row="2" Margin="0,16,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <DockPanel Margin="0,0,0,8">
+                            <TextBlock Text="Журнал действий"
+                                       DockPanel.Dock="Left"
+                                       Foreground="#F4F8F5"
+                                       FontSize="13"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="последние 50"
+                                       HorizontalAlignment="Right"
+                                       Foreground="#7F8D84"
+                                       FontSize="11" />
+                        </DockPanel>
+
+                        <Border Grid.Row="1"
+                                CornerRadius="8"
+                                Background="#111714"
+                                BorderBrush="#25342C"
+                                BorderThickness="1">
+                            <ListBox x:Name="ActivityLogList"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Foreground="#D7E4DC"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0" />
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <Border Background="{TemplateBinding Background}">
+                                                        <ContentPresenter />
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="10,7">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="64" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding TimeText}"
+                                                       Foreground="#8DE6B1"
+                                                       FontFamily="Consolas"
+                                                       FontSize="11" />
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding Message}"
+                                                       Foreground="#D7E4DC"
+                                                       FontSize="12"
+                                                       TextWrapping="Wrap" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>
