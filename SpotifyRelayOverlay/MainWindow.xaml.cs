@@ -154,6 +154,7 @@ public partial class MainWindow : Window
                 var result = await _favorites.ToggleCurrentTrackAsync();
                 StatusText.Text = $"{result.Message}: {result.Track.Name}";
                 _toasts.Show(result);
+                Log($"Статус Избранного перед изменением: {DescribeFavoriteStatusSource(result.PreviousStatusSource)}.");
                 Log($"{result.Message}: {result.Track.Name}.");
             }
             catch (SpotifyRateLimitException ex)
@@ -185,8 +186,8 @@ public partial class MainWindow : Window
             {
                 StatusText.Text = "Проверяю текущий трек...";
                 Log("Нажата клавиша статуса: получаю текущий трек.");
-                var track = await _favorites.GetCurrentTrackWithFavoriteStatusAsync();
-                if (track is null)
+                var result = await _favorites.GetCurrentTrackWithFavoriteStatusAsync();
+                if (result is null)
                 {
                     StatusText.Text = "Spotify сейчас ничего не играет.";
                     _toasts.ShowError("Статус Избранного неизвестен", "Spotify сейчас ничего не играет.");
@@ -194,8 +195,9 @@ public partial class MainWindow : Window
                     return;
                 }
 
-                ShowFavoriteStatusToast(track);
-                Log($"Показан статус Избранного: {track.Name}.");
+                ShowFavoriteStatusToast(result.Track);
+                Log($"Статус Избранного получен: {DescribeFavoriteStatusSource(result.Source)}.");
+                Log($"Показан статус Избранного: {result.Track.Name}.");
             }
             catch (SpotifyRateLimitException ex)
             {
@@ -270,11 +272,12 @@ public partial class MainWindow : Window
         {
             try
             {
-                var track = await _favorites.GetChangedTrackWithFavoriteStatusAsync();
-                if (track is not null)
+                var result = await _favorites.GetChangedTrackWithFavoriteStatusAsync();
+                if (result is not null)
                 {
-                    ShowTrackChangedToast(track);
-                    Log($"Трек сменился: {track.Name}.");
+                    ShowTrackChangedToast(result.Track);
+                    Log($"Трек сменился: {result.Track.Name}.");
+                    Log($"Статус Избранного для нового трека: {DescribeFavoriteStatusSource(result.Source)}.");
                 }
             }
             catch (SpotifyRateLimitException ex)
@@ -440,6 +443,16 @@ public partial class MainWindow : Window
         }
 
         return value[..Math.Max(0, maxLength - 1)] + "...";
+    }
+
+    private static string DescribeFavoriteStatusSource(FavoriteStatusSource source)
+    {
+        return source switch
+        {
+            FavoriteStatusSource.Cache => "из кеша",
+            FavoriteStatusSource.SpotifyApi => "через Spotify API",
+            _ => "неизвестно"
+        };
     }
 
     private void Log(string message)

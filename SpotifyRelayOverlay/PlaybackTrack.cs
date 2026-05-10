@@ -16,7 +16,18 @@ public sealed record PlaybackTrack(
 
 public sealed record FavoriteToggleResult(
     PlaybackTrack Track,
-    string Message)
+    string Message,
+    FavoriteStatusSource PreviousStatusSource)
 {
     public bool IsLiked => Track.IsLiked == true;
+}
+
+public sealed record FavoriteStatusResult(
+    PlaybackTrack Track,
+    FavoriteStatusSource Source);
+
+public enum FavoriteStatusSource
+{
+    Cache,
+    SpotifyApi
 }

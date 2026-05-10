@@ -25,19 +25,19 @@ public sealed class FavoriteTrackService
     public async Task<FavoriteToggleResult> ToggleCurrentTrackAsync()
     {
         var track = await GetCurrentTrackOrThrowAsync();
-        var trackWithStatus = await GetTrackWithFavoriteStatusAsync(track);
-        var nextLiked = trackWithStatus.IsLiked != true;
+        var currentStatus = await GetTrackWithFavoriteStatusAsync(track);
+        var nextLiked = currentStatus.Track.IsLiked != true;
 
-        await _spotify.SetTrackFavoriteAsync(trackWithStatus, nextLiked);
+        await _spotify.SetTrackFavoriteAsync(currentStatus.Track, nextLiked);
 
-        var updatedTrack = trackWithStatus.WithFavoriteStatus(nextLiked);
+        var updatedTrack = currentStatus.Track.WithFavoriteStatus(nextLiked);
         CacheObservedTrack(updatedTrack);
 
         var message = nextLiked ? "Добавлено в Избранное" : "Убрано из Избранного";
-        return new FavoriteToggleResult(updatedTrack, message);
+        return new FavoriteToggleResult(updatedTrack, message, currentStatus.Source);
     }
 
-    public async Task<PlaybackTrack?> GetCurrentTrackWithFavoriteStatusAsync()
+    public async Task<FavoriteStatusResult?> GetCurrentTrackWithFavoriteStatusAsync()
     {
         var track = await _spotify.GetCurrentTrackOrNullAsync();
         if (track is null)
@@ -48,7 +48,7 @@ public sealed class FavoriteTrackService
         return await GetTrackWithFavoriteStatusAsync(track);
     }
 
-    public async Task<PlaybackTrack?> GetChangedTrackWithFavoriteStatusAsync()
+    public async Task<FavoriteStatusResult?> GetChangedTrackWithFavoriteStatusAsync()
     {
         var track = await _spotify.GetCurrentTrackOrNullAsync();
         if (track is null)
@@ -71,15 +71,17 @@ public sealed class FavoriteTrackService
             ?? throw new InvalidOperationException("Spotify сейчас ничего не играет.");
     }
 
-    private async Task<PlaybackTrack> GetTrackWithFavoriteStatusAsync(PlaybackTrack track)
+    private async Task<FavoriteStatusResult> GetTrackWithFavoriteStatusAsync(PlaybackTrack track)
     {
         if (_cache.TryGetWithFavoriteStatus(track, out var cachedTrack))
         {
-            return CacheObservedTrack(cachedTrack);
+            return new FavoriteStatusResult(CacheObservedTrack(cachedTrack), FavoriteStatusSource.Cache);
         }
 
         var isLiked = await _spotify.GetTrackLikedStateAsync(track);
-        return CacheObservedTrack(track.WithFavoriteStatus(isLiked));
+        return new FavoriteStatusResult(
+            CacheObservedTrack(track.WithFavoriteStatus(isLiked)),
+            FavoriteStatusSource.SpotifyApi);
     }
 
     private PlaybackTrack CacheObservedTrack(PlaybackTrack track)
