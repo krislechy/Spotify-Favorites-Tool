@@ -71,11 +71,6 @@ public sealed class SpotifyClient
         return await GetLikedStateAsync(track, cancellationToken);
     }
 
-    public async Task<bool> RefreshTrackLikedStateAsync(PlaybackTrack track, CancellationToken cancellationToken = default)
-    {
-        return await IsTrackLikedAsync(track, cancellationToken);
-    }
-
     private async Task<bool> GetLikedStateAsync(PlaybackTrack track, CancellationToken cancellationToken)
     {
         if (string.Equals(_lastTrackUri, track.Uri, StringComparison.Ordinal))
