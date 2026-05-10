@@ -26,7 +26,8 @@ public sealed class SpotifyClient
 
     public async Task<FavoriteToggleResult> ToggleCurrentTrackFavoriteAsync(CancellationToken cancellationToken = default)
     {
-        var track = await GetCurrentTrackAsync(cancellationToken);
+        var track = await GetCurrentTrackOrNullAsync(cancellationToken)
+            ?? throw new InvalidOperationException("Spotify сейчас ничего не играет.");
         var isLiked = await GetLikedStateAsync(track, cancellationToken);
         var nextLiked = !isLiked;
 
@@ -38,7 +39,7 @@ public sealed class SpotifyClient
         return new FavoriteToggleResult(track, nextLiked, message);
     }
 
-    private async Task<PlaybackTrack> GetCurrentTrackAsync(CancellationToken cancellationToken)
+    public async Task<PlaybackTrack?> GetCurrentTrackOrNullAsync(CancellationToken cancellationToken = default)
     {
         var response = await SendAsync(
             HttpMethod.Get,
@@ -47,7 +48,7 @@ public sealed class SpotifyClient
 
         if (response.StatusCode == HttpStatusCode.NoContent)
         {
-            throw new InvalidOperationException("Spotify сейчас ничего не играет.");
+            return null;
         }
 
         var playback = JsonSerializer.Deserialize<PlaybackResponse>(response.Body, JsonOptions);
@@ -63,6 +64,11 @@ public sealed class SpotifyClient
         }
 
         return CreateTrack(item);
+    }
+
+    public async Task<bool> GetTrackLikedStateAsync(PlaybackTrack track, CancellationToken cancellationToken = default)
+    {
+        return await GetLikedStateAsync(track, cancellationToken);
     }
 
     private async Task<bool> GetLikedStateAsync(PlaybackTrack track, CancellationToken cancellationToken)

@@ -1,12 +1,15 @@
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Threading;
 using Forms = System.Windows.Forms;
 
 namespace SpotifyRelayOverlay;
 
 public partial class MainWindow : Window
 {
+    private static readonly TimeSpan TrackMonitorInterval = TimeSpan.FromSeconds(8);
+
     private readonly SettingsStore _settings = new();
     private readonly SpotifyAuthService _auth;
     private readonly SpotifyClient _spotify;
@@ -17,7 +20,10 @@ public partial class MainWindow : Window
     private bool _hotkeyRegistered;
     private bool _hotkeyRegistrationFailed;
     private bool _isExecuting;
+    private bool _isCheckingTrack;
     private bool _isExiting;
+    private string? _lastObservedTrackUri;
+    private DispatcherTimer? _trackMonitorTimer;
     private Forms.NotifyIcon? _trayIcon;
     private ToastWindow? _toastWindow;
 
@@ -32,6 +38,7 @@ public partial class MainWindow : Window
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
         RestoreWindowPosition();
+        StartTrackMonitorIfReady();
         UpdateStatus();
     }
 
@@ -52,6 +59,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        StopTrackMonitor(clearCache: false);
         SaveWindowPosition();
         UnregisterFavoriteHotkey();
         _source?.RemoveHook(WndProc);
@@ -136,10 +144,16 @@ public partial class MainWindow : Window
         {
             Owner = this
         };
-        _settingsWindow.AuthChanged += (_, _) => UpdateStatus();
+        _settingsWindow.AuthChanged += (_, _) =>
+        {
+            _lastObservedTrackUri = null;
+            StartTrackMonitorIfReady();
+            UpdateStatus();
+        };
         _settingsWindow.SettingsChanged += (_, _) =>
         {
             RegisterFavoriteHotkey();
+            StartTrackMonitorIfReady();
             UpdateStatus("Настройки сохранены.");
         };
         _settingsWindow.Closed += (_, _) => _settingsWindow = null;
@@ -158,11 +172,13 @@ public partial class MainWindow : Window
         {
             StatusText.Text = "Проверяю текущий трек...";
             var result = await _spotify.ToggleCurrentTrackFavoriteAsync();
+            _lastObservedTrackUri = result.Track.Uri;
             StatusText.Text = $"{result.Message}: {result.Track.Name}";
             ShowToast(result);
         }
         catch (SpotifyRateLimitException ex)
         {
+            StopTrackMonitor(clearCache: false);
             StatusText.Text = Shorten(ex.Message, 160);
             ShowErrorToast("Spotify ограничил запросы", ex.Message);
         }
@@ -177,10 +193,100 @@ public partial class MainWindow : Window
         }
     }
 
+    private void StartTrackMonitorIfReady()
+    {
+        if (!_auth.HasRefreshToken || _isExiting)
+        {
+            StopTrackMonitor(clearCache: true);
+            return;
+        }
+
+        _trackMonitorTimer ??= CreateTrackMonitorTimer();
+        if (!_trackMonitorTimer.IsEnabled)
+        {
+            _trackMonitorTimer.Start();
+        }
+    }
+
+    private DispatcherTimer CreateTrackMonitorTimer()
+    {
+        var timer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TrackMonitorInterval
+        };
+        timer.Tick += TrackMonitorTimer_Tick;
+        return timer;
+    }
+
+    private void StopTrackMonitor(bool clearCache)
+    {
+        _trackMonitorTimer?.Stop();
+        if (clearCache)
+        {
+            _lastObservedTrackUri = null;
+        }
+    }
+
+    private async void TrackMonitorTimer_Tick(object? sender, EventArgs e)
+    {
+        await CheckTrackChangeAsync();
+    }
+
+    private async Task CheckTrackChangeAsync()
+    {
+        if (_isCheckingTrack || !_auth.HasRefreshToken)
+        {
+            return;
+        }
+
+        _isCheckingTrack = true;
+        try
+        {
+            var track = await _spotify.GetCurrentTrackOrNullAsync();
+            if (track is null)
+            {
+                _lastObservedTrackUri = null;
+                return;
+            }
+
+            if (string.Equals(_lastObservedTrackUri, track.Uri, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            var isLiked = await _spotify.GetTrackLikedStateAsync(track);
+            _lastObservedTrackUri = track.Uri;
+            ShowTrackChangedToast(track, isLiked);
+        }
+        catch (SpotifyRateLimitException ex)
+        {
+            StopTrackMonitor(clearCache: false);
+            StatusText.Text = Shorten(ex.Message, 160);
+            ShowErrorToast("Spotify ограничил запросы", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            StopTrackMonitor(clearCache: false);
+            StatusText.Text = Shorten($"Мониторинг трека остановлен: {ex.Message}", 160);
+        }
+        finally
+        {
+            _isCheckingTrack = false;
+        }
+    }
+
     private void ShowToast(FavoriteToggleResult result)
     {
         _toastWindow?.Close();
         _toastWindow = new ToastWindow(result);
+        _toastWindow.Closed += (_, _) => _toastWindow = null;
+        _toastWindow.Show();
+    }
+
+    private void ShowTrackChangedToast(PlaybackTrack track, bool isLiked)
+    {
+        _toastWindow?.Close();
+        _toastWindow = new ToastWindow(track, isLiked);
         _toastWindow.Closed += (_, _) => _toastWindow = null;
         _toastWindow.Show();
     }
@@ -274,7 +380,8 @@ public partial class MainWindow : Window
         }
 
         var registration = _hotkeyRegistrationFailed ? " Клавиша занята или недоступна." : string.Empty;
-        var hint = $"По нажатию клавиши приложение проверит текущий трек, изменит Избранное и покажет уведомление.{registration}";
+        var monitor = _trackMonitorTimer?.IsEnabled == true ? " Мониторинг трека: каждые 8 секунд." : string.Empty;
+        var hint = $"По нажатию клавиши приложение проверит текущий трек, изменит Избранное и покажет уведомление.{monitor}{registration}";
         StatusText.Text = string.IsNullOrWhiteSpace(prefix)
             ? $"{account} {hint}"
             : $"{prefix} {account} {hint}";

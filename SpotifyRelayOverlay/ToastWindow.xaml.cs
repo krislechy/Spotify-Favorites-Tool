@@ -17,11 +17,19 @@ public partial class ToastWindow : Window
         ActionText.Text = result.Message;
         TrackTitle.Text = result.Track.Name;
         ArtistText.Text = result.Track.Artists;
-        HeartText.Text = result.IsLiked ? "♥" : "♡";
-        HeartText.Foreground = result.IsLiked
-            ? new SolidColorBrush(System.Windows.Media.Color.FromRgb(30, 215, 96))
-            : new SolidColorBrush(System.Windows.Media.Color.FromRgb(213, 231, 220));
+        SetHeart(result.IsLiked);
         SetAlbumArt(result.Track.AlbumImageUrl);
+    }
+
+    public ToastWindow(PlaybackTrack track, bool isLiked)
+    {
+        InitializeComponent();
+
+        ActionText.Text = isLiked ? "Сейчас играет · В Избранном" : "Сейчас играет · Не в Избранном";
+        TrackTitle.Text = track.Name;
+        ArtistText.Text = track.Artists;
+        SetHeart(isLiked);
+        SetAlbumArt(track.AlbumImageUrl);
     }
 
     public ToastWindow(string title, string message)
@@ -54,8 +62,8 @@ public partial class ToastWindow : Window
 
     private void ConfigureErrorLayout()
     {
-        Width = Math.Min(420, SystemParameters.WorkArea.Width - 36);
-        Height = Math.Min(120, SystemParameters.WorkArea.Height - 36);
+        Width = Math.Min(820, SystemParameters.WorkArea.Width - 36);
+        Height = Math.Min(320, SystemParameters.WorkArea.Height - 36);
 
         ArtworkColumn.Width = new GridLength(0);
         IconColumn.Width = new GridLength(42);
@@ -70,6 +78,14 @@ public partial class ToastWindow : Window
         TrackTitle.TextWrapping = TextWrapping.Wrap;
         TrackTitle.TextTrimming = TextTrimming.None;
         Grid.SetRowSpan(TrackTitle, 3);
+    }
+
+    private void SetHeart(bool isLiked)
+    {
+        HeartText.Text = isLiked ? "♥" : "♡";
+        HeartText.Foreground = isLiked
+            ? new SolidColorBrush(System.Windows.Media.Color.FromRgb(30, 215, 96))
+            : new SolidColorBrush(System.Windows.Media.Color.FromRgb(213, 231, 220));
     }
 
     private void SetAlbumArt(string? imageUrl)
