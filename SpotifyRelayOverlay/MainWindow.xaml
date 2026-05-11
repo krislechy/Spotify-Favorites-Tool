@@ -74,7 +74,8 @@
                               Color="#000000" />
         </Border.Effect>
 
-        <Grid>
+        <Grid x:Name="CursorLightSurface"
+              ClipToBounds="True">
             <Grid.RowDefinitions>
                 <RowDefinition Height="42" />
                 <RowDefinition Height="*" />
@@ -243,6 +244,27 @@
                         </Border>
                     </Grid>
                 </Grid>
+            </Border>
+
+            <Border x:Name="CursorLight"
+                    Grid.RowSpan="2"
+                    Panel.ZIndex="50"
+                    Width="320"
+                    Height="320"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    IsHitTestVisible="False"
+                    Opacity="0">
+                <Border.RenderTransform>
+                    <TranslateTransform x:Name="CursorLightTransform" />
+                </Border.RenderTransform>
+                <Border.Background>
+                    <RadialGradientBrush>
+                        <GradientStop Color="#FFFFFFFF" Offset="0" />
+                        <GradientStop Color="#66FFFFFF" Offset="0.34" />
+                        <GradientStop Color="#00FFFFFF" Offset="1" />
+                    </RadialGradientBrush>
+                </Border.Background>
             </Border>
         </Grid>
     </Border>

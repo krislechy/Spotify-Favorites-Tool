@@ -57,7 +57,10 @@
         </Style>
     </Window.Resources>
 
-    <DockPanel Margin="18" LastChildFill="True">
+    <Grid x:Name="CursorLightSurface"
+          Margin="18"
+          ClipToBounds="True">
+    <DockPanel LastChildFill="True">
         <StackPanel DockPanel.Dock="Bottom"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
@@ -202,4 +205,25 @@
             </StackPanel>
         </ScrollViewer>
     </DockPanel>
+
+    <Border x:Name="CursorLight"
+            Panel.ZIndex="50"
+            Width="300"
+            Height="300"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            IsHitTestVisible="False"
+            Opacity="0">
+        <Border.RenderTransform>
+            <TranslateTransform x:Name="CursorLightTransform" />
+        </Border.RenderTransform>
+        <Border.Background>
+            <RadialGradientBrush>
+                <GradientStop Color="#FFFFFFFF" Offset="0" />
+                <GradientStop Color="#66FFFFFF" Offset="0.34" />
+                <GradientStop Color="#00FFFFFF" Offset="1" />
+            </RadialGradientBrush>
+        </Border.Background>
+    </Border>
+    </Grid>
 </Window>

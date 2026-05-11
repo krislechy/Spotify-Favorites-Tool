@@ -11,6 +11,7 @@ public partial class SettingsWindow : Window
     private string _favoriteHotkeyDisplayName;
     private uint _favoriteStatusHotkeyVirtualKey;
     private string _favoriteStatusHotkeyDisplayName;
+    private readonly CursorLightController _cursorLight;
 
     public SettingsWindow(SettingsStore settings, SpotifyAuthService auth)
     {
@@ -21,6 +22,8 @@ public partial class SettingsWindow : Window
         _favoriteHotkeyDisplayName = GetHotkeyDisplayName(_favoriteHotkeyVirtualKey, _settings.Current.LikeHotkeyDisplayName);
         _favoriteStatusHotkeyVirtualKey = _settings.Current.FavoriteStatusHotkeyVirtualKey;
         _favoriteStatusHotkeyDisplayName = GetHotkeyDisplayName(_favoriteStatusHotkeyVirtualKey, _settings.Current.FavoriteStatusHotkeyDisplayName);
+        _cursorLight = new CursorLightController(CursorLightSurface, CursorLight, CursorLightTransform, 300, 0.15);
+        Closed += (_, _) => _cursorLight.Dispose();
 
         ClientIdBox.Text = _settings.Current.ClientId;
         RedirectUriBox.Text = SpotifyAuthService.RedirectUri;

@@ -19,6 +19,7 @@ public partial class MainWindow : Window
     private readonly ToastPresenter _toasts = new();
     private readonly AsyncActionGate _userActionGate = new();
     private readonly AsyncActionGate _trackMonitorGate = new();
+    private readonly CursorLightController _cursorLight;
 
     private SettingsWindow? _settingsWindow;
     private HwndSource? _source;
@@ -33,6 +34,7 @@ public partial class MainWindow : Window
         _auth = new SpotifyAuthService(_settings);
         _spotify = new SpotifyClient(_auth);
         _favorites = new FavoriteTrackService(_spotify);
+        _cursorLight = new CursorLightController(CursorLightSurface, CursorLight, CursorLightTransform, 320, 0.15);
         ActivityLogList.ItemsSource = _activityLog.Entries;
         _trayIcon = new TrayIconController(Dispatcher, BringMainWindowToFront, ShowSettingsWindow, ExitApplication);
         Log("Приложение запущено.");
@@ -69,6 +71,7 @@ public partial class MainWindow : Window
         _source?.RemoveHook(WndProc);
         _trayIcon?.Dispose();
         _toasts.Dispose();
+        _cursorLight.Dispose();
     }
 
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
