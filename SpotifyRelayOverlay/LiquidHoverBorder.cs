@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -39,15 +40,17 @@ public class LiquidHoverBorder : Border
 
     private static readonly LiquidBlobSpec[] BlobSpecs =
     [
-        new(0.00, 0.00, 0.00, 0.00, 190, 190, SpotifyGreen, 0.90, 0.52, 0.18, 0xB8, 0x70, 0x24),
-        new(-78, 42, 0.030, -0.020, 135, 135, MintGreen, 0.60, 0.30, 0.11, 0x90, 0x54, 0x1E),
-        new(86, -56, -0.040, 0.032, 150, 150, SpotifyGreen, 0.52, 0.27, 0.10, 0x88, 0x4C, 0x1C),
-        new(22, 88, 0.020, 0.045, 230, 230, DeepGreen, 0.54, 0.25, 0.09, 0x72, 0x3C, 0x18),
-        new(-24, -104, -0.018, 0.055, 255, 255, MintGreen, 0.30, 0.16, 0.07, 0x48, 0x2C, 0x14)
+        new(0.00, 0.00, 0.00, 0.00, 190, 190, 20, 14, 0.90, 0.035, SpotifyGreen, 0.90, 0.52, 0.18, 0xB8, 0x70, 0x24),
+        new(-78, 42, 0.030, -0.020, 135, 135, 16, 22, 1.12, 0.050, MintGreen, 0.60, 0.30, 0.11, 0x90, 0x54, 0x1E),
+        new(86, -56, -0.040, 0.032, 150, 150, 24, 18, 0.74, 0.045, SpotifyGreen, 0.52, 0.27, 0.10, 0x88, 0x4C, 0x1C),
+        new(22, 88, 0.020, 0.045, 230, 230, 18, 26, 0.58, 0.030, DeepGreen, 0.54, 0.25, 0.09, 0x72, 0x3C, 0x18),
+        new(-24, -104, -0.018, 0.055, 255, 255, 28, 16, 0.66, 0.026, MintGreen, 0.30, 0.16, 0.07, 0x48, 0x2C, 0x14)
     ];
 
     private WpfPoint _targetPoint;
     private WpfPoint _currentPoint;
+    private long _animationStartedAt;
+    private WpfBrush? _baseBrush;
     private WpfBrush[]? _blobBrushes;
     private bool _hasPoint;
     private bool _isRendering;
@@ -106,7 +109,7 @@ public class LiquidHoverBorder : Border
         var fillRect = Deflate(bounds, borderThickness);
         var fillRadius = Math.Max(0, radius - borderThickness / 2);
 
-        drawingContext.DrawRoundedRectangle(new SolidColorBrush(BaseColor), null, fillRect, fillRadius, fillRadius);
+        drawingContext.DrawRoundedRectangle(GetBaseBrush(), null, fillRect, fillRadius, fillRadius);
 
         var hoverProgress = HoverProgress;
         if (hoverProgress > 0.001)
@@ -114,7 +117,7 @@ public class LiquidHoverBorder : Border
             var clip = new RectangleGeometry(fillRect, fillRadius, fillRadius);
             drawingContext.PushClip(clip);
             drawingContext.PushOpacity(hoverProgress);
-            DrawLiquidGradient(drawingContext, fillRect);
+            DrawLiquidGradient(drawingContext, fillRect, GetAnimationSeconds());
             drawingContext.Pop();
             drawingContext.Pop();
         }
@@ -134,7 +137,7 @@ public class LiquidHoverBorder : Border
         }
     }
 
-    private void DrawLiquidGradient(DrawingContext drawingContext, Rect bounds)
+    private void DrawLiquidGradient(DrawingContext drawingContext, Rect bounds, double seconds)
     {
         var blobBrushes = GetBlobBrushes();
         var pointer = _hasPoint
@@ -147,17 +150,36 @@ public class LiquidHoverBorder : Border
         for (var index = 0; index < BlobSpecs.Length; index++)
         {
             var spec = BlobSpecs[index];
+            var phase = seconds * spec.Speed + index * 1.618;
+            var driftX = Math.Sin(phase) * spec.DriftX
+                + Math.Sin(phase * 0.47 + 1.4) * spec.DriftX * 0.38;
+            var driftY = Math.Cos(phase * 0.82 + 0.7) * spec.DriftY
+                + Math.Sin(phase * 0.39 + 2.1) * spec.DriftY * 0.32;
+            var pulse = 1 + Math.Sin(phase * 0.63 + index * 0.9) * spec.Pulse;
             var center = new WpfPoint(
-                pointer.X + spec.OffsetX + normalX * bounds.Width * spec.ParallaxX,
-                pointer.Y + spec.OffsetY + normalY * bounds.Height * spec.ParallaxY);
+                pointer.X + spec.OffsetX + driftX + normalX * bounds.Width * spec.ParallaxX,
+                pointer.Y + spec.OffsetY + driftY + normalY * bounds.Height * spec.ParallaxY);
 
             drawingContext.DrawEllipse(
                 blobBrushes[index],
                 null,
                 center,
-                spec.RadiusX,
-                spec.RadiusY);
+                spec.RadiusX * pulse,
+                spec.RadiusY * pulse);
         }
+    }
+
+    private WpfBrush GetBaseBrush()
+    {
+        if (_baseBrush is not null)
+        {
+            return _baseBrush;
+        }
+
+        var brush = new SolidColorBrush(BaseColor);
+        brush.Freeze();
+        _baseBrush = brush;
+        return _baseBrush;
     }
 
     private WpfBrush[] GetBlobBrushes()
@@ -203,6 +225,7 @@ public class LiquidHoverBorder : Border
         }
 
         CompositionTarget.Rendering += CompositionTarget_Rendering;
+        _animationStartedAt = Stopwatch.GetTimestamp();
         _isRendering = true;
     }
 
@@ -223,18 +246,24 @@ public class LiquidHoverBorder : Border
         var distanceY = _targetPoint.Y - _currentPoint.Y;
         var distance = Math.Sqrt(distanceX * distanceX + distanceY * distanceY);
 
-        if (distance > 0.15)
+        var pointerMoved = distance > 0.15;
+        if (pointerMoved)
         {
             _currentPoint = new WpfPoint(
                 _currentPoint.X + distanceX * 0.18,
                 _currentPoint.Y + distanceY * 0.18);
-            InvalidateVisual();
-            return;
+        }
+        else
+        {
+            _currentPoint = _targetPoint;
         }
 
-        _currentPoint = _targetPoint;
         InvalidateVisual();
-        StopRendering();
+
+        if (!IsMouseOver && HoverProgress <= 0.01 && !pointerMoved)
+        {
+            StopRendering();
+        }
     }
 
     private WpfPen? CreateBorderPen(double thickness)
@@ -275,7 +304,19 @@ public class LiquidHoverBorder : Border
 
     private static void OnBaseColorChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
     {
-        ((LiquidHoverBorder)dependencyObject)._blobBrushes = null;
+        var liquidHoverBorder = (LiquidHoverBorder)dependencyObject;
+        liquidHoverBorder._baseBrush = null;
+        liquidHoverBorder._blobBrushes = null;
+    }
+
+    private double GetAnimationSeconds()
+    {
+        if (_animationStartedAt == 0)
+        {
+            _animationStartedAt = Stopwatch.GetTimestamp();
+        }
+
+        return Stopwatch.GetElapsedTime(_animationStartedAt).TotalSeconds;
     }
 
     private readonly record struct LiquidBlobSpec(
@@ -285,6 +326,10 @@ public class LiquidHoverBorder : Border
         double ParallaxY,
         double RadiusX,
         double RadiusY,
+        double DriftX,
+        double DriftY,
+        double Speed,
+        double Pulse,
         WpfColor TargetColor,
         double CoreStrength,
         double BodyStrength,
