@@ -151,27 +151,36 @@ public partial class ToastWindow : Window
     {
         ResetFavoriteIcon();
 
-        DropShape.Opacity = 0;
-        DropScale.ScaleX = 0.25;
-        DropScale.ScaleY = 0.25;
-        DropTranslate.Y = -7;
-
         HeartFill.Fill = CreateBrush(30, 215, 96);
         HeartFill.Opacity = 0;
-        HeartScale.ScaleX = 0.72;
-        HeartScale.ScaleY = 0.72;
-        HeartRotate.Angle = -8;
+        HeartScale.ScaleX = 0.26;
+        HeartScale.ScaleY = 0.26;
+        HeartRotate.Angle = -4;
 
-        Animate(DropShape, UIElement.OpacityProperty, 0, 0.95, 150);
-        Animate(DropScale, ScaleTransform.ScaleXProperty, 0.25, 1.06, 280, easing: EaseOut());
-        Animate(DropScale, ScaleTransform.ScaleYProperty, 0.25, 1.06, 280, easing: EaseOut());
-        Animate(DropTranslate, TranslateTransform.YProperty, -7, 0, 260, easing: EaseOut());
+        HeartGlow.Opacity = 0;
+        GlowScale.ScaleX = 0.45;
+        GlowScale.ScaleY = 0.45;
 
-        Animate(DropShape, UIElement.OpacityProperty, 0.95, 0, 180, 220);
-        Animate(HeartFill, UIElement.OpacityProperty, 0, 1, 150, 230);
-        AnimateKeyFrames(HeartScale, ScaleTransform.ScaleXProperty, (0.72, 230), (1.18, 430), (1, 620));
-        AnimateKeyFrames(HeartScale, ScaleTransform.ScaleYProperty, (0.72, 230), (1.18, 430), (1, 620));
-        Animate(HeartRotate, RotateTransform.AngleProperty, -8, 0, 360, 230, EaseOut());
+        Animate(HeartFill, UIElement.OpacityProperty, 0, 1, 120);
+        AnimateKeyFrames(HeartScale, ScaleTransform.ScaleXProperty, (0.26, 0), (1.24, 190), (0.92, 350), (1.13, 520), (1, 720));
+        AnimateKeyFrames(HeartScale, ScaleTransform.ScaleYProperty, (0.26, 0), (1.24, 190), (0.92, 350), (1.13, 520), (1, 720));
+        Animate(HeartRotate, RotateTransform.AngleProperty, -4, 0, 280, easing: EaseOut());
+
+        AnimateKeyFrames(HeartGlow, UIElement.OpacityProperty, (0, 0), (0.78, 130), (0.28, 520), (0, 1160));
+        AnimateKeyFrames(GlowScale, ScaleTransform.ScaleXProperty, (0.45, 0), (1.22, 260), (1.05, 780), (1.35, 1160));
+        AnimateKeyFrames(GlowScale, ScaleTransform.ScaleYProperty, (0.45, 0), (1.22, 260), (1.05, 780), (1.35, 1160));
+
+        AnimateSparkle(SparkleTop, SparkleTopScale, 90, 1.05);
+        AnimateSparkle(SparkleLeft, SparkleLeftScale, 210, 0.9);
+        AnimateSparkle(SparkleRight, SparkleRightScale, 310, 0.95);
+        Animate(SparkleTopRotate, RotateTransform.AngleProperty, -18, 24, 620, 90, EaseOut());
+    }
+
+    private void AnimateSparkle(UIElement sparkle, ScaleTransform scale, int delayMs, double maxScale)
+    {
+        AnimateKeyFrames(sparkle, UIElement.OpacityProperty, (0, delayMs), (0.95, delayMs + 100), (0, delayMs + 520));
+        AnimateKeyFrames(scale, ScaleTransform.ScaleXProperty, (0.25, delayMs), (maxScale, delayMs + 150), (0.35, delayMs + 520));
+        AnimateKeyFrames(scale, ScaleTransform.ScaleYProperty, (0.25, delayMs), (maxScale, delayMs + 150), (0.35, delayMs + 520));
     }
 
     private void PlayRemovedAnimation()
@@ -222,6 +231,10 @@ public partial class ToastWindow : Window
         FavoriteIconCanvas.Visibility = Visibility.Visible;
 
         DropShape.BeginAnimation(UIElement.OpacityProperty, null);
+        HeartGlow.BeginAnimation(UIElement.OpacityProperty, null);
+        SparkleTop.BeginAnimation(UIElement.OpacityProperty, null);
+        SparkleLeft.BeginAnimation(UIElement.OpacityProperty, null);
+        SparkleRight.BeginAnimation(UIElement.OpacityProperty, null);
         HeartFill.BeginAnimation(UIElement.OpacityProperty, null);
         HeartOutline.BeginAnimation(UIElement.OpacityProperty, null);
         CrackLines.BeginAnimation(UIElement.OpacityProperty, null);
@@ -230,6 +243,10 @@ public partial class ToastWindow : Window
         HeartPieceCenter.BeginAnimation(UIElement.OpacityProperty, null);
 
         DropShape.Opacity = 0;
+        HeartGlow.Opacity = 0;
+        SparkleTop.Opacity = 0;
+        SparkleLeft.Opacity = 0;
+        SparkleRight.Opacity = 0;
         HeartFill.Opacity = 0;
         HeartOutline.Opacity = 0;
         CrackLines.Opacity = 0;
@@ -240,6 +257,15 @@ public partial class ToastWindow : Window
         DropScale.ScaleX = 0.25;
         DropScale.ScaleY = 0.25;
         DropTranslate.Y = -5;
+        GlowScale.ScaleX = 0.55;
+        GlowScale.ScaleY = 0.55;
+        SparkleTopScale.ScaleX = 0.25;
+        SparkleTopScale.ScaleY = 0.25;
+        SparkleLeftScale.ScaleX = 0.25;
+        SparkleLeftScale.ScaleY = 0.25;
+        SparkleRightScale.ScaleX = 0.25;
+        SparkleRightScale.ScaleY = 0.25;
+        SparkleTopRotate.Angle = 0;
         HeartScale.ScaleX = 1;
         HeartScale.ScaleY = 1;
         HeartRotate.Angle = 0;

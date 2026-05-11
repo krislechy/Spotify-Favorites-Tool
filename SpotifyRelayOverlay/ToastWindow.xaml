@@ -92,6 +92,73 @@
                         Height="54"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center">
+                    <Ellipse x:Name="HeartGlow"
+                             Canvas.Left="-2"
+                             Canvas.Top="-2"
+                             Width="58"
+                             Height="58"
+                             Opacity="0"
+                             IsHitTestVisible="False"
+                             RenderTransformOrigin="0.5,0.5">
+                        <Ellipse.Fill>
+                            <RadialGradientBrush>
+                                <GradientStop Color="#A01ED760"
+                                              Offset="0" />
+                                <GradientStop Color="#331ED760"
+                                              Offset="0.52" />
+                                <GradientStop Color="#001ED760"
+                                              Offset="1" />
+                            </RadialGradientBrush>
+                        </Ellipse.Fill>
+                        <Ellipse.Effect>
+                            <BlurEffect Radius="9" />
+                        </Ellipse.Effect>
+                        <Ellipse.RenderTransform>
+                            <ScaleTransform x:Name="GlowScale"
+                                            ScaleX="0.55"
+                                            ScaleY="0.55" />
+                        </Ellipse.RenderTransform>
+                    </Ellipse>
+
+                    <Path x:Name="SparkleTop"
+                          Data="M 27,2 L 29.2,8 L 35,10 L 29.2,12 L 27,18 L 24.8,12 L 19,10 L 24.8,8 Z"
+                          Fill="#D8FFE6"
+                          Opacity="0"
+                          RenderTransformOrigin="0.5,0.5">
+                        <Path.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform x:Name="SparkleTopScale"
+                                                ScaleX="0.25"
+                                                ScaleY="0.25" />
+                                <RotateTransform x:Name="SparkleTopRotate" />
+                            </TransformGroup>
+                        </Path.RenderTransform>
+                    </Path>
+
+                    <Path x:Name="SparkleLeft"
+                          Data="M 8,16 L 9.4,20 L 13.5,21.4 L 9.4,22.8 L 8,27 L 6.6,22.8 L 2.5,21.4 L 6.6,20 Z"
+                          Fill="#A7F6C4"
+                          Opacity="0"
+                          RenderTransformOrigin="0.5,0.5">
+                        <Path.RenderTransform>
+                            <ScaleTransform x:Name="SparkleLeftScale"
+                                            ScaleX="0.25"
+                                            ScaleY="0.25" />
+                        </Path.RenderTransform>
+                    </Path>
+
+                    <Path x:Name="SparkleRight"
+                          Data="M 46,18 L 47.5,22 L 51.5,23.5 L 47.5,25 L 46,29 L 44.5,25 L 40.5,23.5 L 44.5,22 Z"
+                          Fill="#E5FFEE"
+                          Opacity="0"
+                          RenderTransformOrigin="0.5,0.5">
+                        <Path.RenderTransform>
+                            <ScaleTransform x:Name="SparkleRightScale"
+                                            ScaleX="0.25"
+                                            ScaleY="0.25" />
+                        </Path.RenderTransform>
+                    </Path>
+
                     <Path x:Name="DropShape"
                           Data="M 27,8 C 35,19 39,25 39,33 C 39,41 33.5,46 27,46 C 20.5,46 15,41 15,33 C 15,25 19,19 27,8 Z"
                           Fill="#1ED760"
@@ -109,7 +176,7 @@
                     </Path>
 
                     <Path x:Name="HeartFill"
-                          Data="M 27,45 C 22,40 9,30 7,19 C 5.5,11 11,6 18,9 C 22,10.5 25,14 27,17 C 29,14 32,10.5 36,9 C 43,6 48.5,11 47,19 C 45,30 32,40 27,45 Z"
+                          Data="M 27,47 C 22,42 7,31.5 5.8,19 C 4.8,9 12.5,4 19.4,8.5 C 23.3,11 25.7,14.6 27,17.8 C 28.3,14.6 30.7,11 34.6,8.5 C 41.5,4 49.2,9 48.2,19 C 47,31.5 32,42 27,47 Z"
                           Fill="#1ED760"
                           Opacity="0"
                           RenderTransformOrigin="0.5,0.5">
@@ -126,7 +193,7 @@
                     </Path>
 
                     <Path x:Name="HeartOutline"
-                          Data="M 27,45 C 22,40 9,30 7,19 C 5.5,11 11,6 18,9 C 22,10.5 25,14 27,17 C 29,14 32,10.5 36,9 C 43,6 48.5,11 47,19 C 45,30 32,40 27,45 Z"
+                          Data="M 27,47 C 22,42 7,31.5 5.8,19 C 4.8,9 12.5,4 19.4,8.5 C 23.3,11 25.7,14.6 27,17.8 C 28.3,14.6 30.7,11 34.6,8.5 C 41.5,4 49.2,9 48.2,19 C 47,31.5 32,42 27,47 Z"
                           Fill="Transparent"
                           Stroke="#D5E7DC"
                           StrokeThickness="3"
@@ -145,7 +212,7 @@
                           Opacity="0" />
 
                     <Path x:Name="HeartPieceLeft"
-                          Data="M 27,45 C 22,40 9,30 7,19 C 5.5,11 11,6 18,9 C 22,10.5 25,14 27,17 L 24,28 L 27,45 Z"
+                          Data="M 27,47 C 22,42 7,31.5 5.8,19 C 4.8,9 12.5,4 19.4,8.5 C 23.3,11 25.7,14.6 27,17.8 L 24,29 L 27,47 Z"
                           Fill="#8CA896"
                           Opacity="0"
                           RenderTransformOrigin="0.5,0.5">
@@ -158,7 +225,7 @@
                     </Path>
 
                     <Path x:Name="HeartPieceRight"
-                          Data="M 27,45 L 24,28 L 27,17 C 29,14 32,10.5 36,9 C 43,6 48.5,11 47,19 C 45,30 32,40 27,45 Z"
+                          Data="M 27,47 L 24,29 L 27,17.8 C 28.3,14.6 30.7,11 34.6,8.5 C 41.5,4 49.2,9 48.2,19 C 47,31.5 32,42 27,47 Z"
                           Fill="#789181"
                           Opacity="0"
                           RenderTransformOrigin="0.5,0.5">
@@ -171,7 +238,7 @@
                     </Path>
 
                     <Path x:Name="HeartPieceCenter"
-                          Data="M 24,28 L 29,29 L 24,39 L 27,45 L 24,28 Z"
+                          Data="M 24,29 L 29,30 L 24,40 L 27,47 L 24,29 Z"
                           Fill="#A9BDAF"
                           Opacity="0"
                           RenderTransformOrigin="0.5,0.5">
