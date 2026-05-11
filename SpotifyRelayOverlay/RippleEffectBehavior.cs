@@ -9,6 +9,7 @@ using MediaColor = System.Windows.Media.Color;
 using MediaBrush = System.Windows.Media.Brush;
 using WpfButtonBase = System.Windows.Controls.Primitives.ButtonBase;
 using WpfPoint = System.Windows.Point;
+using WpfRect = System.Windows.Rect;
 
 namespace SpotifyRelayOverlay;
 
@@ -118,6 +119,8 @@ public static class RippleEffectBehavior
             return;
         }
 
+        ApplyRoundedClip(button, host, width, height);
+
         var position = e.GetPosition(host);
         var finalRadius = GetRequiredRadius(position, width, height) * 1.08;
         var initialRadius = Math.Min(10, finalRadius * 0.18);
@@ -149,6 +152,18 @@ public static class RippleEffectBehavior
         var opacityAnimation = CreateOpacityAnimation(opacity, durationMs);
         opacityAnimation.Completed += (_, _) => host.Children.Remove(ripple);
         ripple.BeginAnimation(UIElement.OpacityProperty, opacityAnimation);
+    }
+
+    private static void ApplyRoundedClip(WpfButtonBase button, Canvas host, double width, double height)
+    {
+        var radius = 0d;
+        if (button.Template.FindName("Root", button) is Border root)
+        {
+            radius = root.CornerRadius.TopLeft;
+        }
+
+        radius = Math.Clamp(radius, 0, Math.Min(width, height) / 2);
+        host.Clip = new RectangleGeometry(new WpfRect(0, 0, width, height), radius, radius);
     }
 
     private static DoubleAnimation CreateExpansionAnimation(double from, double to, TimeSpan duration, IEasingFunction easing)
