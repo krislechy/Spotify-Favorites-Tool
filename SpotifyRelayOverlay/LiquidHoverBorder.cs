@@ -40,11 +40,11 @@ public class LiquidHoverBorder : Border
 
     private static readonly LiquidBlobSpec[] BlobSpecs =
     [
-        new(0.00, 0.00, 0.00, 0.00, 190, 190, 20, 14, 0.90, 0.035, 0.34, 12, 3.6, SpotifyGreen, 0.90, 0.52, 0.18, 0xB8, 0x70, 0x24),
-        new(-78, 42, 0.030, -0.020, 135, 135, 16, 22, 1.12, 0.050, 0.24, 7.8, 2.2, MintGreen, 0.60, 0.30, 0.11, 0x90, 0x54, 0x1E),
-        new(86, -56, -0.040, 0.032, 150, 150, 24, 18, 0.74, 0.045, 0.42, 5.2, 1.7, SpotifyGreen, 0.52, 0.27, 0.10, 0x88, 0x4C, 0x1C),
-        new(22, 88, 0.020, 0.045, 230, 230, 18, 26, 0.58, 0.030, 0.18, 3.8, 1.2, DeepGreen, 0.54, 0.25, 0.09, 0x72, 0x3C, 0x18),
-        new(-24, -104, -0.018, 0.055, 255, 255, 28, 16, 0.66, 0.026, 0.28, 6.4, 2.8, MintGreen, 0.30, 0.16, 0.07, 0x48, 0x2C, 0x14)
+        new(0.00, 0.00, 0.00, 0.00, 190, 190, 20, 14, 0.90, 0.035, 0.34, 12, 3.6, 0.72, SpotifyGreen, 0.90, 0.52, 0.18, 0xB8, 0x70, 0x24),
+        new(-78, 42, 0.030, -0.020, 135, 135, 16, 22, 1.12, 0.050, 0.24, 7.8, 2.2, 0.52, MintGreen, 0.60, 0.30, 0.11, 0x90, 0x54, 0x1E),
+        new(86, -56, -0.040, 0.032, 150, 150, 24, 18, 0.74, 0.045, 0.42, 5.2, 1.7, 0.86, SpotifyGreen, 0.52, 0.27, 0.10, 0x88, 0x4C, 0x1C),
+        new(22, 88, 0.020, 0.045, 230, 230, 18, 26, 0.58, 0.030, 0.18, 3.8, 1.2, 0.36, DeepGreen, 0.54, 0.25, 0.09, 0x72, 0x3C, 0x18),
+        new(-24, -104, -0.018, 0.055, 255, 255, 28, 16, 0.66, 0.026, 0.28, 6.4, 2.8, 0.48, MintGreen, 0.30, 0.16, 0.07, 0x48, 0x2C, 0x14)
     ];
 
     private WpfPoint _targetPoint;
@@ -54,6 +54,7 @@ public class LiquidHoverBorder : Border
     private long _lastFrameAt;
     private WpfBrush? _baseBrush;
     private WpfBrush[]? _blobBrushes;
+    private WpfBrush[]? _motionBlobBrushes;
     private readonly double[] _blobSpeedPressure = new double[BlobSpecs.Length];
     private bool _hasPoint;
     private bool _isRendering;
@@ -143,6 +144,7 @@ public class LiquidHoverBorder : Border
     private void DrawLiquidGradient(DrawingContext drawingContext, Rect bounds, double seconds)
     {
         var blobBrushes = GetBlobBrushes();
+        var motionBlobBrushes = GetMotionBlobBrushes();
         var pointer = _hasPoint
             ? _currentPoint
             : new WpfPoint(bounds.Left + bounds.Width / 2, bounds.Top + bounds.Height / 2);
@@ -173,6 +175,22 @@ public class LiquidHoverBorder : Border
                 center,
                 spec.RadiusX * radiusScale,
                 spec.RadiusY * radiusScale);
+
+            var motionOpacity = Math.Min(0.72, pressure * spec.MotionGlow);
+            if (motionOpacity <= 0.01)
+            {
+                continue;
+            }
+
+            var motionScale = Math.Max(0.42, radiusScale * (0.78 - pressure * 0.16));
+            drawingContext.PushOpacity(motionOpacity);
+            drawingContext.DrawEllipse(
+                motionBlobBrushes[index],
+                null,
+                center,
+                spec.RadiusX * motionScale,
+                spec.RadiusY * motionScale);
+            drawingContext.Pop();
         }
     }
 
@@ -200,6 +218,19 @@ public class LiquidHoverBorder : Border
             .Select(spec => spec.CreateBrush(BaseColor))
             .ToArray();
         return _blobBrushes;
+    }
+
+    private WpfBrush[] GetMotionBlobBrushes()
+    {
+        if (_motionBlobBrushes is not null)
+        {
+            return _motionBlobBrushes;
+        }
+
+        _motionBlobBrushes = BlobSpecs
+            .Select(spec => spec.CreateMotionBrush(BaseColor))
+            .ToArray();
+        return _motionBlobBrushes;
     }
 
     private void SetPointer(WpfPoint point, bool snap)
@@ -348,6 +379,7 @@ public class LiquidHoverBorder : Border
         var liquidHoverBorder = (LiquidHoverBorder)dependencyObject;
         liquidHoverBorder._baseBrush = null;
         liquidHoverBorder._blobBrushes = null;
+        liquidHoverBorder._motionBlobBrushes = null;
     }
 
     private double GetAnimationSeconds()
@@ -374,6 +406,7 @@ public class LiquidHoverBorder : Border
         double SpeedShrink,
         double SpeedAttack,
         double SpeedRelease,
+        double MotionGlow,
         WpfColor TargetColor,
         double CoreStrength,
         double BodyStrength,
@@ -384,6 +417,30 @@ public class LiquidHoverBorder : Border
     {
         public WpfBrush CreateBrush(WpfColor baseColor)
         {
+            return CreateBrush(baseColor, CoreStrength, BodyStrength, TailStrength, CoreAlpha, BodyAlpha, TailAlpha);
+        }
+
+        public WpfBrush CreateMotionBrush(WpfColor baseColor)
+        {
+            return CreateBrush(
+                baseColor,
+                Math.Min(1, CoreStrength + 0.34),
+                Math.Min(1, BodyStrength + 0.30),
+                Math.Min(1, TailStrength + 0.18),
+                AddAlpha(CoreAlpha, 0x34),
+                AddAlpha(BodyAlpha, 0x38),
+                AddAlpha(TailAlpha, 0x26));
+        }
+
+        private WpfBrush CreateBrush(
+            WpfColor baseColor,
+            double coreStrength,
+            double bodyStrength,
+            double tailStrength,
+            byte coreAlpha,
+            byte bodyAlpha,
+            byte tailAlpha)
+        {
             var brush = new RadialGradientBrush
             {
                 MappingMode = BrushMappingMode.RelativeToBoundingBox,
@@ -392,9 +449,9 @@ public class LiquidHoverBorder : Border
                 RadiusX = 0.74,
                 RadiusY = 0.74
             };
-            brush.GradientStops.Add(new GradientStop(CreateColor(baseColor, CoreStrength, CoreAlpha), 0));
-            brush.GradientStops.Add(new GradientStop(CreateColor(baseColor, BodyStrength, BodyAlpha), 0.34));
-            brush.GradientStops.Add(new GradientStop(CreateColor(baseColor, TailStrength, TailAlpha), 0.72));
+            brush.GradientStops.Add(new GradientStop(CreateColor(baseColor, coreStrength, coreAlpha), 0));
+            brush.GradientStops.Add(new GradientStop(CreateColor(baseColor, bodyStrength, bodyAlpha), 0.30));
+            brush.GradientStops.Add(new GradientStop(CreateColor(baseColor, tailStrength, tailAlpha), 0.66));
             brush.GradientStops.Add(new GradientStop(WpfColor.FromArgb(0, baseColor.R, baseColor.G, baseColor.B), 1));
             brush.Freeze();
             return brush;
@@ -412,6 +469,11 @@ public class LiquidHoverBorder : Border
         private static byte BlendChannel(byte current, byte target, double amount)
         {
             return (byte)Math.Round(current + (target - current) * amount);
+        }
+
+        private static byte AddAlpha(byte current, byte amount)
+        {
+            return (byte)Math.Min(byte.MaxValue, current + amount);
         }
     }
 }
