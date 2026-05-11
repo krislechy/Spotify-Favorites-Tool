@@ -1,6 +1,7 @@
 <Window x:Class="SpotifyRelayOverlay.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:SpotifyRelayOverlay"
         Title="Настройки Избранного"
         Width="620"
         Height="680"
@@ -57,7 +58,12 @@
         </Style>
     </Window.Resources>
 
-    <DockPanel Margin="18" LastChildFill="True">
+    <local:LiquidHoverBorder Margin="18"
+                             Padding="0"
+                             CornerRadius="10"
+                             BaseColor="#101512"
+                             BorderThickness="0">
+    <DockPanel LastChildFill="True">
         <StackPanel DockPanel.Dock="Bottom"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
@@ -111,12 +117,12 @@
                          IsReadOnly="True"
                          Foreground="#CFE1D5" />
 
-                <Border Margin="0,16,0,0"
-                        Padding="12"
-                        CornerRadius="8"
-                        BorderBrush="#334139"
-                        BorderThickness="1"
-                        Background="#18201B">
+                <local:LiquidHoverBorder Margin="0,16,0,0"
+                                         Padding="12"
+                                         CornerRadius="8"
+                                         BorderBrush="#334139"
+                                         BorderThickness="1"
+                                         BaseColor="#18201B">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -148,14 +154,14 @@
                                     Click="ClearHotkeyButton_Click" />
                         </Grid>
                     </Grid>
-                </Border>
+                </local:LiquidHoverBorder>
 
-                <Border Margin="0,12,0,0"
-                        Padding="12"
-                        CornerRadius="8"
-                        BorderBrush="#334139"
-                        BorderThickness="1"
-                        Background="#18201B">
+                <local:LiquidHoverBorder Margin="0,12,0,0"
+                                         Padding="12"
+                                         CornerRadius="8"
+                                         BorderBrush="#334139"
+                                         BorderThickness="1"
+                                         BaseColor="#18201B">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -187,7 +193,7 @@
                                     Click="ClearStatusHotkeyButton_Click" />
                         </Grid>
                     </Grid>
-                </Border>
+                </local:LiquidHoverBorder>
 
                 <TextBlock Text="Клавиша статуса получает через Spotify только текущий трек. Если трек уже есть в кеше, статус берется из кеша; если трек новый, статус Избранного проверяется один раз и кеш обновляется."
                            Margin="0,10,0,0"
@@ -202,4 +208,5 @@
             </StackPanel>
         </ScrollViewer>
     </DockPanel>
+    </local:LiquidHoverBorder>
 </Window>

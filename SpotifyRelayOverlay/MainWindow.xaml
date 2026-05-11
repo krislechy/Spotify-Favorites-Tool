@@ -1,6 +1,7 @@
 <Window x:Class="SpotifyRelayOverlay.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:SpotifyRelayOverlay"
         Title="Spotify Избранное"
         Width="720"
         Height="540"
@@ -61,18 +62,18 @@
         </Style>
     </Window.Resources>
 
-    <Border Margin="8"
-            CornerRadius="12"
-            Background="#101512"
-            BorderBrush="#2A3A31"
-            BorderThickness="1"
-            SnapsToDevicePixels="True">
-        <Border.Effect>
+    <local:LiquidHoverBorder Margin="8"
+                             CornerRadius="12"
+                             BaseColor="#101512"
+                             BorderBrush="#2A3A31"
+                             BorderThickness="1"
+                             SnapsToDevicePixels="True">
+        <local:LiquidHoverBorder.Effect>
             <DropShadowEffect BlurRadius="18"
                               ShadowDepth="0"
                               Opacity="0.28"
                               Color="#000000" />
-        </Border.Effect>
+        </local:LiquidHoverBorder.Effect>
 
         <Grid>
             <Grid.RowDefinitions>
@@ -133,13 +134,13 @@
                 </StackPanel>
             </Grid>
 
-            <Border Grid.Row="1"
-                    Margin="12,10,12,12"
-                    Padding="16"
-                    CornerRadius="10"
-                    Background="#141B17"
-                    BorderBrush="#25342C"
-                    BorderThickness="1">
+            <local:LiquidHoverBorder Grid.Row="1"
+                                     Margin="12,10,12,12"
+                                     Padding="16"
+                                     CornerRadius="10"
+                                     BaseColor="#141B17"
+                                     BorderBrush="#25342C"
+                                     BorderThickness="1">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -153,13 +154,13 @@
                                FontWeight="SemiBold"
                                TextWrapping="Wrap" />
 
-                    <Border Grid.Row="1"
-                            Margin="0,14,0,0"
-                            Padding="12"
-                            CornerRadius="8"
-                            Background="#18201B"
-                            BorderBrush="#28362E"
-                            BorderThickness="1">
+                    <local:LiquidHoverBorder Grid.Row="1"
+                                             Margin="0,14,0,0"
+                                             Padding="12"
+                                             CornerRadius="8"
+                                             BaseColor="#18201B"
+                                             BorderBrush="#28362E"
+                                             BorderThickness="1">
                         <StackPanel>
                             <TextBlock x:Name="HotkeyText"
                                        Foreground="#8DE6B1"
@@ -172,7 +173,7 @@
                                        FontSize="12"
                                        TextWrapping="Wrap" />
                         </StackPanel>
-                    </Border>
+                    </local:LiquidHoverBorder>
 
                     <Grid Grid.Row="2" Margin="0,16,0,0">
                         <Grid.RowDefinitions>
@@ -192,11 +193,11 @@
                                        FontSize="11" />
                         </DockPanel>
 
-                        <Border Grid.Row="1"
-                                CornerRadius="8"
-                                Background="#111714"
-                                BorderBrush="#25342C"
-                                BorderThickness="1">
+                        <local:LiquidHoverBorder Grid.Row="1"
+                                                 CornerRadius="8"
+                                                 BaseColor="#111714"
+                                                 BorderBrush="#25342C"
+                                                 BorderThickness="1">
                             <ListBox x:Name="ActivityLogList"
                                      Background="Transparent"
                                      BorderThickness="0"
@@ -240,10 +241,10 @@
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
-                        </Border>
+                        </local:LiquidHoverBorder>
                     </Grid>
                 </Grid>
-            </Border>
+            </local:LiquidHoverBorder>
         </Grid>
-    </Border>
+    </local:LiquidHoverBorder>
 </Window>
