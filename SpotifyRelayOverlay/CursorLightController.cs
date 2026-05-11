@@ -15,6 +15,7 @@ public sealed class CursorLightController : IDisposable
 {
     private static readonly Duration FadeDuration = TimeSpan.FromMilliseconds(180);
     private static readonly IEasingFunction FadeEase = new QuadraticEase { EasingMode = EasingMode.EaseOut };
+    private static readonly WpfColor GreenLightTarget = WpfColor.FromRgb(0x1E, 0xD7, 0x60);
 
     private readonly FrameworkElement _surface;
     private readonly Action<WpfBrush> _setBackground;
@@ -30,8 +31,8 @@ public sealed class CursorLightController : IDisposable
         _surface = surface;
         _setBackground = setBackground;
         _baseColor = baseColor;
-        _centerColor = Lighten(baseColor, 0.15);
-        _middleColor = Lighten(baseColor, 0.07);
+        _centerColor = BrightenTowardGreen(baseColor, 0.15);
+        _middleColor = BrightenTowardGreen(baseColor, 0.07);
 
         _centerStop = new GradientStop(_baseColor, 0);
         _middleStop = new GradientStop(_baseColor, 0.38);
@@ -118,16 +119,16 @@ public sealed class CursorLightController : IDisposable
         return (WpfColor)System.Windows.Media.ColorConverter.ConvertFromString(value)!;
     }
 
-    private static WpfColor Lighten(WpfColor color, double amount)
+    private static WpfColor BrightenTowardGreen(WpfColor color, double amount)
     {
         return WpfColor.FromRgb(
-            LightenChannel(color.R, amount),
-            LightenChannel(color.G, amount),
-            LightenChannel(color.B, amount));
+            BlendChannel(color.R, GreenLightTarget.R, amount),
+            BlendChannel(color.G, GreenLightTarget.G, amount),
+            BlendChannel(color.B, GreenLightTarget.B, amount));
     }
 
-    private static byte LightenChannel(byte channel, double amount)
+    private static byte BlendChannel(byte current, byte target, double amount)
     {
-        return (byte)Math.Round(channel + (255 - channel) * amount);
+        return (byte)Math.Round(current + (target - current) * amount);
     }
 }
