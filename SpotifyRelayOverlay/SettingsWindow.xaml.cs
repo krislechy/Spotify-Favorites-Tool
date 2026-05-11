@@ -11,7 +11,6 @@ public partial class SettingsWindow : Window
     private string _favoriteHotkeyDisplayName;
     private uint _favoriteStatusHotkeyVirtualKey;
     private string _favoriteStatusHotkeyDisplayName;
-    private readonly CursorLiquidGradientController[] _cursorGradients;
 
     public SettingsWindow(SettingsStore settings, SpotifyAuthService auth)
     {
@@ -22,19 +21,6 @@ public partial class SettingsWindow : Window
         _favoriteHotkeyDisplayName = GetHotkeyDisplayName(_favoriteHotkeyVirtualKey, _settings.Current.LikeHotkeyDisplayName);
         _favoriteStatusHotkeyVirtualKey = _settings.Current.FavoriteStatusHotkeyVirtualKey;
         _favoriteStatusHotkeyDisplayName = GetHotkeyDisplayName(_favoriteStatusHotkeyVirtualKey, _settings.Current.FavoriteStatusHotkeyDisplayName);
-        _cursorGradients =
-        [
-            CursorLiquidGradientController.ForPanel(SettingsLayer, "#101512"),
-            CursorLiquidGradientController.ForBorder(FavoriteHotkeySettingsLayer, "#18201B"),
-            CursorLiquidGradientController.ForBorder(StatusSettingsLayer, "#18201B")
-        ];
-        Closed += (_, _) =>
-        {
-            foreach (var cursorGradient in _cursorGradients)
-            {
-                cursorGradient.Dispose();
-            }
-        };
 
         ClientIdBox.Text = _settings.Current.ClientId;
         RedirectUriBox.Text = SpotifyAuthService.RedirectUri;

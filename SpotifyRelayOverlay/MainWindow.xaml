@@ -61,8 +61,7 @@
         </Style>
     </Window.Resources>
 
-    <Border x:Name="ShellLayer"
-            Margin="8"
+    <Border Margin="8"
             CornerRadius="12"
             Background="#101512"
             BorderBrush="#2A3A31"
@@ -134,8 +133,7 @@
                 </StackPanel>
             </Grid>
 
-            <Border x:Name="ContentLayer"
-                    Grid.Row="1"
+            <Border Grid.Row="1"
                     Margin="12,10,12,12"
                     Padding="16"
                     CornerRadius="10"
@@ -155,8 +153,7 @@
                                FontWeight="SemiBold"
                                TextWrapping="Wrap" />
 
-                    <Border x:Name="StatusLayer"
-                            Grid.Row="1"
+                    <Border Grid.Row="1"
                             Margin="0,14,0,0"
                             Padding="12"
                             CornerRadius="8"
@@ -195,8 +192,7 @@
                                        FontSize="11" />
                         </DockPanel>
 
-                        <Border x:Name="ActivityLogLayer"
-                                Grid.Row="1"
+                        <Border Grid.Row="1"
                                 CornerRadius="8"
                                 Background="#111714"
                                 BorderBrush="#25342C"
@@ -248,7 +244,6 @@
                     </Grid>
                 </Grid>
             </Border>
-
         </Grid>
     </Border>
 </Window>
