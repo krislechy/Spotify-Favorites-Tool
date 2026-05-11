@@ -40,11 +40,11 @@ public class LiquidHoverBorder : Border
 
     private static readonly LiquidBlobSpec[] BlobSpecs =
     [
-        new(0.00, 0.00, 0.00, 0.00, 190, 190, 20, 14, 0.90, 0.035, 0.46, 17, 4.4, 1.05, 34, 24, 16, 2.60, 0.10, SpotifyGreen, 0.90, 0.52, 0.18, 0xB8, 0x70, 0x24),
-        new(-78, 42, 0.030, -0.020, 135, 135, 16, 22, 1.12, 0.050, 0.34, 11, 2.9, 0.78, 24, 18, 25, -3.35, 1.40, MintGreen, 0.60, 0.30, 0.11, 0x90, 0x54, 0x1E),
-        new(86, -56, -0.040, 0.032, 150, 150, 24, 18, 0.74, 0.045, 0.58, 8.5, 2.4, 1.16, 42, 28, 20, 2.95, 2.35, SpotifyGreen, 0.52, 0.27, 0.10, 0x88, 0x4C, 0x1C),
-        new(22, 88, 0.020, 0.045, 230, 230, 18, 26, 0.58, 0.030, 0.30, 6.2, 1.8, 0.58, 18, 14, 30, -2.15, 3.20, DeepGreen, 0.54, 0.25, 0.09, 0x72, 0x3C, 0x18),
-        new(-24, -104, -0.018, 0.055, 255, 255, 28, 16, 0.66, 0.026, 0.40, 9.4, 3.6, 0.72, 28, 32, 18, 3.70, 4.15, MintGreen, 0.30, 0.16, 0.07, 0x48, 0x2C, 0x14)
+        new(0.00, 0.00, 0.00, 0.00, 190, 190, 20, 14, 0.90, 0.035, 0.46, 17, 4.4, 1.05, 34, 46, 24, 16, 2.60, 0.10, SpotifyGreen, 0.90, 0.52, 0.18, 0xB8, 0x70, 0x24),
+        new(-78, 42, 0.030, -0.020, 135, 135, 16, 22, 1.12, 0.050, 0.34, 11, 2.9, 0.78, 24, 58, 18, 25, -3.35, 1.40, MintGreen, 0.60, 0.30, 0.11, 0x90, 0x54, 0x1E),
+        new(86, -56, -0.040, 0.032, 150, 150, 24, 18, 0.74, 0.045, 0.58, 8.5, 2.4, 1.16, 42, 64, 28, 20, 2.95, 2.35, SpotifyGreen, 0.52, 0.27, 0.10, 0x88, 0x4C, 0x1C),
+        new(22, 88, 0.020, 0.045, 230, 230, 18, 26, 0.58, 0.030, 0.30, 6.2, 1.8, 0.58, 18, 50, 14, 30, -2.15, 3.20, DeepGreen, 0.54, 0.25, 0.09, 0x72, 0x3C, 0x18),
+        new(-24, -104, -0.018, 0.055, 255, 255, 28, 16, 0.66, 0.026, 0.40, 9.4, 3.6, 0.72, 28, 72, 32, 18, 3.70, 4.15, MintGreen, 0.30, 0.16, 0.07, 0x48, 0x2C, 0x14)
     ];
 
     private WpfPoint _targetPoint;
@@ -168,13 +168,18 @@ public class LiquidHoverBorder : Border
                 + Math.Cos(orbitPhase * 1.83 + index) * spec.OrbitRadiusX * 0.22;
             var orbitY = Math.Sin(orbitPhase) * spec.OrbitRadiusY
                 + Math.Sin(orbitPhase * 1.31 + index * 0.7) * spec.OrbitRadiusY * 0.22;
+            var blurPhase = seconds * (Math.Abs(spec.OrbitSpeed) * 0.64 + spec.Speed * 0.52) + spec.OrbitPhase * 1.7;
+            var anchorBlurX = pressure * spec.AnchorBlur
+                * (Math.Cos(blurPhase) + Math.Sin(blurPhase * 1.53 + index) * 0.42);
+            var anchorBlurY = pressure * spec.AnchorBlur
+                * (Math.Sin(blurPhase * 0.91 + index * 0.6) + Math.Cos(blurPhase * 1.27) * 0.42);
             var pulse = 1 + Math.Sin(phase * 0.63 + index * 0.9) * spec.Pulse;
             var speedShrink = 1 - pressure * spec.SpeedShrink;
             var asynchronousWobble = 1 + pressure * Math.Sin(phase * 1.7 + index) * spec.Pulse * 2.7;
             var radiusScale = Math.Max(0.34, pulse * speedShrink * asynchronousWobble);
             var center = new WpfPoint(
-                pointer.X + spec.OffsetX + driftX + orbitX + normalX * bounds.Width * spec.ParallaxX,
-                pointer.Y + spec.OffsetY + driftY + orbitY + normalY * bounds.Height * spec.ParallaxY);
+                pointer.X + spec.OffsetX + driftX + orbitX + anchorBlurX + normalX * bounds.Width * spec.ParallaxX,
+                pointer.Y + spec.OffsetY + driftY + orbitY + anchorBlurY + normalY * bounds.Height * spec.ParallaxY);
 
             drawingContext.DrawEllipse(
                 blobBrushes[index],
@@ -427,6 +432,7 @@ public class LiquidHoverBorder : Border
         double SpeedRelease,
         double MotionGlow,
         double MotionTrail,
+        double AnchorBlur,
         double OrbitRadiusX,
         double OrbitRadiusY,
         double OrbitSpeed,
