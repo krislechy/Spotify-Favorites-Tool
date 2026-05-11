@@ -11,7 +11,7 @@ public partial class SettingsWindow : Window
     private string _favoriteHotkeyDisplayName;
     private uint _favoriteStatusHotkeyVirtualKey;
     private string _favoriteStatusHotkeyDisplayName;
-    private readonly CursorLightController[] _cursorLights;
+    private readonly CursorAuroraController[] _cursorAuroras;
 
     public SettingsWindow(SettingsStore settings, SpotifyAuthService auth)
     {
@@ -22,17 +22,17 @@ public partial class SettingsWindow : Window
         _favoriteHotkeyDisplayName = GetHotkeyDisplayName(_favoriteHotkeyVirtualKey, _settings.Current.LikeHotkeyDisplayName);
         _favoriteStatusHotkeyVirtualKey = _settings.Current.FavoriteStatusHotkeyVirtualKey;
         _favoriteStatusHotkeyDisplayName = GetHotkeyDisplayName(_favoriteStatusHotkeyVirtualKey, _settings.Current.FavoriteStatusHotkeyDisplayName);
-        _cursorLights =
+        _cursorAuroras =
         [
-            CursorLightController.ForPanel(SettingsLayer, "#101512"),
-            CursorLightController.ForBorder(FavoriteHotkeySettingsLayer, "#18201B"),
-            CursorLightController.ForBorder(StatusSettingsLayer, "#18201B")
+            CursorAuroraController.ForPanel(SettingsLayer, "#101512"),
+            CursorAuroraController.ForBorder(FavoriteHotkeySettingsLayer, "#18201B"),
+            CursorAuroraController.ForBorder(StatusSettingsLayer, "#18201B")
         ];
         Closed += (_, _) =>
         {
-            foreach (var cursorLight in _cursorLights)
+            foreach (var cursorAurora in _cursorAuroras)
             {
-                cursorLight.Dispose();
+                cursorAurora.Dispose();
             }
         };
 
