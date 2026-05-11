@@ -40,18 +40,21 @@ public class LiquidHoverBorder : Border
 
     private static readonly LiquidBlobSpec[] BlobSpecs =
     [
-        new(0.00, 0.00, 0.00, 0.00, 190, 190, 20, 14, 0.90, 0.035, SpotifyGreen, 0.90, 0.52, 0.18, 0xB8, 0x70, 0x24),
-        new(-78, 42, 0.030, -0.020, 135, 135, 16, 22, 1.12, 0.050, MintGreen, 0.60, 0.30, 0.11, 0x90, 0x54, 0x1E),
-        new(86, -56, -0.040, 0.032, 150, 150, 24, 18, 0.74, 0.045, SpotifyGreen, 0.52, 0.27, 0.10, 0x88, 0x4C, 0x1C),
-        new(22, 88, 0.020, 0.045, 230, 230, 18, 26, 0.58, 0.030, DeepGreen, 0.54, 0.25, 0.09, 0x72, 0x3C, 0x18),
-        new(-24, -104, -0.018, 0.055, 255, 255, 28, 16, 0.66, 0.026, MintGreen, 0.30, 0.16, 0.07, 0x48, 0x2C, 0x14)
+        new(0.00, 0.00, 0.00, 0.00, 190, 190, 20, 14, 0.90, 0.035, 0.34, 12, 3.6, SpotifyGreen, 0.90, 0.52, 0.18, 0xB8, 0x70, 0x24),
+        new(-78, 42, 0.030, -0.020, 135, 135, 16, 22, 1.12, 0.050, 0.24, 7.8, 2.2, MintGreen, 0.60, 0.30, 0.11, 0x90, 0x54, 0x1E),
+        new(86, -56, -0.040, 0.032, 150, 150, 24, 18, 0.74, 0.045, 0.42, 5.2, 1.7, SpotifyGreen, 0.52, 0.27, 0.10, 0x88, 0x4C, 0x1C),
+        new(22, 88, 0.020, 0.045, 230, 230, 18, 26, 0.58, 0.030, 0.18, 3.8, 1.2, DeepGreen, 0.54, 0.25, 0.09, 0x72, 0x3C, 0x18),
+        new(-24, -104, -0.018, 0.055, 255, 255, 28, 16, 0.66, 0.026, 0.28, 6.4, 2.8, MintGreen, 0.30, 0.16, 0.07, 0x48, 0x2C, 0x14)
     ];
 
     private WpfPoint _targetPoint;
     private WpfPoint _currentPoint;
+    private WpfPoint _lastVelocityPoint;
     private long _animationStartedAt;
+    private long _lastFrameAt;
     private WpfBrush? _baseBrush;
     private WpfBrush[]? _blobBrushes;
+    private readonly double[] _blobSpeedPressure = new double[BlobSpecs.Length];
     private bool _hasPoint;
     private bool _isRendering;
 
@@ -150,12 +153,16 @@ public class LiquidHoverBorder : Border
         for (var index = 0; index < BlobSpecs.Length; index++)
         {
             var spec = BlobSpecs[index];
+            var pressure = _blobSpeedPressure[index];
             var phase = seconds * spec.Speed + index * 1.618;
             var driftX = Math.Sin(phase) * spec.DriftX
                 + Math.Sin(phase * 0.47 + 1.4) * spec.DriftX * 0.38;
             var driftY = Math.Cos(phase * 0.82 + 0.7) * spec.DriftY
                 + Math.Sin(phase * 0.39 + 2.1) * spec.DriftY * 0.32;
             var pulse = 1 + Math.Sin(phase * 0.63 + index * 0.9) * spec.Pulse;
+            var speedShrink = 1 - pressure * spec.SpeedShrink;
+            var asynchronousWobble = 1 + pressure * Math.Sin(phase * 1.7 + index) * spec.Pulse * 1.8;
+            var radiusScale = Math.Max(0.50, pulse * speedShrink * asynchronousWobble);
             var center = new WpfPoint(
                 pointer.X + spec.OffsetX + driftX + normalX * bounds.Width * spec.ParallaxX,
                 pointer.Y + spec.OffsetY + driftY + normalY * bounds.Height * spec.ParallaxY);
@@ -164,8 +171,8 @@ public class LiquidHoverBorder : Border
                 blobBrushes[index],
                 null,
                 center,
-                spec.RadiusX * pulse,
-                spec.RadiusY * pulse);
+                spec.RadiusX * radiusScale,
+                spec.RadiusY * radiusScale);
         }
     }
 
@@ -204,7 +211,9 @@ public class LiquidHoverBorder : Border
         if (!_hasPoint || snap)
         {
             _currentPoint = _targetPoint;
+            _lastVelocityPoint = _targetPoint;
             _hasPoint = true;
+            ClearSpeedPressure();
         }
     }
 
@@ -226,6 +235,8 @@ public class LiquidHoverBorder : Border
 
         CompositionTarget.Rendering += CompositionTarget_Rendering;
         _animationStartedAt = Stopwatch.GetTimestamp();
+        _lastFrameAt = _animationStartedAt;
+        _lastVelocityPoint = _targetPoint;
         _isRendering = true;
     }
 
@@ -242,6 +253,11 @@ public class LiquidHoverBorder : Border
 
     private void CompositionTarget_Rendering(object? sender, EventArgs e)
     {
+        var now = Stopwatch.GetTimestamp();
+        var elapsed = Stopwatch.GetElapsedTime(_lastFrameAt, now).TotalSeconds;
+        _lastFrameAt = now;
+        var frameSeconds = Math.Clamp(elapsed, 1.0 / 240, 1.0 / 20);
+
         var distanceX = _targetPoint.X - _currentPoint.X;
         var distanceY = _targetPoint.Y - _currentPoint.Y;
         var distance = Math.Sqrt(distanceX * distanceX + distanceY * distanceY);
@@ -258,12 +274,37 @@ public class LiquidHoverBorder : Border
             _currentPoint = _targetPoint;
         }
 
+        UpdateSpeedPressure(frameSeconds);
         InvalidateVisual();
 
         if (!IsMouseOver && HoverProgress <= 0.01 && !pointerMoved)
         {
             StopRendering();
         }
+    }
+
+    private void UpdateSpeedPressure(double frameSeconds)
+    {
+        var speedX = _targetPoint.X - _lastVelocityPoint.X;
+        var speedY = _targetPoint.Y - _lastVelocityPoint.Y;
+        var pixelsPerSecond = Math.Sqrt(speedX * speedX + speedY * speedY) / frameSeconds;
+        var targetPressure = Math.Clamp(pixelsPerSecond / 1450, 0, 1);
+        _lastVelocityPoint = _targetPoint;
+
+        for (var index = 0; index < BlobSpecs.Length; index++)
+        {
+            var spec = BlobSpecs[index];
+            var response = targetPressure > _blobSpeedPressure[index]
+                ? spec.SpeedAttack
+                : spec.SpeedRelease;
+            var blend = 1 - Math.Exp(-response * frameSeconds);
+            _blobSpeedPressure[index] += (targetPressure - _blobSpeedPressure[index]) * blend;
+        }
+    }
+
+    private void ClearSpeedPressure()
+    {
+        Array.Clear(_blobSpeedPressure);
     }
 
     private WpfPen? CreateBorderPen(double thickness)
@@ -330,6 +371,9 @@ public class LiquidHoverBorder : Border
         double DriftY,
         double Speed,
         double Pulse,
+        double SpeedShrink,
+        double SpeedAttack,
+        double SpeedRelease,
         WpfColor TargetColor,
         double CoreStrength,
         double BodyStrength,
