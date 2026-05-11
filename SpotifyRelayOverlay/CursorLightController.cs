@@ -22,22 +22,30 @@ public sealed class CursorLightController : IDisposable
     private readonly FrameworkElement _surface;
     private readonly Action<WpfBrush> _setBackground;
     private readonly RadialGradientBrush _brush;
-    private readonly GradientStop _centerStop;
-    private readonly GradientStop _middleStop;
+    private readonly GradientStop _coreStop;
+    private readonly GradientStop _sheenStop;
+    private readonly GradientStop _diffuseStop;
+    private readonly GradientStop _tailStop;
     private readonly WpfColor _baseColor;
-    private readonly WpfColor _centerColor;
-    private readonly WpfColor _middleColor;
+    private readonly WpfColor _coreColor;
+    private readonly WpfColor _sheenColor;
+    private readonly WpfColor _diffuseColor;
+    private readonly WpfColor _tailColor;
 
     private CursorLightController(FrameworkElement surface, Action<WpfBrush> setBackground, WpfColor baseColor)
     {
         _surface = surface;
         _setBackground = setBackground;
         _baseColor = baseColor;
-        _centerColor = BrightenTowardGreen(baseColor, 0.13);
-        _middleColor = BrightenTowardGreen(baseColor, 0.045);
+        _coreColor = BrightenTowardGreen(baseColor, 0.15);
+        _sheenColor = BrightenTowardGreen(baseColor, 0.09);
+        _diffuseColor = BrightenTowardGreen(baseColor, 0.04);
+        _tailColor = BrightenTowardGreen(baseColor, 0.012);
 
-        _centerStop = new GradientStop(_baseColor, 0);
-        _middleStop = new GradientStop(_baseColor, 0.68);
+        _coreStop = new GradientStop(_baseColor, 0);
+        _sheenStop = new GradientStop(_baseColor, 0.28);
+        _diffuseStop = new GradientStop(_baseColor, 0.76);
+        _tailStop = new GradientStop(_baseColor, 0.94);
         _brush = new RadialGradientBrush
         {
             MappingMode = BrushMappingMode.Absolute,
@@ -46,8 +54,10 @@ public sealed class CursorLightController : IDisposable
             RadiusX = LightRadius,
             RadiusY = LightRadius
         };
-        _brush.GradientStops.Add(_centerStop);
-        _brush.GradientStops.Add(_middleStop);
+        _brush.GradientStops.Add(_coreStop);
+        _brush.GradientStops.Add(_sheenStop);
+        _brush.GradientStops.Add(_diffuseStop);
+        _brush.GradientStops.Add(_tailStop);
         _brush.GradientStops.Add(new GradientStop(_baseColor, 1));
         _setBackground(_brush);
 
@@ -71,21 +81,21 @@ public sealed class CursorLightController : IDisposable
         _surface.MouseEnter -= Surface_MouseEnter;
         _surface.MouseLeave -= Surface_MouseLeave;
         _surface.MouseMove -= Surface_MouseMove;
-        _centerStop.BeginAnimation(GradientStop.ColorProperty, null);
-        _middleStop.BeginAnimation(GradientStop.ColorProperty, null);
+        ClearAnimation(_coreStop);
+        ClearAnimation(_sheenStop);
+        ClearAnimation(_diffuseStop);
+        ClearAnimation(_tailStop);
     }
 
     private void Surface_MouseEnter(object sender, InputMouseEventArgs e)
     {
         MoveTo(e.GetPosition(_surface));
-        AnimateColor(_centerStop, _centerColor);
-        AnimateColor(_middleStop, _middleColor);
+        AnimateMaterial(_coreColor, _sheenColor, _diffuseColor, _tailColor);
     }
 
     private void Surface_MouseLeave(object sender, InputMouseEventArgs e)
     {
-        AnimateColor(_centerStop, _baseColor);
-        AnimateColor(_middleStop, _baseColor);
+        AnimateMaterial(_baseColor, _baseColor, _baseColor, _baseColor);
     }
 
     private void Surface_MouseMove(object sender, InputMouseEventArgs e)
@@ -109,6 +119,19 @@ public sealed class CursorLightController : IDisposable
             EasingFunction = FadeEase
         };
         stop.BeginAnimation(GradientStop.ColorProperty, animation);
+    }
+
+    private void AnimateMaterial(WpfColor core, WpfColor sheen, WpfColor diffuse, WpfColor tail)
+    {
+        AnimateColor(_coreStop, core);
+        AnimateColor(_sheenStop, sheen);
+        AnimateColor(_diffuseStop, diffuse);
+        AnimateColor(_tailStop, tail);
+    }
+
+    private static void ClearAnimation(GradientStop stop)
+    {
+        stop.BeginAnimation(GradientStop.ColorProperty, null);
     }
 
     private static WpfColor ParseColor(string value)
