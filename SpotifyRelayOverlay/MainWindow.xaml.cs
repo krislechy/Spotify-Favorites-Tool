@@ -19,7 +19,7 @@ public partial class MainWindow : Window
     private readonly ToastPresenter _toasts = new();
     private readonly AsyncActionGate _userActionGate = new();
     private readonly AsyncActionGate _trackMonitorGate = new();
-    private readonly CursorAuroraController[] _cursorAuroras;
+    private readonly CursorLiquidGradientController[] _cursorGradients;
 
     private SettingsWindow? _settingsWindow;
     private HwndSource? _source;
@@ -34,12 +34,12 @@ public partial class MainWindow : Window
         _auth = new SpotifyAuthService(_settings);
         _spotify = new SpotifyClient(_auth);
         _favorites = new FavoriteTrackService(_spotify);
-        _cursorAuroras =
+        _cursorGradients =
         [
-            CursorAuroraController.ForBorder(ShellLayer, "#101512"),
-            CursorAuroraController.ForBorder(ContentLayer, "#141B17"),
-            CursorAuroraController.ForBorder(StatusLayer, "#18201B"),
-            CursorAuroraController.ForBorder(ActivityLogLayer, "#111714")
+            CursorLiquidGradientController.ForBorder(ShellLayer, "#101512"),
+            CursorLiquidGradientController.ForBorder(ContentLayer, "#141B17"),
+            CursorLiquidGradientController.ForBorder(StatusLayer, "#18201B"),
+            CursorLiquidGradientController.ForBorder(ActivityLogLayer, "#111714")
         ];
         ActivityLogList.ItemsSource = _activityLog.Entries;
         _trayIcon = new TrayIconController(Dispatcher, BringMainWindowToFront, ShowSettingsWindow, ExitApplication);
@@ -77,9 +77,9 @@ public partial class MainWindow : Window
         _source?.RemoveHook(WndProc);
         _trayIcon?.Dispose();
         _toasts.Dispose();
-        foreach (var cursorAurora in _cursorAuroras)
+        foreach (var cursorGradient in _cursorGradients)
         {
-            cursorAurora.Dispose();
+            cursorGradient.Dispose();
         }
     }
 

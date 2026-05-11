@@ -12,36 +12,40 @@ using WindowsPoint = System.Windows.Point;
 
 namespace SpotifyRelayOverlay;
 
-public sealed class CursorAuroraController : IDisposable
+public sealed class CursorLiquidGradientController : IDisposable
 {
-    private static readonly Duration FadeDuration = TimeSpan.FromMilliseconds(220);
+    private static readonly Duration FadeDuration = TimeSpan.FromMilliseconds(190);
+    private static readonly Duration MoveDuration = TimeSpan.FromMilliseconds(120);
     private static readonly IEasingFunction FadeEase = new QuadraticEase { EasingMode = EasingMode.EaseOut };
+    private static readonly IEasingFunction MoveEase = new CubicEase { EasingMode = EasingMode.EaseOut };
     private static readonly WpfColor SpotifyGreen = WpfColor.FromRgb(0x1E, 0xD7, 0x60);
     private static readonly WpfColor MintGreen = WpfColor.FromRgb(0x8D, 0xE6, 0xB1);
+    private static readonly WpfColor DeepGreen = WpfColor.FromRgb(0x10, 0x8B, 0x46);
 
     private readonly FrameworkElement _surface;
     private readonly Action<WpfBrush> _setBackground;
     private readonly DrawingBrush _backgroundBrush;
     private readonly RectangleGeometry _surfaceGeometry = new();
-    private readonly AuroraBand[] _bands;
+    private readonly LiquidBlob[] _blobs;
 
-    private CursorAuroraController(FrameworkElement surface, Action<WpfBrush> setBackground, WpfColor baseColor)
+    private CursorLiquidGradientController(FrameworkElement surface, Action<WpfBrush> setBackground, WpfColor baseColor)
     {
         _surface = surface;
         _setBackground = setBackground;
-        _bands =
+        _blobs =
         [
-            new AuroraBand(baseColor, SpotifyGreen, 0.58, 0.34, 0.12, 245, 92, -18, 0, 0, -0.12, -0.05),
-            new AuroraBand(baseColor, MintGreen, 0.30, 0.16, 0.06, 205, 78, 24, -92, 54, 0.10, 0.12),
-            new AuroraBand(baseColor, SpotifyGreen, 0.22, 0.12, 0.045, 285, 105, 10, 118, -62, -0.16, 0.08),
-            new AuroraBand(baseColor, SpotifyGreen, 0.16, 0.08, 0.03, 170, 64, -36, 42, 86, 0.06, -0.15)
+            new LiquidBlob(baseColor, SpotifyGreen, 0.84, 0.42, 0.12, 172, 0, 0, 0.00, 0.00, 22, -10),
+            new LiquidBlob(baseColor, MintGreen, 0.54, 0.24, 0.075, 128, -72, 38, 0.045, -0.020, -18, 14),
+            new LiquidBlob(baseColor, SpotifyGreen, 0.40, 0.18, 0.055, 146, 86, -52, -0.055, 0.040, 12, 20),
+            new LiquidBlob(baseColor, DeepGreen, 0.50, 0.22, 0.060, 205, 22, 74, 0.030, 0.055, -28, -8),
+            new LiquidBlob(baseColor, MintGreen, 0.24, 0.12, 0.040, 235, -18, -96, -0.025, 0.070, 8, -24)
         ];
 
         var drawingGroup = new DrawingGroup();
         drawingGroup.Children.Add(new GeometryDrawing(new SolidColorBrush(baseColor), null, _surfaceGeometry));
-        foreach (var band in _bands)
+        foreach (var blob in _blobs)
         {
-            drawingGroup.Children.Add(band.CreateDrawing(_surfaceGeometry));
+            drawingGroup.Children.Add(blob.CreateDrawing(_surfaceGeometry));
         }
 
         _backgroundBrush = new DrawingBrush(drawingGroup)
@@ -60,14 +64,14 @@ public sealed class CursorAuroraController : IDisposable
         _surface.MouseMove += Surface_MouseMove;
     }
 
-    public static CursorAuroraController ForBorder(Border border, string baseColor)
+    public static CursorLiquidGradientController ForBorder(Border border, string baseColor)
     {
-        return new CursorAuroraController(border, brush => border.Background = brush, ParseColor(baseColor));
+        return new CursorLiquidGradientController(border, brush => border.Background = brush, ParseColor(baseColor));
     }
 
-    public static CursorAuroraController ForPanel(WpfPanel panel, string baseColor)
+    public static CursorLiquidGradientController ForPanel(WpfPanel panel, string baseColor)
     {
-        return new CursorAuroraController(panel, brush => panel.Background = brush, ParseColor(baseColor));
+        return new CursorLiquidGradientController(panel, brush => panel.Background = brush, ParseColor(baseColor));
     }
 
     public void Dispose()
@@ -76,9 +80,9 @@ public sealed class CursorAuroraController : IDisposable
         _surface.MouseEnter -= Surface_MouseEnter;
         _surface.MouseLeave -= Surface_MouseLeave;
         _surface.MouseMove -= Surface_MouseMove;
-        foreach (var band in _bands)
+        foreach (var blob in _blobs)
         {
-            band.ClearAnimations();
+            blob.ClearAnimations();
         }
     }
 
@@ -89,24 +93,24 @@ public sealed class CursorAuroraController : IDisposable
 
     private void Surface_MouseEnter(object sender, InputMouseEventArgs e)
     {
-        MoveTo(e.GetPosition(_surface));
-        foreach (var band in _bands)
+        MoveTo(e.GetPosition(_surface), animate: false);
+        foreach (var blob in _blobs)
         {
-            band.Show();
+            blob.Show();
         }
     }
 
     private void Surface_MouseLeave(object sender, InputMouseEventArgs e)
     {
-        foreach (var band in _bands)
+        foreach (var blob in _blobs)
         {
-            band.Hide();
+            blob.Hide();
         }
     }
 
     private void Surface_MouseMove(object sender, InputMouseEventArgs e)
     {
-        MoveTo(e.GetPosition(_surface));
+        MoveTo(e.GetPosition(_surface), animate: true);
     }
 
     private void UpdateBounds()
@@ -119,16 +123,16 @@ public sealed class CursorAuroraController : IDisposable
         _backgroundBrush.Viewport = bounds;
     }
 
-    private void MoveTo(WindowsPoint cursorPosition)
+    private void MoveTo(WindowsPoint cursorPosition, bool animate)
     {
         var size = new WpfSize(Math.Max(1, _surface.ActualWidth), Math.Max(1, _surface.ActualHeight));
         var cursor = new WindowsPoint(
             Math.Clamp(cursorPosition.X, 0, size.Width),
             Math.Clamp(cursorPosition.Y, 0, size.Height));
 
-        foreach (var band in _bands)
+        foreach (var blob in _blobs)
         {
-            band.Move(cursor, size);
+            blob.Move(cursor, size, animate);
         }
     }
 
@@ -137,10 +141,9 @@ public sealed class CursorAuroraController : IDisposable
         return (WpfColor)System.Windows.Media.ColorConverter.ConvertFromString(value)!;
     }
 
-    private sealed class AuroraBand
+    private sealed class LiquidBlob
     {
         private readonly RadialGradientBrush _brush;
-        private readonly RotateTransform _rotation;
         private readonly GradientStop _coreStop;
         private readonly GradientStop _bodyStop;
         private readonly GradientStop _tailStop;
@@ -150,47 +153,51 @@ public sealed class CursorAuroraController : IDisposable
         private readonly WpfColor _visibleCore;
         private readonly WpfColor _visibleBody;
         private readonly WpfColor _visibleTail;
+        private readonly double _radius;
         private readonly double _offsetX;
         private readonly double _offsetY;
         private readonly double _parallaxX;
         private readonly double _parallaxY;
+        private readonly double _originDriftX;
+        private readonly double _originDriftY;
 
-        public AuroraBand(
+        public LiquidBlob(
             WpfColor baseColor,
             WpfColor targetColor,
             double coreStrength,
             double bodyStrength,
             double tailStrength,
-            double radiusX,
-            double radiusY,
-            double angle,
+            double radius,
             double offsetX,
             double offsetY,
             double parallaxX,
-            double parallaxY)
+            double parallaxY,
+            double originDriftX,
+            double originDriftY)
         {
+            _radius = radius;
             _offsetX = offsetX;
             _offsetY = offsetY;
             _parallaxX = parallaxX;
             _parallaxY = parallaxY;
+            _originDriftX = originDriftX;
+            _originDriftY = originDriftY;
             _hiddenCore = ToTransparent(baseColor);
             _hiddenBody = ToTransparent(baseColor);
             _hiddenTail = ToTransparent(baseColor);
-            _visibleCore = CreateAuroraColor(baseColor, targetColor, coreStrength, 0x9C);
-            _visibleBody = CreateAuroraColor(baseColor, targetColor, bodyStrength, 0x58);
-            _visibleTail = CreateAuroraColor(baseColor, targetColor, tailStrength, 0x24);
+            _visibleCore = CreateLiquidColor(baseColor, targetColor, coreStrength, 0xD6);
+            _visibleBody = CreateLiquidColor(baseColor, targetColor, bodyStrength, 0x72);
+            _visibleTail = CreateLiquidColor(baseColor, targetColor, tailStrength, 0x2C);
             _coreStop = new GradientStop(_hiddenCore, 0);
-            _bodyStop = new GradientStop(_hiddenBody, 0.42);
-            _tailStop = new GradientStop(_hiddenTail, 0.82);
-            _rotation = new RotateTransform(angle);
+            _bodyStop = new GradientStop(_hiddenBody, 0.36);
+            _tailStop = new GradientStop(_hiddenTail, 0.74);
             _brush = new RadialGradientBrush
             {
                 MappingMode = BrushMappingMode.Absolute,
                 Center = new WindowsPoint(0, 0),
                 GradientOrigin = new WindowsPoint(0, 0),
-                RadiusX = radiusX,
-                RadiusY = radiusY,
-                Transform = _rotation
+                RadiusX = _radius,
+                RadiusY = _radius
             };
             _brush.GradientStops.Add(_coreStop);
             _brush.GradientStops.Add(_bodyStop);
@@ -203,34 +210,42 @@ public sealed class CursorAuroraController : IDisposable
             return new GeometryDrawing(_brush, null, geometry);
         }
 
-        public void Move(WindowsPoint cursor, WpfSize size)
+        public void Move(WindowsPoint cursor, WpfSize size, bool animate)
         {
             var normalX = cursor.X / size.Width - 0.5;
             var normalY = cursor.Y / size.Height - 0.5;
             var center = new WindowsPoint(
                 cursor.X + _offsetX + normalX * size.Width * _parallaxX,
                 cursor.Y + _offsetY + normalY * size.Height * _parallaxY);
+            var origin = new WindowsPoint(
+                center.X + _originDriftX - normalX * 26,
+                center.Y + _originDriftY - normalY * 22);
 
+            if (animate)
+            {
+                AnimatePoint(RadialGradientBrush.CenterProperty, center);
+                AnimatePoint(RadialGradientBrush.GradientOriginProperty, origin);
+                return;
+            }
+
+            _brush.BeginAnimation(RadialGradientBrush.CenterProperty, null);
+            _brush.BeginAnimation(RadialGradientBrush.GradientOriginProperty, null);
             _brush.Center = center;
-            _brush.GradientOrigin = new WindowsPoint(
-                center.X - normalX * 32,
-                center.Y - normalY * 24);
-            _rotation.CenterX = center.X;
-            _rotation.CenterY = center.Y;
+            _brush.GradientOrigin = origin;
         }
 
         public void Show()
         {
-            Animate(_coreStop, _visibleCore);
-            Animate(_bodyStop, _visibleBody);
-            Animate(_tailStop, _visibleTail);
+            AnimateColor(_coreStop, _visibleCore);
+            AnimateColor(_bodyStop, _visibleBody);
+            AnimateColor(_tailStop, _visibleTail);
         }
 
         public void Hide()
         {
-            Animate(_coreStop, _hiddenCore);
-            Animate(_bodyStop, _hiddenBody);
-            Animate(_tailStop, _hiddenTail);
+            AnimateColor(_coreStop, _hiddenCore);
+            AnimateColor(_bodyStop, _hiddenBody);
+            AnimateColor(_tailStop, _hiddenTail);
         }
 
         public void ClearAnimations()
@@ -238,15 +253,26 @@ public sealed class CursorAuroraController : IDisposable
             ClearAnimation(_coreStop);
             ClearAnimation(_bodyStop);
             ClearAnimation(_tailStop);
+            _brush.BeginAnimation(RadialGradientBrush.CenterProperty, null);
+            _brush.BeginAnimation(RadialGradientBrush.GradientOriginProperty, null);
         }
 
-        private static void Animate(GradientStop stop, WpfColor color)
+        private void AnimatePoint(DependencyProperty property, WindowsPoint target)
+        {
+            var animation = new PointAnimation(target, MoveDuration)
+            {
+                EasingFunction = MoveEase
+            };
+            _brush.BeginAnimation(property, animation, HandoffBehavior.SnapshotAndReplace);
+        }
+
+        private static void AnimateColor(GradientStop stop, WpfColor color)
         {
             var animation = new ColorAnimation(color, FadeDuration)
             {
                 EasingFunction = FadeEase
             };
-            stop.BeginAnimation(GradientStop.ColorProperty, animation);
+            stop.BeginAnimation(GradientStop.ColorProperty, animation, HandoffBehavior.SnapshotAndReplace);
         }
 
         private static void ClearAnimation(GradientStop stop)
@@ -254,7 +280,7 @@ public sealed class CursorAuroraController : IDisposable
             stop.BeginAnimation(GradientStop.ColorProperty, null);
         }
 
-        private static WpfColor CreateAuroraColor(WpfColor baseColor, WpfColor targetColor, double amount, byte alpha)
+        private static WpfColor CreateLiquidColor(WpfColor baseColor, WpfColor targetColor, double amount, byte alpha)
         {
             var color = WpfColor.FromRgb(
                 BlendChannel(baseColor.R, targetColor.R, amount),
