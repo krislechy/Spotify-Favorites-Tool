@@ -192,65 +192,24 @@ public partial class ToastWindow : Window
         HeartFill.Opacity = 1;
         HeartScale.ScaleX = 1;
         HeartScale.ScaleY = 1;
-        BulletHole.Opacity = 0;
-        BulletRing.Opacity = 0;
-        BulletHoleScale.ScaleX = 0.2;
-        BulletHoleScale.ScaleY = 0.2;
-        BulletRingScale.ScaleX = 0.35;
-        BulletRingScale.ScaleY = 0.35;
-        CrackScale.ScaleX = 0.15;
-        CrackScale.ScaleY = 0.15;
 
         dryingBrush.BeginAnimation(
             SolidColorBrush.ColorProperty,
-            new ColorAnimation(MediaColor.FromRgb(30, 215, 96), MediaColor.FromRgb(25, 31, 27), new Duration(TimeSpan.FromMilliseconds(520)))
+            new ColorAnimation(MediaColor.FromRgb(30, 215, 96), MediaColor.FromRgb(132, 154, 138), new Duration(TimeSpan.FromMilliseconds(430)))
             {
                 BeginTime = TimeSpan.FromMilliseconds(60),
                 EasingFunction = EaseOut()
             });
 
-        AnimateKeyFrames(HeartScale, ScaleTransform.ScaleXProperty, (1, 0), (1.04, 120), (0.96, 260), (1, 420));
-        AnimateKeyFrames(HeartScale, ScaleTransform.ScaleYProperty, (1, 0), (1.04, 120), (0.96, 260), (1, 420));
-        Animate(BulletHole, UIElement.OpacityProperty, 0, 1, 80, 130);
-        Animate(BulletHoleScale, ScaleTransform.ScaleXProperty, 0.2, 1, 130, 130, EaseOut());
-        Animate(BulletHoleScale, ScaleTransform.ScaleYProperty, 0.2, 1, 130, 130, EaseOut());
-        AnimateKeyFrames(BulletRing, UIElement.OpacityProperty, (0, 120), (0.9, 190), (0.28, 430), (0, 780));
-        AnimateKeyFrames(BulletRingScale, ScaleTransform.ScaleXProperty, (0.35, 120), (1.1, 260), (1.65, 780));
-        AnimateKeyFrames(BulletRingScale, ScaleTransform.ScaleYProperty, (0.35, 120), (1.1, 260), (1.65, 780));
-        AnimateKeyFrames(CrackLines, UIElement.OpacityProperty, (0, 230), (1, 360), (0.82, 920), (0, 1280));
-        AnimateKeyFrames(CrackScale, ScaleTransform.ScaleXProperty, (0.15, 230), (1, 470), (1.08, 1280));
-        AnimateKeyFrames(CrackScale, ScaleTransform.ScaleYProperty, (0.15, 230), (1, 470), (1.08, 1280));
-        Animate(HeartFill, UIElement.OpacityProperty, 1, 0, 120, 650);
-        Animate(BulletHole, UIElement.OpacityProperty, 1, 0, 180, 760);
+        Animate(HeartScale, ScaleTransform.ScaleXProperty, 1, 0.9, 420, 80, EaseInOut());
+        Animate(HeartScale, ScaleTransform.ScaleYProperty, 1, 0.76, 420, 80, EaseInOut());
+        Animate(CrackLines, UIElement.OpacityProperty, 0, 0.92, 120, 320);
+        Animate(HeartFill, UIElement.OpacityProperty, 1, 0, 180, 560);
+        Animate(CrackLines, UIElement.OpacityProperty, 0.92, 0, 160, 600);
 
-        AnimateBrokenPiece(HeartPieceLeft, LeftPieceTranslate, LeftPieceRotate, -12, -6, -18, 620);
-        AnimateBrokenPiece(HeartPieceRight, RightPieceTranslate, RightPieceRotate, 12, -4, 18, 640);
-        AnimateBrokenPiece(HeartPieceCenter, CenterPieceTranslate, CenterPieceRotate, 1, 13, 7, 660);
-        AnimateBrokenPiece(HeartPieceTop, TopPieceTranslate, TopPieceRotate, -1, -13, -7, 610);
-        AnimateBrokenPiece(HeartPieceLowerLeft, LowerLeftPieceTranslate, LowerLeftPieceRotate, -14, 11, -24, 700);
-        AnimateBrokenPiece(HeartPieceLowerRight, LowerRightPieceTranslate, LowerRightPieceRotate, 14, 11, 24, 720);
-    }
-
-    private void AnimateAsh(UIElement ash, TranslateTransform translate, double x, double y, int delayMs)
-    {
-        ash.Opacity = 0;
-        translate.X = 0;
-        translate.Y = 0;
-
-        AnimateKeyFrames(ash, UIElement.OpacityProperty, (0, delayMs), (0.82, delayMs + 120), (0, delayMs + 780));
-        Animate(translate, TranslateTransform.XProperty, 0, x, 760, delayMs, EaseOut());
-        Animate(translate, TranslateTransform.YProperty, 0, y, 760, delayMs, EaseOut());
-    }
-
-    private void AnimateDust(UIElement dust, TranslateTransform translate, double x, double y, int delayMs)
-    {
-        dust.Opacity = 0;
-        translate.X = 0;
-        translate.Y = 0;
-
-        AnimateKeyFrames(dust, UIElement.OpacityProperty, (0, delayMs), (0.76, delayMs + 100), (0.42, delayMs + 420), (0, delayMs + 900));
-        Animate(translate, TranslateTransform.XProperty, 0, x, 900, delayMs, EaseOut());
-        Animate(translate, TranslateTransform.YProperty, 0, y, 900, delayMs, EaseOut());
+        AnimateBrokenPiece(HeartPieceLeft, LeftPieceTranslate, LeftPieceRotate, -10, -3, -18, 500);
+        AnimateBrokenPiece(HeartPieceRight, RightPieceTranslate, RightPieceRotate, 10, 1, 20, 540);
+        AnimateBrokenPiece(HeartPieceCenter, CenterPieceTranslate, CenterPieceRotate, -1, 9, 8, 580);
     }
 
     private void AnimateBrokenPiece(UIElement piece, TranslateTransform translate, RotateTransform rotate, double x, double y, double angle, int delayMs)
@@ -272,64 +231,32 @@ public partial class ToastWindow : Window
         FavoriteIconCanvas.Visibility = Visibility.Visible;
 
         DropShape.BeginAnimation(UIElement.OpacityProperty, null);
-        DarkMist.BeginAnimation(UIElement.OpacityProperty, null);
         HeartGlow.BeginAnimation(UIElement.OpacityProperty, null);
         SparkleTop.BeginAnimation(UIElement.OpacityProperty, null);
         SparkleLeft.BeginAnimation(UIElement.OpacityProperty, null);
         SparkleRight.BeginAnimation(UIElement.OpacityProperty, null);
-        DustOne.BeginAnimation(UIElement.OpacityProperty, null);
-        DustTwo.BeginAnimation(UIElement.OpacityProperty, null);
-        DustThree.BeginAnimation(UIElement.OpacityProperty, null);
-        DustFour.BeginAnimation(UIElement.OpacityProperty, null);
-        DustFive.BeginAnimation(UIElement.OpacityProperty, null);
-        DustSix.BeginAnimation(UIElement.OpacityProperty, null);
-        AshOne.BeginAnimation(UIElement.OpacityProperty, null);
-        AshTwo.BeginAnimation(UIElement.OpacityProperty, null);
-        AshThree.BeginAnimation(UIElement.OpacityProperty, null);
         HeartFill.BeginAnimation(UIElement.OpacityProperty, null);
         HeartOutline.BeginAnimation(UIElement.OpacityProperty, null);
         CrackLines.BeginAnimation(UIElement.OpacityProperty, null);
-        BulletHole.BeginAnimation(UIElement.OpacityProperty, null);
-        BulletRing.BeginAnimation(UIElement.OpacityProperty, null);
         HeartPieceLeft.BeginAnimation(UIElement.OpacityProperty, null);
         HeartPieceRight.BeginAnimation(UIElement.OpacityProperty, null);
         HeartPieceCenter.BeginAnimation(UIElement.OpacityProperty, null);
-        HeartPieceTop.BeginAnimation(UIElement.OpacityProperty, null);
-        HeartPieceLowerLeft.BeginAnimation(UIElement.OpacityProperty, null);
-        HeartPieceLowerRight.BeginAnimation(UIElement.OpacityProperty, null);
 
         DropShape.Opacity = 0;
-        DarkMist.Opacity = 0;
         HeartGlow.Opacity = 0;
         SparkleTop.Opacity = 0;
         SparkleLeft.Opacity = 0;
         SparkleRight.Opacity = 0;
-        DustOne.Opacity = 0;
-        DustTwo.Opacity = 0;
-        DustThree.Opacity = 0;
-        DustFour.Opacity = 0;
-        DustFive.Opacity = 0;
-        DustSix.Opacity = 0;
-        AshOne.Opacity = 0;
-        AshTwo.Opacity = 0;
-        AshThree.Opacity = 0;
         HeartFill.Opacity = 0;
         HeartOutline.Opacity = 0;
         CrackLines.Opacity = 0;
-        BulletHole.Opacity = 0;
-        BulletRing.Opacity = 0;
         HeartPieceLeft.Opacity = 0;
         HeartPieceRight.Opacity = 0;
         HeartPieceCenter.Opacity = 0;
-        HeartPieceTop.Opacity = 0;
-        HeartPieceLowerLeft.Opacity = 0;
-        HeartPieceLowerRight.Opacity = 0;
 
         DropScale.ScaleX = 0.25;
         DropScale.ScaleY = 0.25;
         DropTranslate.Y = -5;
-        DarkMistScale.ScaleX = 0.62;
-        DarkMistScale.ScaleY = 0.62;
         GlowScale.ScaleX = 0.55;
         GlowScale.ScaleY = 0.55;
         SparkleTopScale.ScaleX = 0.25;
@@ -339,30 +266,6 @@ public partial class ToastWindow : Window
         SparkleRightScale.ScaleX = 0.25;
         SparkleRightScale.ScaleY = 0.25;
         SparkleTopRotate.Angle = 0;
-        CrackScale.ScaleX = 0.15;
-        CrackScale.ScaleY = 0.15;
-        BulletHoleScale.ScaleX = 0.2;
-        BulletHoleScale.ScaleY = 0.2;
-        BulletRingScale.ScaleX = 0.35;
-        BulletRingScale.ScaleY = 0.35;
-        DustOneTranslate.X = 0;
-        DustOneTranslate.Y = 0;
-        DustTwoTranslate.X = 0;
-        DustTwoTranslate.Y = 0;
-        DustThreeTranslate.X = 0;
-        DustThreeTranslate.Y = 0;
-        DustFourTranslate.X = 0;
-        DustFourTranslate.Y = 0;
-        DustFiveTranslate.X = 0;
-        DustFiveTranslate.Y = 0;
-        DustSixTranslate.X = 0;
-        DustSixTranslate.Y = 0;
-        AshOneTranslate.X = 0;
-        AshOneTranslate.Y = 0;
-        AshTwoTranslate.X = 0;
-        AshTwoTranslate.Y = 0;
-        AshThreeTranslate.X = 0;
-        AshThreeTranslate.Y = 0;
         HeartScale.ScaleX = 1;
         HeartScale.ScaleY = 1;
         HeartRotate.Angle = 0;
@@ -374,18 +277,9 @@ public partial class ToastWindow : Window
         RightPieceTranslate.Y = 0;
         CenterPieceTranslate.X = 0;
         CenterPieceTranslate.Y = 0;
-        TopPieceTranslate.X = 0;
-        TopPieceTranslate.Y = 0;
-        LowerLeftPieceTranslate.X = 0;
-        LowerLeftPieceTranslate.Y = 0;
-        LowerRightPieceTranslate.X = 0;
-        LowerRightPieceTranslate.Y = 0;
         LeftPieceRotate.Angle = 0;
         RightPieceRotate.Angle = 0;
         CenterPieceRotate.Angle = 0;
-        TopPieceRotate.Angle = 0;
-        LowerLeftPieceRotate.Angle = 0;
-        LowerRightPieceRotate.Angle = 0;
     }
 
     private static void Animate(UIElement target, DependencyProperty property, double from, double to, int durationMs, int delayMs = 0, IEasingFunction? easing = null)
