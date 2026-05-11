@@ -192,31 +192,56 @@ public partial class ToastWindow : Window
         HeartFill.Opacity = 1;
         HeartScale.ScaleX = 1;
         HeartScale.ScaleY = 1;
+        DarkMist.Opacity = 0;
+        DarkMistScale.ScaleX = 0.62;
+        DarkMistScale.ScaleY = 0.62;
 
         dryingBrush.BeginAnimation(
             SolidColorBrush.ColorProperty,
-            new ColorAnimation(MediaColor.FromRgb(30, 215, 96), MediaColor.FromRgb(91, 105, 93), new Duration(TimeSpan.FromMilliseconds(580)))
+            new ColorAnimation(MediaColor.FromRgb(30, 215, 96), MediaColor.FromRgb(34, 43, 37), new Duration(TimeSpan.FromMilliseconds(600)))
             {
                 BeginTime = TimeSpan.FromMilliseconds(60),
                 EasingFunction = EaseOut()
             });
 
-        AnimateKeyFrames(HeartScale, ScaleTransform.ScaleXProperty, (1, 0), (0.82, 270), (0.9, 430), (0.52, 760));
-        AnimateKeyFrames(HeartScale, ScaleTransform.ScaleYProperty, (1, 0), (0.66, 270), (0.74, 430), (0.38, 760));
-        Animate(HeartRotate, RotateTransform.AngleProperty, 0, -8, 520, 110, EaseInOut());
-        Animate(CrackLines, UIElement.OpacityProperty, 0, 0.62, 120, 360);
-        Animate(HeartFill, UIElement.OpacityProperty, 1, 0, 260, 680);
-        Animate(CrackLines, UIElement.OpacityProperty, 0.62, 0, 220, 720);
+        AnimateKeyFrames(DarkMist, UIElement.OpacityProperty, (0, 0), (0.82, 180), (0.52, 720), (0, 1480));
+        AnimateKeyFrames(DarkMistScale, ScaleTransform.ScaleXProperty, (0.62, 0), (1.08, 360), (1.46, 1480));
+        AnimateKeyFrames(DarkMistScale, ScaleTransform.ScaleYProperty, (0.62, 0), (0.92, 360), (1.3, 1480));
 
-        AnimateBrokenPiece(HeartPieceLeft, LeftPieceTranslate, LeftPieceRotate, -7, 9, -12, 610);
-        AnimateBrokenPiece(HeartPieceRight, RightPieceTranslate, RightPieceRotate, 7, 10, 14, 640);
-        AnimateBrokenPiece(HeartPieceCenter, CenterPieceTranslate, CenterPieceRotate, -1, 13, 6, 670);
-        AnimateDust(DustOne, DustOneTranslate, -13, 11, 520);
-        AnimateDust(DustTwo, DustTwoTranslate, 12, 12, 560);
-        AnimateDust(DustThree, DustThreeTranslate, 0, 16, 620);
-        AnimateDust(DustFour, DustFourTranslate, -8, 18, 660);
-        AnimateDust(DustFive, DustFiveTranslate, 9, 17, 700);
-        AnimateDust(DustSix, DustSixTranslate, 2, 20, 740);
+        Animate(HeartScale, ScaleTransform.ScaleXProperty, 1, 0.82, 500, 80, EaseInOut());
+        Animate(HeartScale, ScaleTransform.ScaleYProperty, 1, 0.62, 500, 80, EaseInOut());
+        Animate(HeartRotate, RotateTransform.AngleProperty, 0, -5, 520, 110, EaseInOut());
+        Animate(CrackLines, UIElement.OpacityProperty, 0, 1, 130, 280);
+        Animate(HeartFill, UIElement.OpacityProperty, 1, 0, 180, 620);
+        Animate(CrackLines, UIElement.OpacityProperty, 1, 0, 220, 780);
+
+        AnimateBrokenPiece(HeartPieceLeft, LeftPieceTranslate, LeftPieceRotate, -11, -4, -20, 500);
+        AnimateBrokenPiece(HeartPieceRight, RightPieceTranslate, RightPieceRotate, 11, 1, 22, 540);
+        AnimateBrokenPiece(HeartPieceCenter, CenterPieceTranslate, CenterPieceRotate, -1, 11, 8, 580);
+        AnimateBrokenPiece(HeartPieceTop, TopPieceTranslate, TopPieceRotate, 0, -12, -10, 500);
+        AnimateBrokenPiece(HeartPieceLowerLeft, LowerLeftPieceTranslate, LowerLeftPieceRotate, -14, 11, -30, 620);
+        AnimateBrokenPiece(HeartPieceLowerRight, LowerRightPieceTranslate, LowerRightPieceRotate, 14, 10, 32, 650);
+
+        AnimateAsh(AshOne, AshOneTranslate, -13, -10, 380);
+        AnimateAsh(AshTwo, AshTwoTranslate, 10, -12, 460);
+        AnimateAsh(AshThree, AshThreeTranslate, 2, 15, 560);
+        AnimateDust(DustOne, DustOneTranslate, -12, 12, 540);
+        AnimateDust(DustTwo, DustTwoTranslate, 13, 13, 590);
+        AnimateDust(DustThree, DustThreeTranslate, 0, 17, 640);
+        AnimateDust(DustFour, DustFourTranslate, -9, 18, 680);
+        AnimateDust(DustFive, DustFiveTranslate, 10, 18, 720);
+        AnimateDust(DustSix, DustSixTranslate, 3, 20, 760);
+    }
+
+    private void AnimateAsh(UIElement ash, TranslateTransform translate, double x, double y, int delayMs)
+    {
+        ash.Opacity = 0;
+        translate.X = 0;
+        translate.Y = 0;
+
+        AnimateKeyFrames(ash, UIElement.OpacityProperty, (0, delayMs), (0.82, delayMs + 120), (0, delayMs + 780));
+        Animate(translate, TranslateTransform.XProperty, 0, x, 760, delayMs, EaseOut());
+        Animate(translate, TranslateTransform.YProperty, 0, y, 760, delayMs, EaseOut());
     }
 
     private void AnimateDust(UIElement dust, TranslateTransform translate, double x, double y, int delayMs)
@@ -249,6 +274,7 @@ public partial class ToastWindow : Window
         FavoriteIconCanvas.Visibility = Visibility.Visible;
 
         DropShape.BeginAnimation(UIElement.OpacityProperty, null);
+        DarkMist.BeginAnimation(UIElement.OpacityProperty, null);
         HeartGlow.BeginAnimation(UIElement.OpacityProperty, null);
         SparkleTop.BeginAnimation(UIElement.OpacityProperty, null);
         SparkleLeft.BeginAnimation(UIElement.OpacityProperty, null);
@@ -259,14 +285,21 @@ public partial class ToastWindow : Window
         DustFour.BeginAnimation(UIElement.OpacityProperty, null);
         DustFive.BeginAnimation(UIElement.OpacityProperty, null);
         DustSix.BeginAnimation(UIElement.OpacityProperty, null);
+        AshOne.BeginAnimation(UIElement.OpacityProperty, null);
+        AshTwo.BeginAnimation(UIElement.OpacityProperty, null);
+        AshThree.BeginAnimation(UIElement.OpacityProperty, null);
         HeartFill.BeginAnimation(UIElement.OpacityProperty, null);
         HeartOutline.BeginAnimation(UIElement.OpacityProperty, null);
         CrackLines.BeginAnimation(UIElement.OpacityProperty, null);
         HeartPieceLeft.BeginAnimation(UIElement.OpacityProperty, null);
         HeartPieceRight.BeginAnimation(UIElement.OpacityProperty, null);
         HeartPieceCenter.BeginAnimation(UIElement.OpacityProperty, null);
+        HeartPieceTop.BeginAnimation(UIElement.OpacityProperty, null);
+        HeartPieceLowerLeft.BeginAnimation(UIElement.OpacityProperty, null);
+        HeartPieceLowerRight.BeginAnimation(UIElement.OpacityProperty, null);
 
         DropShape.Opacity = 0;
+        DarkMist.Opacity = 0;
         HeartGlow.Opacity = 0;
         SparkleTop.Opacity = 0;
         SparkleLeft.Opacity = 0;
@@ -277,16 +310,24 @@ public partial class ToastWindow : Window
         DustFour.Opacity = 0;
         DustFive.Opacity = 0;
         DustSix.Opacity = 0;
+        AshOne.Opacity = 0;
+        AshTwo.Opacity = 0;
+        AshThree.Opacity = 0;
         HeartFill.Opacity = 0;
         HeartOutline.Opacity = 0;
         CrackLines.Opacity = 0;
         HeartPieceLeft.Opacity = 0;
         HeartPieceRight.Opacity = 0;
         HeartPieceCenter.Opacity = 0;
+        HeartPieceTop.Opacity = 0;
+        HeartPieceLowerLeft.Opacity = 0;
+        HeartPieceLowerRight.Opacity = 0;
 
         DropScale.ScaleX = 0.25;
         DropScale.ScaleY = 0.25;
         DropTranslate.Y = -5;
+        DarkMistScale.ScaleX = 0.62;
+        DarkMistScale.ScaleY = 0.62;
         GlowScale.ScaleX = 0.55;
         GlowScale.ScaleY = 0.55;
         SparkleTopScale.ScaleX = 0.25;
@@ -308,6 +349,12 @@ public partial class ToastWindow : Window
         DustFiveTranslate.Y = 0;
         DustSixTranslate.X = 0;
         DustSixTranslate.Y = 0;
+        AshOneTranslate.X = 0;
+        AshOneTranslate.Y = 0;
+        AshTwoTranslate.X = 0;
+        AshTwoTranslate.Y = 0;
+        AshThreeTranslate.X = 0;
+        AshThreeTranslate.Y = 0;
         HeartScale.ScaleX = 1;
         HeartScale.ScaleY = 1;
         HeartRotate.Angle = 0;
@@ -319,9 +366,18 @@ public partial class ToastWindow : Window
         RightPieceTranslate.Y = 0;
         CenterPieceTranslate.X = 0;
         CenterPieceTranslate.Y = 0;
+        TopPieceTranslate.X = 0;
+        TopPieceTranslate.Y = 0;
+        LowerLeftPieceTranslate.X = 0;
+        LowerLeftPieceTranslate.Y = 0;
+        LowerRightPieceTranslate.X = 0;
+        LowerRightPieceTranslate.Y = 0;
         LeftPieceRotate.Angle = 0;
         RightPieceRotate.Angle = 0;
         CenterPieceRotate.Angle = 0;
+        TopPieceRotate.Angle = 0;
+        LowerLeftPieceRotate.Angle = 0;
+        LowerRightPieceRotate.Angle = 0;
     }
 
     private static void Animate(UIElement target, DependencyProperty property, double from, double to, int durationMs, int delayMs = 0, IEasingFunction? easing = null)

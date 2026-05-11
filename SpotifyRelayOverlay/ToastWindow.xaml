@@ -23,7 +23,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="ArtworkColumn" Width="74" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition x:Name="IconColumn" Width="66" />
+                <ColumnDefinition x:Name="IconColumn" Width="78" />
             </Grid.ColumnDefinitions>
 
             <Border x:Name="ArtworkFrame"
@@ -83,8 +83,8 @@
 
             <Grid x:Name="IconStage"
                   Grid.Column="2"
-                  Width="58"
-                  Height="58"
+                  Width="72"
+                  Height="72"
                   HorizontalAlignment="Center"
                   VerticalAlignment="Center">
                 <Canvas x:Name="FavoriteIconCanvas"
@@ -171,6 +171,34 @@
                         </Ellipse.RenderTransform>
                     </Ellipse>
 
+                    <Ellipse x:Name="DarkMist"
+                             Canvas.Left="-7"
+                             Canvas.Top="-5"
+                             Width="68"
+                             Height="62"
+                             Opacity="0"
+                             IsHitTestVisible="False"
+                             RenderTransformOrigin="0.5,0.5">
+                        <Ellipse.Fill>
+                            <RadialGradientBrush>
+                                <GradientStop Color="#AA26312A"
+                                              Offset="0" />
+                                <GradientStop Color="#73121613"
+                                              Offset="0.58" />
+                                <GradientStop Color="#00101512"
+                                              Offset="1" />
+                            </RadialGradientBrush>
+                        </Ellipse.Fill>
+                        <Ellipse.Effect>
+                            <BlurEffect Radius="8" />
+                        </Ellipse.Effect>
+                        <Ellipse.RenderTransform>
+                            <ScaleTransform x:Name="DarkMistScale"
+                                            ScaleX="0.62"
+                                            ScaleY="0.62" />
+                        </Ellipse.RenderTransform>
+                    </Ellipse>
+
                     <Ellipse x:Name="DustTwo"
                              Canvas.Left="39"
                              Canvas.Top="17"
@@ -231,6 +259,45 @@
                         </Ellipse.RenderTransform>
                     </Ellipse>
 
+                    <Ellipse x:Name="AshOne"
+                             Canvas.Left="5"
+                             Canvas.Top="10"
+                             Width="5"
+                             Height="5"
+                             Fill="#5F6B61"
+                             Opacity="0"
+                             RenderTransformOrigin="0.5,0.5">
+                        <Ellipse.RenderTransform>
+                            <TranslateTransform x:Name="AshOneTranslate" />
+                        </Ellipse.RenderTransform>
+                    </Ellipse>
+
+                    <Ellipse x:Name="AshTwo"
+                             Canvas.Left="43"
+                             Canvas.Top="11"
+                             Width="4"
+                             Height="4"
+                             Fill="#313A34"
+                             Opacity="0"
+                             RenderTransformOrigin="0.5,0.5">
+                        <Ellipse.RenderTransform>
+                            <TranslateTransform x:Name="AshTwoTranslate" />
+                        </Ellipse.RenderTransform>
+                    </Ellipse>
+
+                    <Ellipse x:Name="AshThree"
+                             Canvas.Left="31"
+                             Canvas.Top="45"
+                             Width="4"
+                             Height="4"
+                             Fill="#7C8A80"
+                             Opacity="0"
+                             RenderTransformOrigin="0.5,0.5">
+                        <Ellipse.RenderTransform>
+                            <TranslateTransform x:Name="AshThreeTranslate" />
+                        </Ellipse.RenderTransform>
+                    </Ellipse>
+
                     <Path x:Name="DropShape"
                           Data="M 27,8 C 35,19 39,25 39,33 C 39,41 33.5,46 27,46 C 20.5,46 15,41 15,33 C 15,25 19,19 27,8 Z"
                           Fill="#1ED760"
@@ -275,9 +342,9 @@
                           Opacity="0" />
 
                     <Path x:Name="CrackLines"
-                          Data="M 27,17 L 23,25 L 29,29 L 24,39 M 35,12 L 31,22 L 36,26"
-                          Stroke="#101512"
-                          StrokeThickness="2.2"
+                          Data="M 27,16 L 22.5,24.5 L 29.5,29.2 L 23.5,40 M 35.5,11 L 31,22 L 37.5,26.5 M 17,16 L 21,22 M 40,18 L 35,25 M 28,30 L 34,39"
+                          Stroke="#070A08"
+                          StrokeThickness="2.35"
                           StrokeStartLineCap="Round"
                           StrokeEndLineCap="Round"
                           StrokeLineJoin="Round"
@@ -285,7 +352,7 @@
 
                     <Path x:Name="HeartPieceLeft"
                           Data="M 27,47 C 22,42 7,31.5 5.8,19 C 4.8,9 12.5,4 19.4,8.5 C 23.3,11 25.7,14.6 27,17.8 L 24,29 L 27,47 Z"
-                          Fill="#6F7C70"
+                          Fill="#4D5A51"
                           Opacity="0"
                           RenderTransformOrigin="0.5,0.5">
                         <Path.RenderTransform>
@@ -298,7 +365,7 @@
 
                     <Path x:Name="HeartPieceRight"
                           Data="M 27,47 L 24,29 L 27,17.8 C 28.3,14.6 30.7,11 34.6,8.5 C 41.5,4 49.2,9 48.2,19 C 47,31.5 32,42 27,47 Z"
-                          Fill="#58645B"
+                          Fill="#38443D"
                           Opacity="0"
                           RenderTransformOrigin="0.5,0.5">
                         <Path.RenderTransform>
@@ -311,13 +378,52 @@
 
                     <Path x:Name="HeartPieceCenter"
                           Data="M 24,29 L 29,30 L 24,40 L 27,47 L 24,29 Z"
-                          Fill="#8B978C"
+                          Fill="#667166"
                           Opacity="0"
                           RenderTransformOrigin="0.5,0.5">
                         <Path.RenderTransform>
                             <TransformGroup>
                                 <RotateTransform x:Name="CenterPieceRotate" />
                                 <TranslateTransform x:Name="CenterPieceTranslate" />
+                            </TransformGroup>
+                        </Path.RenderTransform>
+                    </Path>
+
+                    <Path x:Name="HeartPieceTop"
+                          Data="M 19.4,8.5 C 23.3,11 25.7,14.6 27,17.8 C 28.3,14.6 30.7,11 34.6,8.5 C 37.5,6.6 40.6,6.2 43.1,7.2 L 34.5,18.2 L 27,17.8 L 19.2,18.2 L 11,7.2 C 13.6,6.2 16.5,6.6 19.4,8.5 Z"
+                          Fill="#3F4A43"
+                          Opacity="0"
+                          RenderTransformOrigin="0.5,0.5">
+                        <Path.RenderTransform>
+                            <TransformGroup>
+                                <RotateTransform x:Name="TopPieceRotate" />
+                                <TranslateTransform x:Name="TopPieceTranslate" />
+                            </TransformGroup>
+                        </Path.RenderTransform>
+                    </Path>
+
+                    <Path x:Name="HeartPieceLowerLeft"
+                          Data="M 5.8,19 C 7,31.5 22,42 27,47 L 17,34 L 12,23 L 5.8,19 Z"
+                          Fill="#2F3933"
+                          Opacity="0"
+                          RenderTransformOrigin="0.5,0.5">
+                        <Path.RenderTransform>
+                            <TransformGroup>
+                                <RotateTransform x:Name="LowerLeftPieceRotate" />
+                                <TranslateTransform x:Name="LowerLeftPieceTranslate" />
+                            </TransformGroup>
+                        </Path.RenderTransform>
+                    </Path>
+
+                    <Path x:Name="HeartPieceLowerRight"
+                          Data="M 48.2,19 C 47,31.5 32,42 27,47 L 37,34 L 42,23 L 48.2,19 Z"
+                          Fill="#26302A"
+                          Opacity="0"
+                          RenderTransformOrigin="0.5,0.5">
+                        <Path.RenderTransform>
+                            <TransformGroup>
+                                <RotateTransform x:Name="LowerRightPieceRotate" />
+                                <TranslateTransform x:Name="LowerRightPieceTranslate" />
                             </TransformGroup>
                         </Path.RenderTransform>
                     </Path>
