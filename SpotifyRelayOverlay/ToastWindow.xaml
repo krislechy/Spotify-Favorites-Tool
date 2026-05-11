@@ -81,13 +81,118 @@
                            VerticalAlignment="Bottom" />
             </Grid>
 
-            <TextBlock x:Name="HeartText"
-                       Grid.Column="2"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       Foreground="#1ED760"
-                       FontSize="48"
-                       FontWeight="Bold" />
+            <Grid x:Name="IconStage"
+                  Grid.Column="2"
+                  Width="58"
+                  Height="58"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center">
+                <Canvas x:Name="FavoriteIconCanvas"
+                        Width="54"
+                        Height="54"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                    <Path x:Name="DropShape"
+                          Data="M 27,8 C 35,19 39,25 39,33 C 39,41 33.5,46 27,46 C 20.5,46 15,41 15,33 C 15,25 19,19 27,8 Z"
+                          Fill="#1ED760"
+                          Opacity="0"
+                          RenderTransformOrigin="0.5,0.5">
+                        <Path.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform x:Name="DropScale"
+                                                ScaleX="0.25"
+                                                ScaleY="0.25" />
+                                <TranslateTransform x:Name="DropTranslate"
+                                                    Y="-5" />
+                            </TransformGroup>
+                        </Path.RenderTransform>
+                    </Path>
+
+                    <Path x:Name="HeartFill"
+                          Data="M 27,45 C 22,40 9,30 7,19 C 5.5,11 11,6 18,9 C 22,10.5 25,14 27,17 C 29,14 32,10.5 36,9 C 43,6 48.5,11 47,19 C 45,30 32,40 27,45 Z"
+                          Fill="#1ED760"
+                          Opacity="0"
+                          RenderTransformOrigin="0.5,0.5">
+                        <Path.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform x:Name="HeartScale"
+                                                ScaleX="0.82"
+                                                ScaleY="0.82" />
+                                <RotateTransform x:Name="HeartRotate"
+                                                 Angle="0" />
+                                <TranslateTransform x:Name="HeartTranslate" />
+                            </TransformGroup>
+                        </Path.RenderTransform>
+                    </Path>
+
+                    <Path x:Name="HeartOutline"
+                          Data="M 27,45 C 22,40 9,30 7,19 C 5.5,11 11,6 18,9 C 22,10.5 25,14 27,17 C 29,14 32,10.5 36,9 C 43,6 48.5,11 47,19 C 45,30 32,40 27,45 Z"
+                          Fill="Transparent"
+                          Stroke="#D5E7DC"
+                          StrokeThickness="3"
+                          StrokeStartLineCap="Round"
+                          StrokeEndLineCap="Round"
+                          StrokeLineJoin="Round"
+                          Opacity="0" />
+
+                    <Path x:Name="CrackLines"
+                          Data="M 27,17 L 23,25 L 29,29 L 24,39 M 35,12 L 31,22 L 36,26"
+                          Stroke="#101512"
+                          StrokeThickness="2.2"
+                          StrokeStartLineCap="Round"
+                          StrokeEndLineCap="Round"
+                          StrokeLineJoin="Round"
+                          Opacity="0" />
+
+                    <Path x:Name="HeartPieceLeft"
+                          Data="M 27,45 C 22,40 9,30 7,19 C 5.5,11 11,6 18,9 C 22,10.5 25,14 27,17 L 24,28 L 27,45 Z"
+                          Fill="#8CA896"
+                          Opacity="0"
+                          RenderTransformOrigin="0.5,0.5">
+                        <Path.RenderTransform>
+                            <TransformGroup>
+                                <RotateTransform x:Name="LeftPieceRotate" />
+                                <TranslateTransform x:Name="LeftPieceTranslate" />
+                            </TransformGroup>
+                        </Path.RenderTransform>
+                    </Path>
+
+                    <Path x:Name="HeartPieceRight"
+                          Data="M 27,45 L 24,28 L 27,17 C 29,14 32,10.5 36,9 C 43,6 48.5,11 47,19 C 45,30 32,40 27,45 Z"
+                          Fill="#789181"
+                          Opacity="0"
+                          RenderTransformOrigin="0.5,0.5">
+                        <Path.RenderTransform>
+                            <TransformGroup>
+                                <RotateTransform x:Name="RightPieceRotate" />
+                                <TranslateTransform x:Name="RightPieceTranslate" />
+                            </TransformGroup>
+                        </Path.RenderTransform>
+                    </Path>
+
+                    <Path x:Name="HeartPieceCenter"
+                          Data="M 24,28 L 29,29 L 24,39 L 27,45 L 24,28 Z"
+                          Fill="#A9BDAF"
+                          Opacity="0"
+                          RenderTransformOrigin="0.5,0.5">
+                        <Path.RenderTransform>
+                            <TransformGroup>
+                                <RotateTransform x:Name="CenterPieceRotate" />
+                                <TranslateTransform x:Name="CenterPieceTranslate" />
+                            </TransformGroup>
+                        </Path.RenderTransform>
+                    </Path>
+                </Canvas>
+
+                <TextBlock x:Name="ErrorIconText"
+                           Text="!"
+                           Foreground="#FFC457"
+                           FontSize="48"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Visibility="Collapsed" />
+            </Grid>
         </Grid>
     </Border>
 </Window>
