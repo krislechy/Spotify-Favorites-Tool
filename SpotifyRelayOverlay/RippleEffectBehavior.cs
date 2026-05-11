@@ -119,56 +119,61 @@ public static class RippleEffectBehavior
         }
 
         var position = e.GetPosition(host);
-        var radius = GetRequiredRadius(position, width, height);
-        var diameter = radius * 2;
-        var scale = new ScaleTransform(0.08, 0.08);
+        var finalRadius = GetRequiredRadius(position, width, height) * 1.08;
+        var initialRadius = Math.Min(10, finalRadius * 0.18);
+        var initialDiameter = initialRadius * 2;
+        var finalDiameter = finalRadius * 2;
         var ripple = new Ellipse
         {
-            Width = diameter,
-            Height = diameter,
+            Width = initialDiameter,
+            Height = initialDiameter,
             Fill = GetRippleBrush(button),
             Opacity = 0,
-            IsHitTestVisible = false,
-            RenderTransform = scale,
-            RenderTransformOrigin = new WpfPoint(0.5, 0.5)
+            IsHitTestVisible = false
         };
 
-        Canvas.SetLeft(ripple, position.X - radius);
-        Canvas.SetTop(ripple, position.Y - radius);
+        Canvas.SetLeft(ripple, position.X - initialRadius);
+        Canvas.SetTop(ripple, position.Y - initialRadius);
         host.Children.Add(ripple);
 
         var durationMs = Math.Clamp(GetDurationMilliseconds(button), 160, 1200);
         var opacity = Math.Clamp(GetPressedOpacity(button), 0.04, 0.5);
         var duration = TimeSpan.FromMilliseconds(durationMs);
-        var storyboard = new Storyboard();
+        var expandEase = new CubicEase { EasingMode = EasingMode.EaseOut };
 
-        var opacityAnimation = new DoubleAnimationUsingKeyFrames();
-        opacityAnimation.KeyFrames.Add(new DiscreteDoubleKeyFrame(opacity, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-        opacityAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(opacity, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(durationMs * 0.22))));
-        opacityAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(duration)));
-        Storyboard.SetTarget(opacityAnimation, ripple);
-        Storyboard.SetTargetProperty(opacityAnimation, new PropertyPath(UIElement.OpacityProperty));
+        ripple.BeginAnimation(FrameworkElement.WidthProperty, CreateExpansionAnimation(initialDiameter, finalDiameter, duration, expandEase));
+        ripple.BeginAnimation(FrameworkElement.HeightProperty, CreateExpansionAnimation(initialDiameter, finalDiameter, duration, expandEase));
+        ripple.BeginAnimation(Canvas.LeftProperty, CreateExpansionAnimation(position.X - initialRadius, position.X - finalRadius, duration, expandEase));
+        ripple.BeginAnimation(Canvas.TopProperty, CreateExpansionAnimation(position.Y - initialRadius, position.Y - finalRadius, duration, expandEase));
 
-        var scaleEase = new CubicEase { EasingMode = EasingMode.EaseOut };
-        var scaleXAnimation = new DoubleAnimation(0.08, 1, new Duration(duration))
+        var opacityAnimation = CreateOpacityAnimation(opacity, durationMs);
+        opacityAnimation.Completed += (_, _) => host.Children.Remove(ripple);
+        ripple.BeginAnimation(UIElement.OpacityProperty, opacityAnimation);
+    }
+
+    private static DoubleAnimation CreateExpansionAnimation(double from, double to, TimeSpan duration, IEasingFunction easing)
+    {
+        return new DoubleAnimation(from, to, new Duration(duration))
         {
-            EasingFunction = scaleEase
+            EasingFunction = easing
         };
-        Storyboard.SetTarget(scaleXAnimation, scale);
-        Storyboard.SetTargetProperty(scaleXAnimation, new PropertyPath(ScaleTransform.ScaleXProperty));
+    }
 
-        var scaleYAnimation = new DoubleAnimation(0.08, 1, new Duration(duration))
+    private static DoubleAnimationUsingKeyFrames CreateOpacityAnimation(double opacity, int durationMs)
+    {
+        var duration = TimeSpan.FromMilliseconds(durationMs);
+        var hold = TimeSpan.FromMilliseconds(durationMs * 0.58);
+        var fadeIn = TimeSpan.FromMilliseconds(Math.Min(70, durationMs * 0.16));
+        var animation = new DoubleAnimationUsingKeyFrames
         {
-            EasingFunction = scaleEase
+            Duration = new Duration(duration)
         };
-        Storyboard.SetTarget(scaleYAnimation, scale);
-        Storyboard.SetTargetProperty(scaleYAnimation, new PropertyPath(ScaleTransform.ScaleYProperty));
 
-        storyboard.Children.Add(opacityAnimation);
-        storyboard.Children.Add(scaleXAnimation);
-        storyboard.Children.Add(scaleYAnimation);
-        storyboard.Completed += (_, _) => host.Children.Remove(ripple);
-        storyboard.Begin();
+        animation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+        animation.KeyFrames.Add(new EasingDoubleKeyFrame(opacity, KeyTime.FromTimeSpan(fadeIn)));
+        animation.KeyFrames.Add(new EasingDoubleKeyFrame(opacity, KeyTime.FromTimeSpan(hold)));
+        animation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(duration)));
+        return animation;
     }
 
     private static double GetRequiredRadius(WpfPoint origin, double width, double height)
