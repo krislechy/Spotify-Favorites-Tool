@@ -12,7 +12,10 @@
         AllowsTransparency="True"
         WindowStartupLocation="CenterOwner"
         Background="Transparent"
-        Foreground="#F4F8F5">
+        Foreground="#F4F8F5"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        KeyboardNavigation.TabNavigation="None"
+        KeyboardNavigation.ControlTabNavigation="None">
     <Window.Resources>
         <Style x:Key="IconButton" TargetType="Button">
             <Setter Property="Width" Value="34" />
@@ -25,6 +28,8 @@
             <Setter Property="BorderBrush" Value="#3D4B42" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="IsTabStop" Value="False" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -32,10 +37,28 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="8">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              RecognizesAccessKey="True" />
+                                CornerRadius="8"
+                                ClipToBounds="True">
+                            <Grid ClipToBounds="True">
+                                <Ellipse x:Name="Ripple"
+                                         Width="96"
+                                         Height="96"
+                                         Fill="#661ED760"
+                                         Opacity="0"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center"
+                                         IsHitTestVisible="False"
+                                         RenderTransformOrigin="0.5,0.5">
+                                    <Ellipse.RenderTransform>
+                                        <ScaleTransform x:Name="RippleScale"
+                                                        ScaleX="0.16"
+                                                        ScaleY="0.16" />
+                                    </Ellipse.RenderTransform>
+                                </Ellipse>
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"
+                                                  RecognizesAccessKey="True" />
+                            </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -46,6 +69,27 @@
                                 <Setter TargetName="Root" Property="Background" Value="#1ED760" />
                                 <Setter Property="Foreground" Value="#0F1511" />
                             </Trigger>
+                            <EventTrigger RoutedEvent="Button.PreviewMouseDown">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Ripple"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         From="0.42"
+                                                         To="0"
+                                                         Duration="0:0:0.34" />
+                                        <DoubleAnimation Storyboard.TargetName="RippleScale"
+                                                         Storyboard.TargetProperty="ScaleX"
+                                                         From="0.16"
+                                                         To="2.05"
+                                                         Duration="0:0:0.34" />
+                                        <DoubleAnimation Storyboard.TargetName="RippleScale"
+                                                         Storyboard.TargetProperty="ScaleY"
+                                                         From="0.16"
+                                                         To="2.05"
+                                                         Duration="0:0:0.34" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -60,13 +104,16 @@
         </Style>
 
         <Style TargetType="TextBox" BasedOn="{StaticResource AppTextBoxStyle}">
-            <Setter Property="Height" Value="34" />
-            <Setter Property="Padding" Value="9,6" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Background" Value="#202A24" />
             <Setter Property="Foreground" Value="#F4F8F5" />
             <Setter Property="BorderBrush" Value="#3D4B42" />
             <Setter Property="CaretBrush" Value="#1ED760" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="IsTabStop" Value="False" />
         </Style>
 
         <Style x:Key="SettingsButton" TargetType="Button">
@@ -78,6 +125,7 @@
             <Setter Property="BorderBrush" Value="#3D4B42" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="IsTabStop" Value="False" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -86,10 +134,28 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="1"
                                 CornerRadius="8"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              RecognizesAccessKey="True" />
+                                Padding="{TemplateBinding Padding}"
+                                ClipToBounds="True">
+                            <Grid ClipToBounds="True">
+                                <Ellipse x:Name="Ripple"
+                                         Width="210"
+                                         Height="210"
+                                         Fill="#5A1ED760"
+                                         Opacity="0"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center"
+                                         IsHitTestVisible="False"
+                                         RenderTransformOrigin="0.5,0.5">
+                                    <Ellipse.RenderTransform>
+                                        <ScaleTransform x:Name="RippleScale"
+                                                        ScaleX="0.14"
+                                                        ScaleY="0.14" />
+                                    </Ellipse.RenderTransform>
+                                </Ellipse>
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"
+                                                  RecognizesAccessKey="True" />
+                            </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -100,6 +166,27 @@
                                 <Setter TargetName="Root" Property="Background" Value="#1ED760" />
                                 <Setter Property="Foreground" Value="#0F1511" />
                             </Trigger>
+                            <EventTrigger RoutedEvent="Button.PreviewMouseDown">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Ripple"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         From="0.38"
+                                                         To="0"
+                                                         Duration="0:0:0.38" />
+                                        <DoubleAnimation Storyboard.TargetName="RippleScale"
+                                                         Storyboard.TargetProperty="ScaleX"
+                                                         From="0.14"
+                                                         To="1.45"
+                                                         Duration="0:0:0.38" />
+                                        <DoubleAnimation Storyboard.TargetName="RippleScale"
+                                                         Storyboard.TargetProperty="ScaleY"
+                                                         From="0.14"
+                                                         To="1.45"
+                                                         Duration="0:0:0.38" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>

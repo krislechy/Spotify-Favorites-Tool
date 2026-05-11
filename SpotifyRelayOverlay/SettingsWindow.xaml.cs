@@ -88,6 +88,23 @@ public partial class SettingsWindow : Window
         WindowState = WindowState.Minimized;
     }
 
+    private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key != Key.Tab)
+        {
+            return;
+        }
+
+        var focusedElement = Keyboard.FocusedElement;
+        if (ReferenceEquals(focusedElement, FavoriteHotkeyBox)
+            || ReferenceEquals(focusedElement, FavoriteStatusHotkeyBox))
+        {
+            return;
+        }
+
+        e.Handled = true;
+    }
+
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.ButtonState != MouseButtonState.Pressed)

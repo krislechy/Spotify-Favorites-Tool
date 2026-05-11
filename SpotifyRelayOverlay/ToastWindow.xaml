@@ -10,6 +10,8 @@
         ShowActivated="False"
         ShowInTaskbar="False"
         Topmost="True"
+        KeyboardNavigation.TabNavigation="None"
+        KeyboardNavigation.ControlTabNavigation="None"
         Loaded="Window_Loaded">
     <Border CornerRadius="8"
             Background="#F0161B18"
