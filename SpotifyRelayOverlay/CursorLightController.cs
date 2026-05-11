@@ -13,7 +13,7 @@ namespace SpotifyRelayOverlay;
 
 public sealed class CursorLightController : IDisposable
 {
-    private const double LightRadius = 135;
+    private const double LightRadius = 150;
 
     private static readonly Duration FadeDuration = TimeSpan.FromMilliseconds(180);
     private static readonly IEasingFunction FadeEase = new QuadraticEase { EasingMode = EasingMode.EaseOut };
@@ -37,15 +37,15 @@ public sealed class CursorLightController : IDisposable
         _surface = surface;
         _setBackground = setBackground;
         _baseColor = baseColor;
-        _coreColor = BrightenTowardGreen(baseColor, 0.15);
-        _sheenColor = BrightenTowardGreen(baseColor, 0.09);
-        _diffuseColor = BrightenTowardGreen(baseColor, 0.04);
-        _tailColor = BrightenTowardGreen(baseColor, 0.012);
+        _coreColor = BrightenTowardGreen(baseColor, 0.30);
+        _sheenColor = BrightenTowardGreen(baseColor, 0.19);
+        _diffuseColor = BrightenTowardGreen(baseColor, 0.085);
+        _tailColor = BrightenTowardGreen(baseColor, 0.035);
 
         _coreStop = new GradientStop(_baseColor, 0);
-        _sheenStop = new GradientStop(_baseColor, 0.28);
-        _diffuseStop = new GradientStop(_baseColor, 0.76);
-        _tailStop = new GradientStop(_baseColor, 0.94);
+        _sheenStop = new GradientStop(_baseColor, 0.24);
+        _diffuseStop = new GradientStop(_baseColor, 0.72);
+        _tailStop = new GradientStop(_baseColor, 0.96);
         _brush = new RadialGradientBrush
         {
             MappingMode = BrushMappingMode.Absolute,
