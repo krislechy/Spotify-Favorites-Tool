@@ -32,66 +32,39 @@
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="local:RippleEffectBehavior.IsEnabled" Value="True" />
+            <Setter Property="local:RippleEffectBehavior.RippleBrush" Value="#1ED760" />
+            <Setter Property="local:RippleEffectBehavior.PressedOpacity" Value="0.24" />
+            <Setter Property="local:RippleEffectBehavior.DurationMilliseconds" Value="460" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Root"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="8"
-                                ClipToBounds="True">
-                            <Grid ClipToBounds="True">
-                                <Ellipse x:Name="Ripple"
-                                         Width="96"
-                                         Height="96"
-                                         Fill="#661ED760"
-                                         Opacity="0"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Center"
-                                         IsHitTestVisible="False"
-                                         RenderTransformOrigin="0.5,0.5">
-                                    <Ellipse.RenderTransform>
-                                        <ScaleTransform x:Name="RippleScale"
-                                                        ScaleX="0.16"
-                                                        ScaleY="0.16" />
-                                    </Ellipse.RenderTransform>
-                                </Ellipse>
-                                <ContentPresenter HorizontalAlignment="Center"
-                                                  VerticalAlignment="Center"
-                                                  RecognizesAccessKey="True" />
-                            </Grid>
-                        </Border>
+                        <Grid ClipToBounds="True">
+                            <Border x:Name="Root"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="8" />
+                            <Canvas x:Name="RippleHost"
+                                    ClipToBounds="True"
+                                    IsHitTestVisible="False">
+                                <Canvas.OpacityMask>
+                                    <VisualBrush Visual="{Binding ElementName=Root}" />
+                                </Canvas.OpacityMask>
+                            </Canvas>
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True" />
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Root" Property="Background" Value="#2B3A32" />
                                 <Setter TargetName="Root" Property="BorderBrush" Value="#4E6357" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="#1ED760" />
-                                <Setter Property="Foreground" Value="#0F1511" />
+                                <Setter TargetName="Root" Property="Background" Value="#203A29" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#1ED760" />
                             </Trigger>
-                            <EventTrigger RoutedEvent="Button.PreviewMouseDown">
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="Ripple"
-                                                         Storyboard.TargetProperty="Opacity"
-                                                         From="0.42"
-                                                         To="0"
-                                                         Duration="0:0:0.34" />
-                                        <DoubleAnimation Storyboard.TargetName="RippleScale"
-                                                         Storyboard.TargetProperty="ScaleX"
-                                                         From="0.16"
-                                                         To="2.05"
-                                                         Duration="0:0:0.34" />
-                                        <DoubleAnimation Storyboard.TargetName="RippleScale"
-                                                         Storyboard.TargetProperty="ScaleY"
-                                                         From="0.16"
-                                                         To="2.05"
-                                                         Duration="0:0:0.34" />
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </EventTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
