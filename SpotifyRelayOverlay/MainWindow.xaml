@@ -255,14 +255,17 @@
                     VerticalAlignment="Top"
                     IsHitTestVisible="False"
                     Opacity="0">
+                <Border.CacheMode>
+                    <BitmapCache />
+                </Border.CacheMode>
                 <Border.RenderTransform>
                     <TranslateTransform x:Name="CursorLightTransform" />
                 </Border.RenderTransform>
                 <Border.Background>
                     <RadialGradientBrush>
-                        <GradientStop Color="#FFFFFFFF" Offset="0" />
-                        <GradientStop Color="#66FFFFFF" Offset="0.34" />
-                        <GradientStop Color="#00FFFFFF" Offset="1" />
+                        <GradientStop Color="#FF49D86E" Offset="0" />
+                        <GradientStop Color="#6649D86E" Offset="0.36" />
+                        <GradientStop Color="#0036A85A" Offset="1" />
                     </RadialGradientBrush>
                 </Border.Background>
             </Border>

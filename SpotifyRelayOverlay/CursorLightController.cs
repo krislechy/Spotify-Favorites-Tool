@@ -9,9 +9,7 @@ namespace SpotifyRelayOverlay;
 
 public sealed class CursorLightController : IDisposable
 {
-    private static readonly Duration MoveDuration = TimeSpan.FromMilliseconds(120);
     private static readonly Duration FadeDuration = TimeSpan.FromMilliseconds(180);
-    private static readonly IEasingFunction MoveEase = new QuadraticEase { EasingMode = EasingMode.EaseOut };
     private static readonly IEasingFunction FadeEase = new QuadraticEase { EasingMode = EasingMode.EaseOut };
 
     private readonly FrameworkElement _surface;
@@ -44,13 +42,11 @@ public sealed class CursorLightController : IDisposable
         _surface.MouseLeave -= Surface_MouseLeave;
         _surface.MouseMove -= Surface_MouseMove;
         _light.BeginAnimation(UIElement.OpacityProperty, null);
-        _transform.BeginAnimation(TranslateTransform.XProperty, null);
-        _transform.BeginAnimation(TranslateTransform.YProperty, null);
     }
 
     private void Surface_MouseEnter(object sender, InputMouseEventArgs e)
     {
-        MoveTo(e.GetPosition(_surface), immediate: true);
+        MoveTo(e.GetPosition(_surface));
         AnimateOpacity(_visibleOpacity);
     }
 
@@ -61,23 +57,16 @@ public sealed class CursorLightController : IDisposable
 
     private void Surface_MouseMove(object sender, InputMouseEventArgs e)
     {
-        MoveTo(e.GetPosition(_surface), immediate: false);
+        MoveTo(e.GetPosition(_surface));
     }
 
-    private void MoveTo(WindowsPoint cursorPosition, bool immediate)
+    private void MoveTo(WindowsPoint cursorPosition)
     {
         var targetX = cursorPosition.X - _lightSize / 2;
         var targetY = cursorPosition.Y - _lightSize / 2;
 
-        if (immediate)
-        {
-            _transform.X = targetX;
-            _transform.Y = targetY;
-            return;
-        }
-
-        AnimateTransform(TranslateTransform.XProperty, targetX);
-        AnimateTransform(TranslateTransform.YProperty, targetY);
+        _transform.X = targetX;
+        _transform.Y = targetY;
     }
 
     private void AnimateOpacity(double opacity)
@@ -87,14 +76,5 @@ public sealed class CursorLightController : IDisposable
             EasingFunction = FadeEase
         };
         _light.BeginAnimation(UIElement.OpacityProperty, animation);
-    }
-
-    private void AnimateTransform(DependencyProperty property, double value)
-    {
-        var animation = new DoubleAnimation(value, MoveDuration)
-        {
-            EasingFunction = MoveEase
-        };
-        _transform.BeginAnimation(property, animation);
     }
 }
