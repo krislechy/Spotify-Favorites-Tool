@@ -192,45 +192,43 @@ public partial class ToastWindow : Window
         HeartFill.Opacity = 1;
         HeartScale.ScaleX = 1;
         HeartScale.ScaleY = 1;
-        DarkMist.Opacity = 0;
-        DarkMistScale.ScaleX = 0.62;
-        DarkMistScale.ScaleY = 0.62;
+        BulletHole.Opacity = 0;
+        BulletRing.Opacity = 0;
+        BulletHoleScale.ScaleX = 0.2;
+        BulletHoleScale.ScaleY = 0.2;
+        BulletRingScale.ScaleX = 0.35;
+        BulletRingScale.ScaleY = 0.35;
+        CrackScale.ScaleX = 0.15;
+        CrackScale.ScaleY = 0.15;
 
         dryingBrush.BeginAnimation(
             SolidColorBrush.ColorProperty,
-            new ColorAnimation(MediaColor.FromRgb(30, 215, 96), MediaColor.FromRgb(34, 43, 37), new Duration(TimeSpan.FromMilliseconds(600)))
+            new ColorAnimation(MediaColor.FromRgb(30, 215, 96), MediaColor.FromRgb(25, 31, 27), new Duration(TimeSpan.FromMilliseconds(520)))
             {
                 BeginTime = TimeSpan.FromMilliseconds(60),
                 EasingFunction = EaseOut()
             });
 
-        AnimateKeyFrames(DarkMist, UIElement.OpacityProperty, (0, 0), (0.82, 180), (0.52, 720), (0, 1480));
-        AnimateKeyFrames(DarkMistScale, ScaleTransform.ScaleXProperty, (0.62, 0), (1.08, 360), (1.46, 1480));
-        AnimateKeyFrames(DarkMistScale, ScaleTransform.ScaleYProperty, (0.62, 0), (0.92, 360), (1.3, 1480));
+        AnimateKeyFrames(HeartScale, ScaleTransform.ScaleXProperty, (1, 0), (1.04, 120), (0.96, 260), (1, 420));
+        AnimateKeyFrames(HeartScale, ScaleTransform.ScaleYProperty, (1, 0), (1.04, 120), (0.96, 260), (1, 420));
+        Animate(BulletHole, UIElement.OpacityProperty, 0, 1, 80, 130);
+        Animate(BulletHoleScale, ScaleTransform.ScaleXProperty, 0.2, 1, 130, 130, EaseOut());
+        Animate(BulletHoleScale, ScaleTransform.ScaleYProperty, 0.2, 1, 130, 130, EaseOut());
+        AnimateKeyFrames(BulletRing, UIElement.OpacityProperty, (0, 120), (0.9, 190), (0.28, 430), (0, 780));
+        AnimateKeyFrames(BulletRingScale, ScaleTransform.ScaleXProperty, (0.35, 120), (1.1, 260), (1.65, 780));
+        AnimateKeyFrames(BulletRingScale, ScaleTransform.ScaleYProperty, (0.35, 120), (1.1, 260), (1.65, 780));
+        AnimateKeyFrames(CrackLines, UIElement.OpacityProperty, (0, 230), (1, 360), (0.82, 920), (0, 1280));
+        AnimateKeyFrames(CrackScale, ScaleTransform.ScaleXProperty, (0.15, 230), (1, 470), (1.08, 1280));
+        AnimateKeyFrames(CrackScale, ScaleTransform.ScaleYProperty, (0.15, 230), (1, 470), (1.08, 1280));
+        Animate(HeartFill, UIElement.OpacityProperty, 1, 0, 120, 650);
+        Animate(BulletHole, UIElement.OpacityProperty, 1, 0, 180, 760);
 
-        Animate(HeartScale, ScaleTransform.ScaleXProperty, 1, 0.82, 500, 80, EaseInOut());
-        Animate(HeartScale, ScaleTransform.ScaleYProperty, 1, 0.62, 500, 80, EaseInOut());
-        Animate(HeartRotate, RotateTransform.AngleProperty, 0, -5, 520, 110, EaseInOut());
-        Animate(CrackLines, UIElement.OpacityProperty, 0, 1, 130, 280);
-        Animate(HeartFill, UIElement.OpacityProperty, 1, 0, 180, 620);
-        Animate(CrackLines, UIElement.OpacityProperty, 1, 0, 220, 780);
-
-        AnimateBrokenPiece(HeartPieceLeft, LeftPieceTranslate, LeftPieceRotate, -11, -4, -20, 500);
-        AnimateBrokenPiece(HeartPieceRight, RightPieceTranslate, RightPieceRotate, 11, 1, 22, 540);
-        AnimateBrokenPiece(HeartPieceCenter, CenterPieceTranslate, CenterPieceRotate, -1, 11, 8, 580);
-        AnimateBrokenPiece(HeartPieceTop, TopPieceTranslate, TopPieceRotate, 0, -12, -10, 500);
-        AnimateBrokenPiece(HeartPieceLowerLeft, LowerLeftPieceTranslate, LowerLeftPieceRotate, -14, 11, -30, 620);
-        AnimateBrokenPiece(HeartPieceLowerRight, LowerRightPieceTranslate, LowerRightPieceRotate, 14, 10, 32, 650);
-
-        AnimateAsh(AshOne, AshOneTranslate, -13, -10, 380);
-        AnimateAsh(AshTwo, AshTwoTranslate, 10, -12, 460);
-        AnimateAsh(AshThree, AshThreeTranslate, 2, 15, 560);
-        AnimateDust(DustOne, DustOneTranslate, -12, 12, 540);
-        AnimateDust(DustTwo, DustTwoTranslate, 13, 13, 590);
-        AnimateDust(DustThree, DustThreeTranslate, 0, 17, 640);
-        AnimateDust(DustFour, DustFourTranslate, -9, 18, 680);
-        AnimateDust(DustFive, DustFiveTranslate, 10, 18, 720);
-        AnimateDust(DustSix, DustSixTranslate, 3, 20, 760);
+        AnimateBrokenPiece(HeartPieceLeft, LeftPieceTranslate, LeftPieceRotate, -12, -6, -18, 620);
+        AnimateBrokenPiece(HeartPieceRight, RightPieceTranslate, RightPieceRotate, 12, -4, 18, 640);
+        AnimateBrokenPiece(HeartPieceCenter, CenterPieceTranslate, CenterPieceRotate, 1, 13, 7, 660);
+        AnimateBrokenPiece(HeartPieceTop, TopPieceTranslate, TopPieceRotate, -1, -13, -7, 610);
+        AnimateBrokenPiece(HeartPieceLowerLeft, LowerLeftPieceTranslate, LowerLeftPieceRotate, -14, 11, -24, 700);
+        AnimateBrokenPiece(HeartPieceLowerRight, LowerRightPieceTranslate, LowerRightPieceRotate, 14, 11, 24, 720);
     }
 
     private void AnimateAsh(UIElement ash, TranslateTransform translate, double x, double y, int delayMs)
@@ -291,6 +289,8 @@ public partial class ToastWindow : Window
         HeartFill.BeginAnimation(UIElement.OpacityProperty, null);
         HeartOutline.BeginAnimation(UIElement.OpacityProperty, null);
         CrackLines.BeginAnimation(UIElement.OpacityProperty, null);
+        BulletHole.BeginAnimation(UIElement.OpacityProperty, null);
+        BulletRing.BeginAnimation(UIElement.OpacityProperty, null);
         HeartPieceLeft.BeginAnimation(UIElement.OpacityProperty, null);
         HeartPieceRight.BeginAnimation(UIElement.OpacityProperty, null);
         HeartPieceCenter.BeginAnimation(UIElement.OpacityProperty, null);
@@ -316,6 +316,8 @@ public partial class ToastWindow : Window
         HeartFill.Opacity = 0;
         HeartOutline.Opacity = 0;
         CrackLines.Opacity = 0;
+        BulletHole.Opacity = 0;
+        BulletRing.Opacity = 0;
         HeartPieceLeft.Opacity = 0;
         HeartPieceRight.Opacity = 0;
         HeartPieceCenter.Opacity = 0;
@@ -337,6 +339,12 @@ public partial class ToastWindow : Window
         SparkleRightScale.ScaleX = 0.25;
         SparkleRightScale.ScaleY = 0.25;
         SparkleTopRotate.Angle = 0;
+        CrackScale.ScaleX = 0.15;
+        CrackScale.ScaleY = 0.15;
+        BulletHoleScale.ScaleX = 0.2;
+        BulletHoleScale.ScaleY = 0.2;
+        BulletRingScale.ScaleX = 0.35;
+        BulletRingScale.ScaleY = 0.35;
         DustOneTranslate.X = 0;
         DustOneTranslate.Y = 0;
         DustTwoTranslate.X = 0;
