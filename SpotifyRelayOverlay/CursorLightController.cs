@@ -13,6 +13,8 @@ namespace SpotifyRelayOverlay;
 
 public sealed class CursorLightController : IDisposable
 {
+    private const double LightRadius = 135;
+
     private static readonly Duration FadeDuration = TimeSpan.FromMilliseconds(180);
     private static readonly IEasingFunction FadeEase = new QuadraticEase { EasingMode = EasingMode.EaseOut };
     private static readonly WpfColor GreenLightTarget = WpfColor.FromRgb(0x1E, 0xD7, 0x60);
@@ -31,18 +33,18 @@ public sealed class CursorLightController : IDisposable
         _surface = surface;
         _setBackground = setBackground;
         _baseColor = baseColor;
-        _centerColor = BrightenTowardGreen(baseColor, 0.15);
-        _middleColor = BrightenTowardGreen(baseColor, 0.07);
+        _centerColor = BrightenTowardGreen(baseColor, 0.13);
+        _middleColor = BrightenTowardGreen(baseColor, 0.045);
 
         _centerStop = new GradientStop(_baseColor, 0);
-        _middleStop = new GradientStop(_baseColor, 0.38);
+        _middleStop = new GradientStop(_baseColor, 0.68);
         _brush = new RadialGradientBrush
         {
-            MappingMode = BrushMappingMode.RelativeToBoundingBox,
-            Center = new WindowsPoint(0.5, 0.5),
-            GradientOrigin = new WindowsPoint(0.5, 0.5),
-            RadiusX = 0.62,
-            RadiusY = 0.62
+            MappingMode = BrushMappingMode.Absolute,
+            Center = new WindowsPoint(0, 0),
+            GradientOrigin = new WindowsPoint(0, 0),
+            RadiusX = LightRadius,
+            RadiusY = LightRadius
         };
         _brush.GradientStops.Add(_centerStop);
         _brush.GradientStops.Add(_middleStop);
@@ -93,14 +95,9 @@ public sealed class CursorLightController : IDisposable
 
     private void MoveTo(WindowsPoint cursorPosition)
     {
-        if (_surface.ActualWidth <= 0 || _surface.ActualHeight <= 0)
-        {
-            return;
-        }
-
         var center = new WindowsPoint(
-            Math.Clamp(cursorPosition.X / _surface.ActualWidth, 0, 1),
-            Math.Clamp(cursorPosition.Y / _surface.ActualHeight, 0, 1));
+            Math.Clamp(cursorPosition.X, 0, _surface.ActualWidth),
+            Math.Clamp(cursorPosition.Y, 0, _surface.ActualHeight));
         _brush.Center = center;
         _brush.GradientOrigin = center;
     }
