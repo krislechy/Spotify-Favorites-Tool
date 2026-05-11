@@ -57,9 +57,9 @@
         </Style>
     </Window.Resources>
 
-    <Grid x:Name="CursorLightSurface"
+    <Grid x:Name="SettingsLayer"
           Margin="18"
-          ClipToBounds="True">
+          Background="#101512">
     <DockPanel LastChildFill="True">
         <StackPanel DockPanel.Dock="Bottom"
                     Orientation="Horizontal"
@@ -114,7 +114,8 @@
                          IsReadOnly="True"
                          Foreground="#CFE1D5" />
 
-                <Border Margin="0,16,0,0"
+                <Border x:Name="FavoriteHotkeySettingsLayer"
+                        Margin="0,16,0,0"
                         Padding="12"
                         CornerRadius="8"
                         BorderBrush="#334139"
@@ -153,7 +154,8 @@
                     </Grid>
                 </Border>
 
-                <Border Margin="0,12,0,0"
+                <Border x:Name="StatusSettingsLayer"
+                        Margin="0,12,0,0"
                         Padding="12"
                         CornerRadius="8"
                         BorderBrush="#334139"
@@ -206,27 +208,5 @@
         </ScrollViewer>
     </DockPanel>
 
-    <Border x:Name="CursorLight"
-            Panel.ZIndex="50"
-            Width="300"
-            Height="300"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Top"
-            IsHitTestVisible="False"
-            Opacity="0">
-        <Border.CacheMode>
-            <BitmapCache />
-        </Border.CacheMode>
-        <Border.RenderTransform>
-            <TranslateTransform x:Name="CursorLightTransform" />
-        </Border.RenderTransform>
-        <Border.Background>
-            <RadialGradientBrush>
-                <GradientStop Color="#FF49D86E" Offset="0" />
-                <GradientStop Color="#6649D86E" Offset="0.36" />
-                <GradientStop Color="#0036A85A" Offset="1" />
-            </RadialGradientBrush>
-        </Border.Background>
-    </Border>
     </Grid>
 </Window>

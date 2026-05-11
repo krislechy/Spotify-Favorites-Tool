@@ -61,7 +61,8 @@
         </Style>
     </Window.Resources>
 
-    <Border Margin="8"
+    <Border x:Name="ShellLayer"
+            Margin="8"
             CornerRadius="12"
             Background="#101512"
             BorderBrush="#2A3A31"
@@ -74,8 +75,7 @@
                               Color="#000000" />
         </Border.Effect>
 
-        <Grid x:Name="CursorLightSurface"
-              ClipToBounds="True">
+        <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="42" />
                 <RowDefinition Height="*" />
@@ -134,7 +134,8 @@
                 </StackPanel>
             </Grid>
 
-            <Border Grid.Row="1"
+            <Border x:Name="ContentLayer"
+                    Grid.Row="1"
                     Margin="12,10,12,12"
                     Padding="16"
                     CornerRadius="10"
@@ -154,7 +155,8 @@
                                FontWeight="SemiBold"
                                TextWrapping="Wrap" />
 
-                    <Border Grid.Row="1"
+                    <Border x:Name="StatusLayer"
+                            Grid.Row="1"
                             Margin="0,14,0,0"
                             Padding="12"
                             CornerRadius="8"
@@ -193,7 +195,8 @@
                                        FontSize="11" />
                         </DockPanel>
 
-                        <Border Grid.Row="1"
+                        <Border x:Name="ActivityLogLayer"
+                                Grid.Row="1"
                                 CornerRadius="8"
                                 Background="#111714"
                                 BorderBrush="#25342C"
@@ -246,29 +249,6 @@
                 </Grid>
             </Border>
 
-            <Border x:Name="CursorLight"
-                    Grid.RowSpan="2"
-                    Panel.ZIndex="50"
-                    Width="320"
-                    Height="320"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Top"
-                    IsHitTestVisible="False"
-                    Opacity="0">
-                <Border.CacheMode>
-                    <BitmapCache />
-                </Border.CacheMode>
-                <Border.RenderTransform>
-                    <TranslateTransform x:Name="CursorLightTransform" />
-                </Border.RenderTransform>
-                <Border.Background>
-                    <RadialGradientBrush>
-                        <GradientStop Color="#FF49D86E" Offset="0" />
-                        <GradientStop Color="#6649D86E" Offset="0.36" />
-                        <GradientStop Color="#0036A85A" Offset="1" />
-                    </RadialGradientBrush>
-                </Border.Background>
-            </Border>
         </Grid>
     </Border>
 </Window>

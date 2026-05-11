@@ -1,8 +1,12 @@
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using InputMouseEventArgs = System.Windows.Input.MouseEventArgs;
+using WpfBrush = System.Windows.Media.Brush;
+using WpfColor = System.Windows.Media.Color;
+using WpfPanel = System.Windows.Controls.Panel;
 using WindowsPoint = System.Windows.Point;
 
 namespace SpotifyRelayOverlay;
@@ -13,27 +17,50 @@ public sealed class CursorLightController : IDisposable
     private static readonly IEasingFunction FadeEase = new QuadraticEase { EasingMode = EasingMode.EaseOut };
 
     private readonly FrameworkElement _surface;
-    private readonly UIElement _light;
-    private readonly TranslateTransform _transform;
-    private readonly double _lightSize;
-    private readonly double _visibleOpacity;
+    private readonly Action<WpfBrush> _setBackground;
+    private readonly RadialGradientBrush _brush;
+    private readonly GradientStop _centerStop;
+    private readonly GradientStop _middleStop;
+    private readonly WpfColor _baseColor;
+    private readonly WpfColor _centerColor;
+    private readonly WpfColor _middleColor;
 
-    public CursorLightController(
-        FrameworkElement surface,
-        UIElement light,
-        TranslateTransform transform,
-        double lightSize,
-        double visibleOpacity)
+    private CursorLightController(FrameworkElement surface, Action<WpfBrush> setBackground, WpfColor baseColor)
     {
         _surface = surface;
-        _light = light;
-        _transform = transform;
-        _lightSize = lightSize;
-        _visibleOpacity = visibleOpacity;
+        _setBackground = setBackground;
+        _baseColor = baseColor;
+        _centerColor = Lighten(baseColor, 0.15);
+        _middleColor = Lighten(baseColor, 0.07);
+
+        _centerStop = new GradientStop(_baseColor, 0);
+        _middleStop = new GradientStop(_baseColor, 0.38);
+        _brush = new RadialGradientBrush
+        {
+            MappingMode = BrushMappingMode.RelativeToBoundingBox,
+            Center = new WindowsPoint(0.5, 0.5),
+            GradientOrigin = new WindowsPoint(0.5, 0.5),
+            RadiusX = 0.62,
+            RadiusY = 0.62
+        };
+        _brush.GradientStops.Add(_centerStop);
+        _brush.GradientStops.Add(_middleStop);
+        _brush.GradientStops.Add(new GradientStop(_baseColor, 1));
+        _setBackground(_brush);
 
         _surface.MouseEnter += Surface_MouseEnter;
         _surface.MouseLeave += Surface_MouseLeave;
         _surface.MouseMove += Surface_MouseMove;
+    }
+
+    public static CursorLightController ForBorder(Border border, string baseColor)
+    {
+        return new CursorLightController(border, brush => border.Background = brush, ParseColor(baseColor));
+    }
+
+    public static CursorLightController ForPanel(WpfPanel panel, string baseColor)
+    {
+        return new CursorLightController(panel, brush => panel.Background = brush, ParseColor(baseColor));
     }
 
     public void Dispose()
@@ -41,18 +68,21 @@ public sealed class CursorLightController : IDisposable
         _surface.MouseEnter -= Surface_MouseEnter;
         _surface.MouseLeave -= Surface_MouseLeave;
         _surface.MouseMove -= Surface_MouseMove;
-        _light.BeginAnimation(UIElement.OpacityProperty, null);
+        _centerStop.BeginAnimation(GradientStop.ColorProperty, null);
+        _middleStop.BeginAnimation(GradientStop.ColorProperty, null);
     }
 
     private void Surface_MouseEnter(object sender, InputMouseEventArgs e)
     {
         MoveTo(e.GetPosition(_surface));
-        AnimateOpacity(_visibleOpacity);
+        AnimateColor(_centerStop, _centerColor);
+        AnimateColor(_middleStop, _middleColor);
     }
 
     private void Surface_MouseLeave(object sender, InputMouseEventArgs e)
     {
-        AnimateOpacity(0);
+        AnimateColor(_centerStop, _baseColor);
+        AnimateColor(_middleStop, _baseColor);
     }
 
     private void Surface_MouseMove(object sender, InputMouseEventArgs e)
@@ -62,19 +92,42 @@ public sealed class CursorLightController : IDisposable
 
     private void MoveTo(WindowsPoint cursorPosition)
     {
-        var targetX = cursorPosition.X - _lightSize / 2;
-        var targetY = cursorPosition.Y - _lightSize / 2;
+        if (_surface.ActualWidth <= 0 || _surface.ActualHeight <= 0)
+        {
+            return;
+        }
 
-        _transform.X = targetX;
-        _transform.Y = targetY;
+        var center = new WindowsPoint(
+            Math.Clamp(cursorPosition.X / _surface.ActualWidth, 0, 1),
+            Math.Clamp(cursorPosition.Y / _surface.ActualHeight, 0, 1));
+        _brush.Center = center;
+        _brush.GradientOrigin = center;
     }
 
-    private void AnimateOpacity(double opacity)
+    private void AnimateColor(GradientStop stop, WpfColor color)
     {
-        var animation = new DoubleAnimation(opacity, FadeDuration)
+        var animation = new ColorAnimation(color, FadeDuration)
         {
             EasingFunction = FadeEase
         };
-        _light.BeginAnimation(UIElement.OpacityProperty, animation);
+        stop.BeginAnimation(GradientStop.ColorProperty, animation);
+    }
+
+    private static WpfColor ParseColor(string value)
+    {
+        return (WpfColor)System.Windows.Media.ColorConverter.ConvertFromString(value)!;
+    }
+
+    private static WpfColor Lighten(WpfColor color, double amount)
+    {
+        return WpfColor.FromRgb(
+            LightenChannel(color.R, amount),
+            LightenChannel(color.G, amount),
+            LightenChannel(color.B, amount));
+    }
+
+    private static byte LightenChannel(byte channel, double amount)
+    {
+        return (byte)Math.Round(channel + (255 - channel) * amount);
     }
 }
