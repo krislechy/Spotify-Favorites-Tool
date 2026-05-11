@@ -76,6 +76,15 @@
             <Setter Property="FontSize" Value="13" />
         </Style>
 
+        <Style x:Key="ButtonIconPath" TargetType="Path">
+            <Setter Property="Stroke" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+            <Setter Property="StrokeThickness" Value="1.7" />
+            <Setter Property="StrokeStartLineCap" Value="Round" />
+            <Setter Property="StrokeEndLineCap" Value="Round" />
+            <Setter Property="StrokeLineJoin" Value="Round" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
+
         <Style TargetType="TextBox" BasedOn="{StaticResource AppTextBoxStyle}">
             <Setter Property="Height" Value="38" />
             <Setter Property="MinHeight" Value="38" />
@@ -197,14 +206,26 @@
                             Orientation="Horizontal"
                             VerticalAlignment="Center">
                     <Button Style="{StaticResource TitleButton}"
-                            Content="─"
                             Click="MinimizeButton_Click"
-                            ToolTip="Свернуть" />
+                            ToolTip="Свернуть">
+                        <Canvas Width="16"
+                                Height="16"
+                                IsHitTestVisible="False">
+                            <Path Style="{StaticResource ButtonIconPath}"
+                                  Data="M 4,9 L 12,9" />
+                        </Canvas>
+                    </Button>
                     <Button Style="{StaticResource TitleButton}"
-                            Content="×"
                             Margin="0"
                             Click="CloseButton_Click"
-                            ToolTip="Закрыть" />
+                            ToolTip="Закрыть">
+                        <Canvas Width="16"
+                                Height="16"
+                                IsHitTestVisible="False">
+                            <Path Style="{StaticResource ButtonIconPath}"
+                                  Data="M 4,4 L 12,12 M 12,4 L 4,12" />
+                        </Canvas>
+                    </Button>
                 </StackPanel>
             </Grid>
 
@@ -221,25 +242,95 @@
                     HorizontalAlignment="Right"
                     Margin="0,14,0,0">
             <Button Style="{StaticResource SettingsButton}"
-                    Content="✓ Сохранить"
-                    Width="116"
+                    Width="126"
                     Margin="0,0,8,0"
-                    Click="SaveButton_Click" />
+                    Click="SaveButton_Click">
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                    <Canvas Width="16"
+                            Height="16"
+                            Margin="0,0,7,0"
+                            IsHitTestVisible="False">
+                        <Path Style="{StaticResource ButtonIconPath}"
+                              Data="M 3,2.5 L 11.5,2.5 L 13.5,4.5 L 13.5,13.5 L 2.5,13.5 L 2.5,2.5 Z" />
+                        <Path Style="{StaticResource ButtonIconPath}"
+                              Data="M 5,2.5 L 5,6 L 11,6 L 11,2.5" />
+                        <Path Style="{StaticResource ButtonIconPath}"
+                              Data="M 5,10.5 L 11,10.5 L 11,13.5 L 5,13.5 Z" />
+                    </Canvas>
+                    <TextBlock Text="Сохранить" />
+                </StackPanel>
+            </Button>
             <Button x:Name="LoginButton"
                     Style="{StaticResource SettingsButton}"
-                    Content="↗ Spotify"
-                    Width="116"
+                    Width="124"
                     Margin="0,0,8,0"
-                    Click="LoginButton_Click" />
+                    Click="LoginButton_Click">
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                    <Canvas Width="16"
+                            Height="16"
+                            Margin="0,0,7,0"
+                            IsHitTestVisible="False">
+                        <Ellipse Width="16"
+                                 Height="16"
+                                 Fill="#1ED760" />
+                        <Path Data="M 4,6.1 C 6.6,5.3 9.5,5.5 12,6.7"
+                              Stroke="#0F1511"
+                              StrokeThickness="1.35"
+                              StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round" />
+                        <Path Data="M 4.6,8.4 C 6.8,7.8 9,8.1 11.3,9"
+                              Stroke="#0F1511"
+                              StrokeThickness="1.2"
+                              StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round" />
+                        <Path Data="M 5.2,10.5 C 6.8,10.1 8.5,10.2 10.2,10.9"
+                              Stroke="#0F1511"
+                              StrokeThickness="1.1"
+                              StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round" />
+                    </Canvas>
+                    <TextBlock Text="Spotify" />
+                </StackPanel>
+            </Button>
             <Button Style="{StaticResource SettingsButton}"
-                    Content="⎋ Выйти"
-                    Width="92"
+                    Width="100"
                     Margin="0,0,8,0"
-                    Click="LogoutButton_Click" />
+                    Click="LogoutButton_Click">
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                    <Canvas Width="16"
+                            Height="16"
+                            Margin="0,0,7,0"
+                            IsHitTestVisible="False">
+                        <Path Style="{StaticResource ButtonIconPath}"
+                              Data="M 3,3 L 8,3 L 8,13 L 3,13 Z" />
+                        <Path Style="{StaticResource ButtonIconPath}"
+                              Data="M 8,8 L 14,8 M 11,5 L 14,8 L 11,11" />
+                    </Canvas>
+                    <TextBlock Text="Выйти" />
+                </StackPanel>
+            </Button>
             <Button Style="{StaticResource SettingsButton}"
-                    Content="Закрыть"
-                    Width="90"
-                    Click="CloseButton_Click" />
+                    Width="98"
+                    Click="CloseButton_Click">
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                    <Canvas Width="16"
+                            Height="16"
+                            Margin="0,0,7,0"
+                            IsHitTestVisible="False">
+                        <Path Style="{StaticResource ButtonIconPath}"
+                              Data="M 4,4 L 12,12 M 12,4 L 4,12" />
+                    </Canvas>
+                    <TextBlock Text="Закрыть" />
+                </StackPanel>
+            </Button>
         </StackPanel>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto"
@@ -300,10 +391,22 @@
                                      ToolTip="Кликни сюда и нажми клавишу добавления/удаления из Избранного" />
                             <Button Grid.Column="1"
                                     Style="{StaticResource SettingsButton}"
-                                    Content="Очистить"
-                                    Width="96"
+                                    Width="112"
                                     Margin="8,0,0,0"
-                                    Click="ClearHotkeyButton_Click" />
+                                    Click="ClearHotkeyButton_Click">
+                                <StackPanel Orientation="Horizontal"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center">
+                                    <Canvas Width="15"
+                                            Height="15"
+                                            Margin="0,0,7,0"
+                                            IsHitTestVisible="False">
+                                        <Path Style="{StaticResource ButtonIconPath}"
+                                              Data="M 4,5 L 11,5 M 5.6,5 L 6,3 L 9,3 L 9.4,5 M 6,5 L 6.4,12.5 L 9.6,12.5 L 10,5" />
+                                    </Canvas>
+                                    <TextBlock Text="Очистить" />
+                                </StackPanel>
+                            </Button>
                         </Grid>
                     </Grid>
                 </local:LiquidHoverBorder>
@@ -339,10 +442,22 @@
                                      ToolTip="Кликни сюда и нажми клавишу проверки статуса Избранного" />
                             <Button Grid.Column="1"
                                     Style="{StaticResource SettingsButton}"
-                                    Content="Очистить"
-                                    Width="96"
+                                    Width="112"
                                     Margin="8,0,0,0"
-                                    Click="ClearStatusHotkeyButton_Click" />
+                                    Click="ClearStatusHotkeyButton_Click">
+                                <StackPanel Orientation="Horizontal"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center">
+                                    <Canvas Width="15"
+                                            Height="15"
+                                            Margin="0,0,7,0"
+                                            IsHitTestVisible="False">
+                                        <Path Style="{StaticResource ButtonIconPath}"
+                                              Data="M 4,5 L 11,5 M 5.6,5 L 6,3 L 9,3 L 9.4,5 M 6,5 L 6.4,12.5 L 9.6,12.5 L 10,5" />
+                                    </Canvas>
+                                    <TextBlock Text="Очистить" />
+                                </StackPanel>
+                            </Button>
                         </Grid>
                     </Grid>
                 </local:LiquidHoverBorder>
