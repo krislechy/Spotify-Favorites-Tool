@@ -83,6 +83,28 @@ public partial class SettingsWindow : Window
         Close();
     }
 
+    private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ButtonState != MouseButtonState.Pressed)
+        {
+            return;
+        }
+
+        try
+        {
+            DragMove();
+        }
+        catch (InvalidOperationException)
+        {
+            // DragMove can throw if Windows has already ended the mouse capture.
+        }
+    }
+
     private void FavoriteHotkeyBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
     {
         FavoriteHotkeyBox.Text = "Нажми клавишу Избранного...";

@@ -7,11 +7,58 @@
         Height="680"
         MinWidth="540"
         MinHeight="440"
-        ResizeMode="CanResize"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
         WindowStartupLocation="CenterOwner"
-        Background="#101512"
+        Background="Transparent"
         Foreground="#F4F8F5">
     <Window.Resources>
+        <Style x:Key="IconButton" TargetType="Button">
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="#F4F8F5" />
+            <Setter Property="Background" Value="#202A24" />
+            <Setter Property="BorderBrush" Value="#3D4B42" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#2B3A32" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#4E6357" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#1ED760" />
+                                <Setter Property="Foreground" Value="#0F1511" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TitleButton" BasedOn="{StaticResource IconButton}" TargetType="Button">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+
         <Style TargetType="TextBox">
             <Setter Property="Height" Value="34" />
             <Setter Property="Padding" Value="9,6" />
@@ -58,11 +105,81 @@
         </Style>
     </Window.Resources>
 
-    <local:LiquidHoverBorder Margin="18"
-                             Padding="0"
-                             CornerRadius="10"
+    <local:LiquidHoverBorder Margin="8"
+                             CornerRadius="12"
                              BaseColor="#101512"
-                             BorderThickness="0">
+                             BorderBrush="#2A3A31"
+                             BorderThickness="1"
+                             SnapsToDevicePixels="True">
+        <local:LiquidHoverBorder.Effect>
+            <DropShadowEffect BlurRadius="18"
+                              ShadowDepth="0"
+                              Opacity="0.28"
+                              Color="#000000" />
+        </local:LiquidHoverBorder.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="42" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Grid x:Name="TitleBar"
+                  Grid.Row="0"
+                  Margin="10,8,10,0"
+                  MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Border Width="28"
+                        Height="28"
+                        CornerRadius="7"
+                        Background="#1ED760">
+                    <TextBlock Text="♥"
+                               Foreground="#0F1511"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+                </Border>
+
+                <StackPanel Grid.Column="1"
+                            Margin="10,0,0,0"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="Настройки Избранного"
+                               Foreground="#F4F8F5"
+                               FontSize="14"
+                               FontWeight="SemiBold" />
+                    <TextBlock Text="Spotify, горячие клавиши и авторизация"
+                               Foreground="#7F8D84"
+                               FontSize="10" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <Button Style="{StaticResource TitleButton}"
+                            Content="─"
+                            Click="MinimizeButton_Click"
+                            ToolTip="Свернуть" />
+                    <Button Style="{StaticResource TitleButton}"
+                            Content="×"
+                            Margin="0"
+                            Click="CloseButton_Click"
+                            ToolTip="Закрыть" />
+                </StackPanel>
+            </Grid>
+
+            <local:LiquidHoverBorder Grid.Row="1"
+                                     Margin="12,10,12,12"
+                                     Padding="16"
+                                     CornerRadius="10"
+                                     BaseColor="#101512"
+                                     BorderBrush="#25342C"
+                                     BorderThickness="1">
     <DockPanel LastChildFill="True">
         <StackPanel DockPanel.Dock="Bottom"
                     Orientation="Horizontal"
@@ -208,5 +325,7 @@
             </StackPanel>
         </ScrollViewer>
     </DockPanel>
+            </local:LiquidHoverBorder>
+        </Grid>
     </local:LiquidHoverBorder>
 </Window>
