@@ -1,11 +1,11 @@
 using System.Threading;
 using System.Windows;
 
-namespace SpotifyRelayOverlay;
+namespace SpotifyFavoritesTool;
 
 public partial class App : System.Windows.Application
 {
-    private const string SingleInstanceMutexName = @"Local\SpotifyRelayOverlay.SingleInstance";
+    private const string SingleInstanceMutexName = @"Local\SpotifyFavoritesTool.SingleInstance";
 
     private Mutex? _singleInstanceMutex;
     private bool _ownsSingleInstanceMutex;

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace SpotifyRelayOverlay;
+namespace SpotifyFavoritesTool;
 
 internal sealed class TokenResponse
 {

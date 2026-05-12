@@ -1,7 +1,7 @@
 using System.Windows.Threading;
 using Forms = System.Windows.Forms;
 
-namespace SpotifyRelayOverlay;
+namespace SpotifyFavoritesTool;
 
 public sealed class TrayIconController : IDisposable
 {
@@ -25,7 +25,7 @@ public sealed class TrayIconController : IDisposable
         _icon = new Forms.NotifyIcon
         {
             Icon = LoadIcon(),
-            Text = "Spotify Избранное",
+            Text = "Spotify Favorites Tool",
             Visible = true,
             ContextMenuStrip = CreateMenu()
         };

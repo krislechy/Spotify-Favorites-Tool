@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace SpotifyRelayOverlay;
+namespace SpotifyFavoritesTool;
 
 public sealed class SpotifyApiException : Exception
 {

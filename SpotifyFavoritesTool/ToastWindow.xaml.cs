@@ -6,7 +6,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using MediaColor = System.Windows.Media.Color;
 
-namespace SpotifyRelayOverlay;
+namespace SpotifyFavoritesTool;
 
 public partial class ToastWindow : Window
 {

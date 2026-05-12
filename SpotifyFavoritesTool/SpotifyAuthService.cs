@@ -7,7 +7,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
-namespace SpotifyRelayOverlay;
+namespace SpotifyFavoritesTool;
 
 public sealed class SpotifyAuthService
 {

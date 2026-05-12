@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace SpotifyRelayOverlay;
+namespace SpotifyFavoritesTool;
 
 internal static class NativeMethods
 {
@@ -8,7 +8,7 @@ internal static class NativeMethods
     public const int HotkeyToggleFavorite = 1001;
     public const int HotkeyShowFavoriteStatus = 1002;
 
-    public static readonly uint ShowExistingWindowMessage = RegisterWindowMessage("SpotifyRelayOverlay.ShowExistingWindow");
+    public static readonly uint ShowExistingWindowMessage = RegisterWindowMessage("SpotifyFavoritesTool.ShowExistingWindow");
 
     private const uint SwpNomove = 0x0002;
     private const uint SwpNosize = 0x0001;

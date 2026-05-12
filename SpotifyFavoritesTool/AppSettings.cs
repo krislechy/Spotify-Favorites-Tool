@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace SpotifyRelayOverlay;
+namespace SpotifyFavoritesTool;
 
 public sealed class AppSettings
 {

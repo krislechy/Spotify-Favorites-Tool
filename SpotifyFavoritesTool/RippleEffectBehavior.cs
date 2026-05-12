@@ -12,7 +12,7 @@ using WpfPanel = System.Windows.Controls.Panel;
 using WpfPoint = System.Windows.Point;
 using WpfRect = System.Windows.Rect;
 
-namespace SpotifyRelayOverlay;
+namespace SpotifyFavoritesTool;
 
 public static class RippleEffectBehavior
 {

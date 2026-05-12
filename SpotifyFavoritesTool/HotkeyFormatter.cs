@@ -1,4 +1,4 @@
-namespace SpotifyRelayOverlay;
+namespace SpotifyFavoritesTool;
 
 internal static class HotkeyFormatter
 {

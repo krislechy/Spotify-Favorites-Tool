@@ -11,7 +11,7 @@ using WpfMouseEventArgs = System.Windows.Input.MouseEventArgs;
 using WpfPen = System.Windows.Media.Pen;
 using WpfPoint = System.Windows.Point;
 
-namespace SpotifyRelayOverlay;
+namespace SpotifyFavoritesTool;
 
 public class LiquidHoverBorder : Border
 {

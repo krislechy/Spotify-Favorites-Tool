@@ -1,20 +1,27 @@
 using System.IO;
 using System.Text.Json;
 
-namespace SpotifyRelayOverlay;
+namespace SpotifyFavoritesTool;
 
 public sealed class SettingsStore
 {
+    private const string SettingsFileName = "settings.json";
+    private const string SettingsDirectoryName = "SpotifyFavoritesTool";
+    private const string LegacySettingsDirectoryName = "SpotifyRelayOverlay";
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true
     };
 
+    private readonly string _legacySettingsPath;
+
     public SettingsStore()
     {
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        SettingsDirectory = Path.Combine(appData, "SpotifyRelayOverlay");
-        SettingsPath = Path.Combine(SettingsDirectory, "settings.json");
+        SettingsDirectory = Path.Combine(appData, SettingsDirectoryName);
+        SettingsPath = Path.Combine(SettingsDirectory, SettingsFileName);
+        _legacySettingsPath = Path.Combine(appData, LegacySettingsDirectoryName, SettingsFileName);
         Current = Load(out var shouldSave);
         if (shouldSave)
         {
@@ -51,12 +58,14 @@ public sealed class SettingsStore
         shouldSave = false;
         try
         {
-            if (!File.Exists(SettingsPath))
+            var settingsPath = GetSettingsPathForLoad(out var shouldMigrate);
+            shouldSave = shouldMigrate;
+            if (!File.Exists(settingsPath))
             {
                 return new AppSettings();
             }
 
-            var json = File.ReadAllText(SettingsPath);
+            var json = File.ReadAllText(settingsPath);
             var settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
             using var document = JsonDocument.Parse(json);
             var root = document.RootElement;
@@ -94,6 +103,23 @@ public sealed class SettingsStore
         {
             return new AppSettings();
         }
+    }
+
+    private string GetSettingsPathForLoad(out bool shouldMigrate)
+    {
+        shouldMigrate = false;
+        if (File.Exists(SettingsPath))
+        {
+            return SettingsPath;
+        }
+
+        if (File.Exists(_legacySettingsPath))
+        {
+            shouldMigrate = true;
+            return _legacySettingsPath;
+        }
+
+        return SettingsPath;
     }
 
     private static bool TryGetString(JsonElement root, string propertyName, out string value)

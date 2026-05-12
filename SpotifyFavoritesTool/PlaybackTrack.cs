@@ -1,4 +1,4 @@
-namespace SpotifyRelayOverlay;
+namespace SpotifyFavoritesTool;
 
 public sealed record PlaybackTrack(
     string Id,

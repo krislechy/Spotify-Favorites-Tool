@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Input;
 
-namespace SpotifyRelayOverlay;
+namespace SpotifyFavoritesTool;
 
 public partial class SettingsWindow : Window
 {
@@ -63,7 +63,7 @@ public partial class SettingsWindow : Window
         catch (Exception ex)
         {
             UpdateStatus("Spotify не подключен.");
-            System.Windows.MessageBox.Show(this, ex.Message, "Spotify Избранное", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, ex.Message, "Spotify Favorites Tool", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         finally
         {
@@ -180,7 +180,7 @@ public partial class SettingsWindow : Window
             System.Windows.MessageBox.Show(
                 this,
                 "Клавиша Избранного и клавиша статуса должны отличаться.",
-                "Spotify Избранное",
+                "Spotify Favorites Tool",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
             return false;

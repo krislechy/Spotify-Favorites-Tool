@@ -4,7 +4,7 @@ using System.Windows.Interop;
 using System.Windows.Threading;
 using Forms = System.Windows.Forms;
 
-namespace SpotifyRelayOverlay;
+namespace SpotifyFavoritesTool;
 
 public partial class MainWindow : Window
 {

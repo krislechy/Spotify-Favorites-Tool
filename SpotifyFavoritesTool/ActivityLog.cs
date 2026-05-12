@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 
-namespace SpotifyRelayOverlay;
+namespace SpotifyFavoritesTool;
 
 public sealed class ActivityLog
 {
