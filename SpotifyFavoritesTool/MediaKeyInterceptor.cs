@@ -41,7 +41,6 @@ public sealed class MediaKeyInterceptor : IDisposable
     private readonly HashSet<uint> _applicationHotkeys = [];
     private readonly Dictionary<int, uint> _registeredHotkeys = [];
     private readonly Dictionary<uint, DateTimeOffset> _lastHandledAt = [];
-    private readonly Dictionary<uint, int> _failedHotkeys = [];
 
     private IntPtr _hookHandle;
     private IntPtr _targetWindowHandle;
@@ -56,8 +55,6 @@ public sealed class MediaKeyInterceptor : IDisposable
 
     public bool IsEnabled => _hookHandle != IntPtr.Zero || _registeredHotkeys.Count > 0;
     public int LastInstallError { get; private set; }
-    public bool ShouldRetryRegistration => _applicationHotkeys.Any(virtualKey => !_registeredHotkeys.ContainsValue(virtualKey));
-    public string RegistrationSummary => CreateRegistrationSummary();
 
     public bool Apply(bool enabled, IntPtr targetWindowHandle, IEnumerable<uint> applicationHotkeys)
     {
@@ -68,7 +65,6 @@ public sealed class MediaKeyInterceptor : IDisposable
 
         _targetWindowHandle = targetWindowHandle;
         _applicationHotkeys.Clear();
-        _failedHotkeys.Clear();
         foreach (var virtualKey in applicationHotkeys.Where(IsMediaKey))
         {
             _applicationHotkeys.Add(virtualKey);
@@ -96,7 +92,6 @@ public sealed class MediaKeyInterceptor : IDisposable
     {
         _pressedKeys.Clear();
         _lastHandledAt.Clear();
-        _failedHotkeys.Clear();
         UnregisterMediaHotkeys();
         if (_hookHandle == IntPtr.Zero)
         {
@@ -209,19 +204,15 @@ public sealed class MediaKeyInterceptor : IDisposable
     private void RegisterMediaHotkeys(IntPtr targetWindowHandle)
     {
         UnregisterMediaHotkeys();
-        _failedHotkeys.Clear();
 
         var index = 0;
-        foreach (var virtualKey in GetRegistrationOrder())
+        foreach (var virtualKey in AppCommands.Keys)
         {
             var id = HotkeyIdBase + index++;
             if (NativeMethods.RegisterHotKey(targetWindowHandle, id, 0, virtualKey))
             {
                 _registeredHotkeys[id] = virtualKey;
-                continue;
             }
-
-            _failedHotkeys[virtualKey] = Marshal.GetLastWin32Error();
         }
     }
 
@@ -239,51 +230,6 @@ public sealed class MediaKeyInterceptor : IDisposable
         }
 
         _registeredHotkeys.Clear();
-    }
-
-    private IEnumerable<uint> GetRegistrationOrder()
-    {
-        foreach (var virtualKey in _applicationHotkeys)
-        {
-            yield return virtualKey;
-        }
-
-        foreach (var virtualKey in AppCommands.Keys)
-        {
-            if (!_applicationHotkeys.Contains(virtualKey))
-            {
-                yield return virtualKey;
-            }
-        }
-    }
-
-    private string CreateRegistrationSummary()
-    {
-        if (_targetWindowHandle == IntPtr.Zero)
-        {
-            return "RDP media keys: no window handle.";
-        }
-
-        var registered = _registeredHotkeys.Values
-            .Distinct()
-            .Select(HotkeyFormatter.Format)
-            .OrderBy(static value => value)
-            .ToArray();
-
-        var failedApplicationHotkeys = _applicationHotkeys
-            .Where(virtualKey => !_registeredHotkeys.ContainsValue(virtualKey))
-            .Select(virtualKey => _failedHotkeys.TryGetValue(virtualKey, out var error)
-                ? $"{HotkeyFormatter.Format(virtualKey)} Win32 {error}"
-                : $"{HotkeyFormatter.Format(virtualKey)} not registered")
-            .ToArray();
-
-        var registeredText = registered.Length == 0 ? "none" : string.Join(", ", registered);
-        if (failedApplicationHotkeys.Length == 0)
-        {
-            return $"RDP media keys captured: {registeredText}.";
-        }
-
-        return $"RDP media keys captured: {registeredText}. Failed app hotkeys: {string.Join(", ", failedApplicationHotkeys)}.";
     }
 }
 
