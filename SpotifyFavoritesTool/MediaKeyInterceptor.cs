@@ -4,6 +4,8 @@ namespace SpotifyFavoritesTool;
 
 public sealed class MediaKeyInterceptor : IDisposable
 {
+    private const int HotkeyIdBase = 3100;
+
     private const uint VkVolumeMute = 0xAD;
     private const uint VkVolumeDown = 0xAE;
     private const uint VkVolumeUp = 0xAF;
@@ -37,6 +39,8 @@ public sealed class MediaKeyInterceptor : IDisposable
     private readonly NativeMethods.LowLevelKeyboardProc _hookCallback;
     private readonly HashSet<uint> _pressedKeys = [];
     private readonly HashSet<uint> _applicationHotkeys = [];
+    private readonly Dictionary<int, uint> _registeredHotkeys = [];
+    private readonly Dictionary<uint, DateTimeOffset> _lastHandledAt = [];
 
     private IntPtr _hookHandle;
     private IntPtr _targetWindowHandle;
@@ -49,7 +53,7 @@ public sealed class MediaKeyInterceptor : IDisposable
 
     public event EventHandler<MediaKeyPressedEventArgs>? MediaKeyPressed;
 
-    public bool IsEnabled => _hookHandle != IntPtr.Zero;
+    public bool IsEnabled => _hookHandle != IntPtr.Zero || _registeredHotkeys.Count > 0;
     public int LastInstallError { get; private set; }
 
     public bool Apply(bool enabled, IntPtr targetWindowHandle, IEnumerable<uint> applicationHotkeys)
@@ -72,7 +76,9 @@ public sealed class MediaKeyInterceptor : IDisposable
             return true;
         }
 
-        if (IsEnabled)
+        RegisterMediaHotkeys(targetWindowHandle);
+
+        if (_hookHandle != IntPtr.Zero)
         {
             return true;
         }
@@ -85,6 +91,8 @@ public sealed class MediaKeyInterceptor : IDisposable
     public void Disable()
     {
         _pressedKeys.Clear();
+        _lastHandledAt.Clear();
+        UnregisterMediaHotkeys();
         if (_hookHandle == IntPtr.Zero)
         {
             return;
@@ -103,6 +111,12 @@ public sealed class MediaKeyInterceptor : IDisposable
 
         Disable();
         _disposed = true;
+    }
+
+    public bool TryHandleHotkey(IntPtr hotkeyId)
+    {
+        return _registeredHotkeys.TryGetValue(hotkeyId.ToInt32(), out var virtualKey)
+            && HandleMediaKeyDown(virtualKey);
     }
 
     private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
@@ -138,17 +152,46 @@ public sealed class MediaKeyInterceptor : IDisposable
             return new IntPtr(1);
         }
 
-        var args = new MediaKeyPressedEventArgs(info.VirtualKey);
-        MediaKeyPressed?.Invoke(this, args);
-        if (!args.Handled && AppCommands.TryGetValue(info.VirtualKey, out var appCommand))
-        {
-            NativeMethods.SendAppCommand(_targetWindowHandle, appCommand);
-        }
-
+        HandleMediaKeyDown(info.VirtualKey);
         return new IntPtr(1);
     }
 
-    private static bool IsMediaKey(uint virtualKey)
+    private bool HandleMediaKeyDown(uint virtualKey)
+    {
+        if (IsDuplicatePress(virtualKey))
+        {
+            return true;
+        }
+
+        var args = new MediaKeyPressedEventArgs(virtualKey);
+        MediaKeyPressed?.Invoke(this, args);
+        if (!args.Handled && AppCommands.TryGetValue(virtualKey, out var appCommand))
+        {
+            NativeMethods.PostShellAppCommand(appCommand);
+        }
+
+        return true;
+    }
+
+    private bool IsDuplicatePress(uint virtualKey)
+    {
+        if (CanRepeat(virtualKey))
+        {
+            return false;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        if (_lastHandledAt.TryGetValue(virtualKey, out var lastHandledAt)
+            && now - lastHandledAt < TimeSpan.FromMilliseconds(350))
+        {
+            return true;
+        }
+
+        _lastHandledAt[virtualKey] = now;
+        return false;
+    }
+
+    public static bool IsMediaKey(uint virtualKey)
     {
         return AppCommands.ContainsKey(virtualKey);
     }
@@ -156,6 +199,37 @@ public sealed class MediaKeyInterceptor : IDisposable
     private static bool CanRepeat(uint virtualKey)
     {
         return virtualKey is VkVolumeDown or VkVolumeUp;
+    }
+
+    private void RegisterMediaHotkeys(IntPtr targetWindowHandle)
+    {
+        UnregisterMediaHotkeys();
+
+        var index = 0;
+        foreach (var virtualKey in AppCommands.Keys)
+        {
+            var id = HotkeyIdBase + index++;
+            if (NativeMethods.RegisterHotKey(targetWindowHandle, id, 0, virtualKey))
+            {
+                _registeredHotkeys[id] = virtualKey;
+            }
+        }
+    }
+
+    private void UnregisterMediaHotkeys()
+    {
+        if (_targetWindowHandle == IntPtr.Zero || _registeredHotkeys.Count == 0)
+        {
+            _registeredHotkeys.Clear();
+            return;
+        }
+
+        foreach (var id in _registeredHotkeys.Keys)
+        {
+            NativeMethods.UnregisterHotKey(_targetWindowHandle, id);
+        }
+
+        _registeredHotkeys.Clear();
     }
 }
 

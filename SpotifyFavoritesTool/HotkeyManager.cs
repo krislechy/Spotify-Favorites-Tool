@@ -17,8 +17,8 @@ public sealed class HotkeyManager
 
         _windowHandle = windowHandle;
         Unregister();
-        RegisterFavoriteHotkey(settings.LikeHotkeyVirtualKey);
-        RegisterStatusHotkey(settings.FavoriteStatusHotkeyVirtualKey);
+        RegisterFavoriteHotkey(settings.LikeHotkeyVirtualKey, settings.KeepMediaKeysLocalDuringRdp);
+        RegisterStatusHotkey(settings.FavoriteStatusHotkeyVirtualKey, settings.KeepMediaKeysLocalDuringRdp);
     }
 
     public void Unregister()
@@ -72,9 +72,14 @@ public sealed class HotkeyManager
         return parts.Count == 0 ? string.Empty : $" {string.Join("; ", parts)}.";
     }
 
-    private void RegisterFavoriteHotkey(uint virtualKey)
+    private void RegisterFavoriteHotkey(uint virtualKey, bool mediaKeysHandledByInterceptor)
     {
         if (virtualKey == 0)
+        {
+            return;
+        }
+
+        if (mediaKeysHandledByInterceptor && MediaKeyInterceptor.IsMediaKey(virtualKey))
         {
             return;
         }
@@ -87,9 +92,14 @@ public sealed class HotkeyManager
         _favoriteRegistrationFailed = !_favoriteRegistered;
     }
 
-    private void RegisterStatusHotkey(uint virtualKey)
+    private void RegisterStatusHotkey(uint virtualKey, bool mediaKeysHandledByInterceptor)
     {
         if (virtualKey == 0)
+        {
+            return;
+        }
+
+        if (mediaKeysHandledByInterceptor && MediaKeyInterceptor.IsMediaKey(virtualKey))
         {
             return;
         }
