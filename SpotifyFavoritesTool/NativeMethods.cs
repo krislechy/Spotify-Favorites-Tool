@@ -39,9 +39,6 @@ internal static class NativeMethods
     [DllImport("user32.dll", EntryPoint = "SendMessageW", SetLastError = true)]
     private static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 
-    [DllImport("user32.dll", EntryPoint = "FindWindowW", SetLastError = true, CharSet = CharSet.Unicode)]
-    private static extern IntPtr FindWindow(string lpClassName, string? lpWindowName);
-
     [DllImport("user32.dll", EntryPoint = "SetWindowsHookExW", SetLastError = true)]
     private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hmod, uint dwThreadId);
 
@@ -127,17 +124,6 @@ internal static class NativeMethods
         }
 
         SendMessage(hWnd, WmAppCommand, hWnd, new IntPtr(appCommand << 16));
-    }
-
-    public static void PostShellAppCommand(int appCommand)
-    {
-        var shell = FindWindow("Shell_TrayWnd", null);
-        if (shell == IntPtr.Zero)
-        {
-            return;
-        }
-
-        PostMessage(shell, WmAppCommand, IntPtr.Zero, new IntPtr(appCommand << 16));
     }
 
     [StructLayout(LayoutKind.Sequential)]

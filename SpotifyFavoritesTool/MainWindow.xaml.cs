@@ -408,12 +408,6 @@ public partial class MainWindow : Window
             return IntPtr.Zero;
         }
 
-        if (_mediaKeyInterceptor.TryHandleHotkey(wParam))
-        {
-            handled = true;
-            return IntPtr.Zero;
-        }
-
         if (!_hotkeys.TryGetAction(wParam, out var action))
         {
             return IntPtr.Zero;
