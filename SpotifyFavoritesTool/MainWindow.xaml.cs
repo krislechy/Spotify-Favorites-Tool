@@ -19,13 +19,16 @@ public partial class MainWindow : Window
     private readonly ToastPresenter _toasts = new();
     private readonly AsyncActionGate _userActionGate = new();
     private readonly AsyncActionGate _trackMonitorGate = new();
+    private readonly AsyncActionGate _overlayRefreshGate = new();
 
     private SettingsWindow? _settingsWindow;
+    private OverlayWindow? _overlayWindow;
     private HwndSource? _source;
     private IntPtr _hwnd;
     private bool _isExiting;
     private DispatcherTimer? _trackMonitorTimer;
     private TrayIconController? _trayIcon;
+    private PlaybackTrack? _lastOverlayTrack;
 
     public MainWindow()
     {
@@ -65,6 +68,7 @@ public partial class MainWindow : Window
 
         StopTrackMonitor(clearCache: false);
         SaveWindowPosition();
+        CloseOverlayWindow();
         _hotkeys.Unregister();
         _source?.RemoveHook(WndProc);
         _trayIcon?.Dispose();
@@ -85,6 +89,17 @@ public partial class MainWindow : Window
     private void CloseToTrayButton_Click(object sender, RoutedEventArgs e)
     {
         Close();
+    }
+
+    private void OverlayButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_overlayWindow is { IsVisible: true })
+        {
+            CloseOverlayWindow();
+            return;
+        }
+
+        OpenOverlayWindow();
     }
 
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -131,6 +146,10 @@ public partial class MainWindow : Window
         _settingsWindow.AuthChanged += (_, _) =>
         {
             _favorites.ClearCache();
+            _lastOverlayTrack = null;
+            _overlayWindow?.ShowMessage(
+                _auth.HasRefreshToken ? "Spotify подключен" : "Spotify отключен",
+                _auth.HasRefreshToken ? "Жду текущий трек" : "Открой настройки и войди в Spotify");
             StartTrackMonitorIfReady();
             UpdateStatus();
             Log(_auth.HasRefreshToken ? "Spotify подключен, кеш треков очищен." : "Spotify отключен, кеш треков очищен.");
@@ -161,6 +180,7 @@ public partial class MainWindow : Window
                 Log("Нажата клавиша Избранного: получаю текущий трек.");
                 var result = await _favorites.ToggleCurrentTrackAsync();
                 StatusText.Text = $"{result.Message}: {result.Track.Name}";
+                UpdateOverlayTrack(result.Track);
                 _toasts.Show(result);
                 Log($"Статус Избранного перед изменением: {DescribeFavoriteStatusSource(result.PreviousStatusSource)}.");
                 Log($"{result.Message}: {result.Track.Name}.");
@@ -203,6 +223,7 @@ public partial class MainWindow : Window
                     return;
                 }
 
+                UpdateOverlayTrack(result.Track);
                 ShowFavoriteStatusToast(result.Track);
                 Log($"Статус Избранного получен: {DescribeFavoriteStatusSource(result.Source)}.");
                 Log($"Показан статус Избранного: {result.Track.Name}.");
@@ -283,6 +304,7 @@ public partial class MainWindow : Window
                 var result = await _favorites.GetChangedTrackWithFavoriteStatusAsync();
                 if (result is not null)
                 {
+                    UpdateOverlayTrack(result.Track);
                     ShowTrackChangedToast(result.Track);
                     Log($"Трек сменился: {result.Track.Name}.");
                     Log($"Статус Избранного для нового трека: {DescribeFavoriteStatusSource(result.Source)}.");
@@ -315,6 +337,114 @@ public partial class MainWindow : Window
     private void ShowTrackChangedToast(PlaybackTrack track)
     {
         _toasts.ShowTrackChanged(track);
+    }
+
+    private void OpenOverlayWindow()
+    {
+        _overlayWindow = new OverlayWindow();
+        _overlayWindow.FavoriteRequested += OverlayWindow_FavoriteRequested;
+        _overlayWindow.Closed += OverlayWindow_Closed;
+
+        if (_lastOverlayTrack is not null)
+        {
+            _overlayWindow.ShowTrack(_lastOverlayTrack);
+        }
+        else
+        {
+            _overlayWindow.ShowMessage("Overlay запущен", "Получаю текущий трек");
+        }
+
+        _overlayWindow.Show();
+        UpdateOverlayButton();
+        Log("Overlay открыт.");
+        _ = RefreshOverlayAsync();
+    }
+
+    private void CloseOverlayWindow()
+    {
+        _overlayWindow?.Close();
+    }
+
+    private async Task RefreshOverlayAsync()
+    {
+        if (_overlayWindow is null || !_overlayRefreshGate.TryEnter(out var action))
+        {
+            return;
+        }
+
+        using (action)
+        {
+            if (!_auth.HasRefreshToken)
+            {
+                _overlayWindow?.ShowMessage("Spotify не подключен", "Открой настройки и войди в Spotify");
+                return;
+            }
+
+            try
+            {
+                var result = await _favorites.GetCurrentTrackWithFavoriteStatusAsync();
+                if (result is null)
+                {
+                    _lastOverlayTrack = null;
+                    _overlayWindow?.ShowMessage("Spotify молчит", "Сейчас ничего не играет");
+                    Log("Overlay не обновлен: Spotify сейчас ничего не играет.");
+                    return;
+                }
+
+                UpdateOverlayTrack(result.Track);
+                Log($"Overlay обновлен: {result.Track.Name}.");
+            }
+            catch (SpotifyRateLimitException ex)
+            {
+                StopTrackMonitor(clearCache: false);
+                _overlayWindow?.ShowMessage("Spotify ограничил запросы", ex.Message);
+                _toasts.ShowError("Spotify ограничил запросы", ex.Message);
+                Log($"Overlay не обновлен: Spotify вернул 429 ({ex.Endpoint}).");
+            }
+            catch (Exception ex)
+            {
+                _overlayWindow?.ShowMessage("Overlay не обновлен", Shorten(ex.Message, 90));
+                Log($"Overlay не обновлен: {Shorten(ex.Message, 90)}");
+            }
+        }
+    }
+
+    private void UpdateOverlayTrack(PlaybackTrack track)
+    {
+        _lastOverlayTrack = track;
+        _overlayWindow?.ShowTrack(track);
+    }
+
+    private void OverlayWindow_FavoriteRequested(object? sender, EventArgs e)
+    {
+        _ = ToggleFavoriteAsync();
+    }
+
+    private void OverlayWindow_Closed(object? sender, EventArgs e)
+    {
+        if (sender is OverlayWindow overlay)
+        {
+            overlay.FavoriteRequested -= OverlayWindow_FavoriteRequested;
+            overlay.Closed -= OverlayWindow_Closed;
+        }
+
+        if (ReferenceEquals(_overlayWindow, sender))
+        {
+            _overlayWindow = null;
+        }
+
+        UpdateOverlayButton();
+        if (!_isExiting)
+        {
+            Log("Overlay закрыт.");
+        }
+    }
+
+    private void UpdateOverlayButton()
+    {
+        OverlayButton.Content = _overlayWindow is { IsVisible: true }
+            ? "Убрать Overlay"
+            : "Запустить Overlay";
     }
 
     private void RegisterHotkeys()

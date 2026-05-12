@@ -77,6 +77,16 @@
             <Setter Property="Margin" Value="0,0,6,0" />
             <Setter Property="FontSize" Value="13" />
         </Style>
+
+        <Style x:Key="ActionButton" BasedOn="{StaticResource IconButton}" TargetType="Button">
+            <Setter Property="Width" Value="Auto" />
+            <Setter Property="MinWidth" Value="148" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
     </Window.Resources>
 
     <local:LiquidHoverBorder Margin="8"
@@ -162,6 +172,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
@@ -192,7 +203,17 @@
                         </StackPanel>
                     </local:LiquidHoverBorder>
 
-                    <Grid Grid.Row="2" Margin="0,16,0,0">
+                    <StackPanel Grid.Row="2"
+                                Margin="0,14,0,0"
+                                Orientation="Horizontal">
+                        <Button x:Name="OverlayButton"
+                                Style="{StaticResource ActionButton}"
+                                Content="Запустить Overlay"
+                                Click="OverlayButton_Click"
+                                ToolTip="Открыть отдельное окно оверлея поверх окон" />
+                    </StackPanel>
+
+                    <Grid Grid.Row="3" Margin="0,16,0,0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
