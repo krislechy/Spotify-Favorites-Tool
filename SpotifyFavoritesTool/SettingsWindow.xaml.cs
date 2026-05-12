@@ -11,6 +11,7 @@ public partial class SettingsWindow : Window
     private string _favoriteHotkeyDisplayName;
     private uint _favoriteStatusHotkeyVirtualKey;
     private string _favoriteStatusHotkeyDisplayName;
+    private bool _shouldOfferRestartAfterSave;
 
     public SettingsWindow(SettingsStore settings, SpotifyAuthService auth)
     {
@@ -32,6 +33,7 @@ public partial class SettingsWindow : Window
 
     public event EventHandler? AuthChanged;
     public event EventHandler? SettingsChanged;
+    public event EventHandler? RestartRequested;
 
     private void SaveButton_Click(object sender, RoutedEventArgs e)
     {
@@ -42,6 +44,7 @@ public partial class SettingsWindow : Window
 
         UpdateStatus("Настройки сохранены.");
         SettingsChanged?.Invoke(this, EventArgs.Empty);
+        OfferRestartAfterSaveIfNeeded();
     }
 
     private async void LoginButton_Click(object sender, RoutedEventArgs e)
@@ -52,6 +55,10 @@ public partial class SettingsWindow : Window
         }
 
         SettingsChanged?.Invoke(this, EventArgs.Empty);
+        if (OfferRestartAfterSaveIfNeeded())
+        {
+            return;
+        }
 
         try
         {
@@ -187,14 +194,40 @@ public partial class SettingsWindow : Window
             return false;
         }
 
+        var previousKeepMediaKeysLocalDuringRdp = _settings.Current.KeepMediaKeysLocalDuringRdp;
         _settings.Current.ClientId = ClientIdBox.Text.Trim();
         _settings.Current.LikeHotkeyVirtualKey = _favoriteHotkeyVirtualKey;
         _settings.Current.LikeHotkeyDisplayName = GetHotkeyDisplayName(_favoriteHotkeyVirtualKey, _favoriteHotkeyDisplayName);
         _settings.Current.FavoriteStatusHotkeyVirtualKey = _favoriteStatusHotkeyVirtualKey;
         _settings.Current.FavoriteStatusHotkeyDisplayName = GetHotkeyDisplayName(_favoriteStatusHotkeyVirtualKey, _favoriteStatusHotkeyDisplayName);
         _settings.Current.KeepMediaKeysLocalDuringRdp = KeepMediaKeysLocalCheckBox.IsChecked == true;
+        _shouldOfferRestartAfterSave = previousKeepMediaKeysLocalDuringRdp != _settings.Current.KeepMediaKeysLocalDuringRdp;
         _settings.Save();
         return true;
+    }
+
+    private bool OfferRestartAfterSaveIfNeeded()
+    {
+        if (!_shouldOfferRestartAfterSave)
+        {
+            return false;
+        }
+
+        _shouldOfferRestartAfterSave = false;
+        var result = System.Windows.MessageBox.Show(
+            this,
+            "Режим RDP-перехвата медиа-клавиш изменен. Для самого надежного применения лучше перезапустить приложение сейчас.\n\nПерезапустить Spotify Favorites Tool?",
+            "Spotify Favorites Tool",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (result == MessageBoxResult.Yes)
+        {
+            RestartRequested?.Invoke(this, EventArgs.Empty);
+            return true;
+        }
+
+        return false;
     }
 
     private void UpdateStatus(string? prefix = null)

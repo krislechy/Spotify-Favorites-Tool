@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
@@ -26,7 +27,9 @@ public partial class MainWindow : Window
     private IntPtr _hwnd;
     private bool _isExiting;
     private DispatcherTimer? _trackMonitorTimer;
+    private DispatcherTimer? _mediaKeyRegistrationRetryTimer;
     private TrayIconController? _trayIcon;
+    private string _lastMediaKeyRegistrationSummary = string.Empty;
 
     public MainWindow()
     {
@@ -45,6 +48,7 @@ public partial class MainWindow : Window
         RestoreWindowPosition();
         StartTrackMonitorIfReady();
         UpdateStatus();
+        Dispatcher.BeginInvoke(RegisterHotkeys, DispatcherPriority.ApplicationIdle);
     }
 
     private void Window_SourceInitialized(object? sender, EventArgs e)
@@ -66,6 +70,7 @@ public partial class MainWindow : Window
         }
 
         StopTrackMonitor(clearCache: false);
+        StopMediaKeyRegistrationRetry();
         SaveWindowPosition();
         _mediaKeyInterceptor.Dispose();
         _hotkeys.Unregister();
@@ -145,6 +150,7 @@ public partial class MainWindow : Window
             UpdateStatus("Настройки сохранены.");
             Log("Настройки сохранены.");
         };
+        _settingsWindow.RestartRequested += (_, _) => RestartApplication();
         _settingsWindow.Closed += (_, _) => _settingsWindow = null;
         _settingsWindow.Show();
     }
@@ -345,6 +351,7 @@ public partial class MainWindow : Window
 
         if (!_settings.Current.KeepMediaKeysLocalDuringRdp)
         {
+            StopMediaKeyRegistrationRetry();
             if (wasEnabled)
             {
                 Log("RDP-перехват медиа-клавиш отключен.");
@@ -355,14 +362,77 @@ public partial class MainWindow : Window
 
         if (!isApplied)
         {
+            StartMediaKeyRegistrationRetry();
             Log($"RDP-перехват медиа-клавиш не включился: Win32 {_mediaKeyInterceptor.LastInstallError}.");
             return;
+        }
+
+        LogMediaKeyRegistrationSummaryIfChanged();
+        if (_mediaKeyInterceptor.ShouldRetryRegistration)
+        {
+            StartMediaKeyRegistrationRetry();
+        }
+        else
+        {
+            StopMediaKeyRegistrationRetry();
         }
 
         if (!wasEnabled)
         {
             Log("RDP-перехват медиа-клавиш включен.");
         }
+    }
+
+    private void StartMediaKeyRegistrationRetry()
+    {
+        _mediaKeyRegistrationRetryTimer ??= CreateMediaKeyRegistrationRetryTimer();
+        if (!_mediaKeyRegistrationRetryTimer.IsEnabled)
+        {
+            _mediaKeyRegistrationRetryTimer.Start();
+        }
+    }
+
+    private DispatcherTimer CreateMediaKeyRegistrationRetryTimer()
+    {
+        var timer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromSeconds(2)
+        };
+        timer.Tick += (_, _) => RetryMediaKeyRegistration();
+        return timer;
+    }
+
+    private void RetryMediaKeyRegistration()
+    {
+        if (!_settings.Current.KeepMediaKeysLocalDuringRdp || _hwnd == IntPtr.Zero)
+        {
+            StopMediaKeyRegistrationRetry();
+            return;
+        }
+
+        _mediaKeyInterceptor.Apply(true, _hwnd, GetApplicationHotkeys());
+        LogMediaKeyRegistrationSummaryIfChanged();
+        if (!_mediaKeyInterceptor.ShouldRetryRegistration)
+        {
+            StopMediaKeyRegistrationRetry();
+        }
+    }
+
+    private void StopMediaKeyRegistrationRetry()
+    {
+        _mediaKeyRegistrationRetryTimer?.Stop();
+    }
+
+    private void LogMediaKeyRegistrationSummaryIfChanged()
+    {
+        var summary = _mediaKeyInterceptor.RegistrationSummary;
+        if (summary == _lastMediaKeyRegistrationSummary)
+        {
+            return;
+        }
+
+        _lastMediaKeyRegistrationSummary = summary;
+        Log(summary);
     }
 
     private IEnumerable<uint> GetApplicationHotkeys()
@@ -477,6 +547,29 @@ public partial class MainWindow : Window
     private void ExitApplication()
     {
         Log("Выход из приложения.");
+        _isExiting = true;
+        Close();
+    }
+
+    private void RestartApplication()
+    {
+        var executablePath = Environment.ProcessPath;
+        if (string.IsNullOrWhiteSpace(executablePath))
+        {
+            return;
+        }
+
+        var escapedPath = executablePath.Replace("'", "''", StringComparison.Ordinal);
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = "powershell",
+            Arguments = $"-NoProfile -WindowStyle Hidden -Command \"Start-Sleep -Milliseconds 900; Start-Process -FilePath '{escapedPath}'\"",
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
+            UseShellExecute = false
+        });
+
+        Log("Перезапуск приложения для применения перехвата медиа-клавиш.");
         _isExiting = true;
         Close();
     }
