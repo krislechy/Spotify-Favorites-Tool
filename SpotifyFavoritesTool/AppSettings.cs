@@ -22,4 +22,5 @@ public sealed class AppSettings
     public string LikeHotkeyDisplayName { get; set; } = string.Empty;
     public uint FavoriteStatusHotkeyVirtualKey { get; set; }
     public string FavoriteStatusHotkeyDisplayName { get; set; } = string.Empty;
+    public bool KeepMediaKeysLocalDuringRdp { get; set; }
 }

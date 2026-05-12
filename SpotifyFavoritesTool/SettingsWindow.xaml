@@ -468,6 +468,27 @@
                            FontSize="11"
                            TextWrapping="Wrap" />
 
+                <local:LiquidHoverBorder Margin="0,12,0,0"
+                                         Padding="12"
+                                         CornerRadius="8"
+                                         BorderBrush="#334139"
+                                         BorderThickness="1"
+                                         BaseColor="#18201B">
+                    <StackPanel>
+                        <CheckBox x:Name="KeepMediaKeysLocalCheckBox"
+                                  Content="Перехватывать медиа-клавиши локально при RDP"
+                                  Foreground="#F4F8F5"
+                                  FontSize="13"
+                                  FontWeight="SemiBold"
+                                  ToolTip="VK_VOLUME_*, VK_MEDIA_* и VK_LAUNCH_MEDIA_SELECT будут выполняться на этом ПК и не уйдут в удаленную RDP-сессию." />
+                        <TextBlock Text="Для назначенных в приложении медиа-клавиш выполнится действие Spotify Favorites Tool. Остальные медиа-клавиши будут отправлены локальной Windows как системные media-команды."
+                                   Margin="24,8,0,0"
+                                   Foreground="#AEBDB4"
+                                   FontSize="11"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </local:LiquidHoverBorder>
+
                 <TextBlock x:Name="StatusText"
                            Margin="0,16,0,0"
                            Foreground="#9ECFB1"

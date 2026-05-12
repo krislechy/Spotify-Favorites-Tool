@@ -16,6 +16,7 @@ public partial class MainWindow : Window
     private readonly FavoriteTrackService _favorites;
     private readonly ActivityLog _activityLog = new();
     private readonly HotkeyManager _hotkeys = new();
+    private readonly MediaKeyInterceptor _mediaKeyInterceptor = new();
     private readonly ToastPresenter _toasts = new();
     private readonly AsyncActionGate _userActionGate = new();
     private readonly AsyncActionGate _trackMonitorGate = new();
@@ -34,6 +35,7 @@ public partial class MainWindow : Window
         _spotify = new SpotifyClient(_auth);
         _favorites = new FavoriteTrackService(_spotify);
         ActivityLogList.ItemsSource = _activityLog.Entries;
+        _mediaKeyInterceptor.MediaKeyPressed += MediaKeyInterceptor_MediaKeyPressed;
         _trayIcon = new TrayIconController(Dispatcher, BringMainWindowToFront, ShowSettingsWindow, ExitApplication);
         Log("Приложение запущено.");
     }
@@ -65,6 +67,7 @@ public partial class MainWindow : Window
 
         StopTrackMonitor(clearCache: false);
         SaveWindowPosition();
+        _mediaKeyInterceptor.Dispose();
         _hotkeys.Unregister();
         _source?.RemoveHook(WndProc);
         _trayIcon?.Dispose();
@@ -325,10 +328,70 @@ public partial class MainWindow : Window
         }
 
         _hotkeys.Register(_hwnd, _settings.Current);
+        ApplyMediaKeyInterceptor();
         var registration = _hotkeys.GetRegistrationMessage();
         Log(string.IsNullOrWhiteSpace(registration)
             ? "Горячие клавиши зарегистрированы."
             : $"Горячие клавиши зарегистрированы с предупреждением:{registration}");
+    }
+
+    private void ApplyMediaKeyInterceptor()
+    {
+        var wasEnabled = _mediaKeyInterceptor.IsEnabled;
+        var isApplied = _mediaKeyInterceptor.Apply(
+            _settings.Current.KeepMediaKeysLocalDuringRdp,
+            _hwnd,
+            GetApplicationHotkeys());
+
+        if (!_settings.Current.KeepMediaKeysLocalDuringRdp)
+        {
+            if (wasEnabled)
+            {
+                Log("RDP-перехват медиа-клавиш отключен.");
+            }
+
+            return;
+        }
+
+        if (!isApplied)
+        {
+            Log($"RDP-перехват медиа-клавиш не включился: Win32 {_mediaKeyInterceptor.LastInstallError}.");
+            return;
+        }
+
+        if (!wasEnabled)
+        {
+            Log("RDP-перехват медиа-клавиш включен.");
+        }
+    }
+
+    private IEnumerable<uint> GetApplicationHotkeys()
+    {
+        if (_settings.Current.LikeHotkeyVirtualKey != 0)
+        {
+            yield return _settings.Current.LikeHotkeyVirtualKey;
+        }
+
+        if (_settings.Current.FavoriteStatusHotkeyVirtualKey != 0)
+        {
+            yield return _settings.Current.FavoriteStatusHotkeyVirtualKey;
+        }
+    }
+
+    private void MediaKeyInterceptor_MediaKeyPressed(object? sender, MediaKeyPressedEventArgs e)
+    {
+        if (e.VirtualKey == _settings.Current.LikeHotkeyVirtualKey)
+        {
+            e.Handled = true;
+            Dispatcher.BeginInvoke(() => _ = ToggleFavoriteAsync());
+            return;
+        }
+
+        if (e.VirtualKey == _settings.Current.FavoriteStatusHotkeyVirtualKey)
+        {
+            e.Handled = true;
+            Dispatcher.BeginInvoke(() => _ = ShowFavoriteStatusAsync());
+        }
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)

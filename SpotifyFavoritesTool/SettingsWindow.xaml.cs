@@ -26,6 +26,7 @@ public partial class SettingsWindow : Window
         RedirectUriBox.Text = SpotifyAuthService.RedirectUri;
         FavoriteHotkeyBox.Text = _favoriteHotkeyDisplayName;
         FavoriteStatusHotkeyBox.Text = _favoriteStatusHotkeyDisplayName;
+        KeepMediaKeysLocalCheckBox.IsChecked = _settings.Current.KeepMediaKeysLocalDuringRdp;
         UpdateStatus();
     }
 
@@ -191,6 +192,7 @@ public partial class SettingsWindow : Window
         _settings.Current.LikeHotkeyDisplayName = GetHotkeyDisplayName(_favoriteHotkeyVirtualKey, _favoriteHotkeyDisplayName);
         _settings.Current.FavoriteStatusHotkeyVirtualKey = _favoriteStatusHotkeyVirtualKey;
         _settings.Current.FavoriteStatusHotkeyDisplayName = GetHotkeyDisplayName(_favoriteStatusHotkeyVirtualKey, _favoriteStatusHotkeyDisplayName);
+        _settings.Current.KeepMediaKeysLocalDuringRdp = KeepMediaKeysLocalCheckBox.IsChecked == true;
         _settings.Save();
         return true;
     }

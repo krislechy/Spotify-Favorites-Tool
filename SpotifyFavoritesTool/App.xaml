@@ -89,6 +89,58 @@
         <Style TargetType="{x:Type CheckBox}">
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="#F4F8F5" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type CheckBox}">
+                        <BulletDecorator VerticalAlignment="Center">
+                            <BulletDecorator.Bullet>
+                                <Border x:Name="Box"
+                                        Width="17"
+                                        Height="17"
+                                        Background="#202A24"
+                                        BorderBrush="#3D4B42"
+                                        BorderThickness="1"
+                                        CornerRadius="5"
+                                        SnapsToDevicePixels="True">
+                                    <Path x:Name="Check"
+                                          Data="M 4,8.5 L 7,11.5 L 13,5"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          Stroke="#101512"
+                                          StrokeThickness="2"
+                                          StrokeStartLineCap="Round"
+                                          StrokeEndLineCap="Round"
+                                          StrokeLineJoin="Round"
+                                          Opacity="0" />
+                                </Border>
+                            </BulletDecorator.Bullet>
+                            <ContentPresenter Margin="8,0,0,0"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True"
+                                              Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+                        </BulletDecorator>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Box" Property="Background" Value="#243027" />
+                                <Setter TargetName="Box" Property="BorderBrush" Value="#4E6357" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Box" Property="Background" Value="#1ED760" />
+                                <Setter TargetName="Box" Property="BorderBrush" Value="#1ED760" />
+                                <Setter TargetName="Check" Property="Opacity" Value="1" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="#77847C" />
+                                <Setter TargetName="Box" Property="Background" Value="#171D19" />
+                                <Setter TargetName="Box" Property="BorderBrush" Value="#2A342D" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="{x:Type RadioButton}">
