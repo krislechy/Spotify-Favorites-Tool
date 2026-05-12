@@ -166,6 +166,8 @@
                                      Padding="16"
                                      CornerRadius="10"
                                      BaseColor="#141B17"
+                                     IsLiquidEnabled="False"
+                                     SurfaceOpacity="0.82"
                                      BorderBrush="#25342C"
                                      BorderThickness="1">
                 <Grid>
@@ -187,6 +189,8 @@
                                              Padding="12"
                                              CornerRadius="8"
                                              BaseColor="#18201B"
+                                             IsLiquidEnabled="False"
+                                             SurfaceOpacity="0.74"
                                              BorderBrush="#28362E"
                                              BorderThickness="1">
                         <StackPanel>
@@ -234,6 +238,8 @@
                         <local:LiquidHoverBorder Grid.Row="1"
                                                  CornerRadius="8"
                                                  BaseColor="#111714"
+                                                 IsLiquidEnabled="False"
+                                                 SurfaceOpacity="0.70"
                                                  BorderBrush="#25342C"
                                                  BorderThickness="1">
                             <ListBox x:Name="ActivityLogList"

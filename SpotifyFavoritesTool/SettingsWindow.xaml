@@ -234,6 +234,8 @@
                                      Padding="16"
                                      CornerRadius="10"
                                      BaseColor="#101512"
+                                     IsLiquidEnabled="False"
+                                     SurfaceOpacity="0.80"
                                      BorderBrush="#25342C"
                                      BorderThickness="1">
     <DockPanel LastChildFill="True">
@@ -365,6 +367,8 @@
                                          CornerRadius="8"
                                          BorderBrush="#334139"
                                          BorderThickness="1"
+                                         IsLiquidEnabled="False"
+                                         SurfaceOpacity="0.72"
                                          BaseColor="#18201B">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -416,6 +420,8 @@
                                          CornerRadius="8"
                                          BorderBrush="#334139"
                                          BorderThickness="1"
+                                         IsLiquidEnabled="False"
+                                         SurfaceOpacity="0.72"
                                          BaseColor="#18201B">
                     <Grid>
                         <Grid.RowDefinitions>

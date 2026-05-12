@@ -46,7 +46,7 @@ public sealed class SpotifyClient
             throw new InvalidOperationException("Сейчас играет не трек.");
         }
 
-        return CreateTrack(item);
+        return CreateTrack(item, playback?.IsPlaying == true);
     }
 
     public async Task<bool> GetTrackLikedStateAsync(PlaybackTrack track, CancellationToken cancellationToken = default)
@@ -59,6 +59,26 @@ public sealed class SpotifyClient
         await SetTrackLikedAsync(track, isLiked, cancellationToken);
     }
 
+    public async Task SkipToPreviousTrackAsync(CancellationToken cancellationToken = default)
+    {
+        await SendPlaybackCommandAsync(HttpMethod.Post, "previous", cancellationToken);
+    }
+
+    public async Task SkipToNextTrackAsync(CancellationToken cancellationToken = default)
+    {
+        await SendPlaybackCommandAsync(HttpMethod.Post, "next", cancellationToken);
+    }
+
+    public async Task PausePlaybackAsync(CancellationToken cancellationToken = default)
+    {
+        await SendPlaybackCommandAsync(HttpMethod.Put, "pause", cancellationToken);
+    }
+
+    public async Task ResumePlaybackAsync(CancellationToken cancellationToken = default)
+    {
+        await SendPlaybackCommandAsync(HttpMethod.Put, "play", cancellationToken);
+    }
+
     private async Task<bool> IsTrackLikedAsync(PlaybackTrack track, CancellationToken cancellationToken)
     {
         var uri = Uri.EscapeDataString(track.Uri);
@@ -69,9 +89,9 @@ public sealed class SpotifyClient
 
     private async Task SetTrackLikedAsync(PlaybackTrack track, bool isLiked, CancellationToken cancellationToken)
     {
-        if (_auth.KnowsGrantedScopes && !_auth.HasRequiredScopes)
+        if (_auth.KnowsGrantedScopes && !_auth.HasFavoriteScopes)
         {
-            throw new InvalidOperationException(BuildScopeError());
+            throw new InvalidOperationException(BuildScopeError("Избранного", SpotifyAuthService.FavoriteScopes));
         }
 
         var uri = Uri.EscapeDataString(track.Uri);
@@ -79,7 +99,17 @@ public sealed class SpotifyClient
         await SendAsync(method, $"{ApiRoot}/me/library?uris={uri}", cancellationToken);
     }
 
-    private static PlaybackTrack CreateTrack(SpotifyItem item)
+    private async Task SendPlaybackCommandAsync(HttpMethod method, string command, CancellationToken cancellationToken)
+    {
+        if (_auth.KnowsGrantedScopes && !_auth.HasPlaybackControlScopes)
+        {
+            throw new InvalidOperationException(BuildScopeError("управления плеером", SpotifyAuthService.PlaybackControlScopes));
+        }
+
+        await SendAsync(method, $"{ApiRoot}/me/player/{command}", cancellationToken);
+    }
+
+    private static PlaybackTrack CreateTrack(SpotifyItem item, bool isPlaying)
     {
         var artists = item.Artists is { Length: > 0 }
             ? string.Join(", ", item.Artists.Select(artist => artist.Name).Where(name => !string.IsNullOrWhiteSpace(name)))
@@ -90,7 +120,7 @@ public sealed class SpotifyClient
             .FirstOrDefault()
             ?.Url;
 
-        return new PlaybackTrack(item.Id!, item.Uri!, item.Name!, artists, image);
+        return new PlaybackTrack(item.Id!, item.Uri!, item.Name!, artists, image, IsPlaying: isPlaying);
     }
 
     private async Task<ApiResponse> SendAsync(HttpMethod method, string url, CancellationToken cancellationToken)
@@ -134,14 +164,14 @@ public sealed class SpotifyClient
             HttpStatusCode.Unauthorized => new InvalidOperationException(
                 "Spotify вернул 401. Открой настройки, нажми «Выйти», потом «Войти в Spotify» и выдай новые права."),
             HttpStatusCode.Forbidden => new InvalidOperationException(
-                $"{BuildScopeError()} Endpoint: {DescribeEndpoint(url)}. Ответ Spotify: {FormatBody(body)}"),
+                $"{BuildScopeError("этого действия", SpotifyAuthService.RequiredScopes)} Endpoint: {DescribeEndpoint(url)}. Ответ Spotify: {FormatBody(body)}"),
             _ => new SpotifyApiException(statusCode, body)
         };
     }
 
-    private static string BuildScopeError()
+    private static string BuildScopeError(string feature, string scopes)
     {
-        return $"Spotify вернул 403 Forbidden. Для Избранного нужны права {SpotifyAuthService.RequiredScopes}. " +
+        return $"Spotify вернул 403 Forbidden. Для {feature} нужны права {scopes}. " +
             "Открой настройки, нажми «Выйти», затем «Войти в Spotify» и подтверди доступ.";
     }
 
@@ -177,6 +207,26 @@ public sealed class SpotifyClient
         if (url.Contains("/me/player/currently-playing", StringComparison.OrdinalIgnoreCase))
         {
             return "получение текущего трека";
+        }
+
+        if (url.Contains("/me/player/previous", StringComparison.OrdinalIgnoreCase))
+        {
+            return "переключение на предыдущий трек";
+        }
+
+        if (url.Contains("/me/player/next", StringComparison.OrdinalIgnoreCase))
+        {
+            return "переключение на следующий трек";
+        }
+
+        if (url.Contains("/me/player/pause", StringComparison.OrdinalIgnoreCase))
+        {
+            return "пауза Spotify";
+        }
+
+        if (url.Contains("/me/player/play", StringComparison.OrdinalIgnoreCase))
+        {
+            return "воспроизведение Spotify";
         }
 
         return "Spotify API";

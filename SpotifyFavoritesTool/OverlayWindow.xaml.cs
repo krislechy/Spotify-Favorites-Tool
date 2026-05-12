@@ -9,6 +9,9 @@ namespace SpotifyFavoritesTool;
 public partial class OverlayWindow : Window
 {
     public event EventHandler? FavoriteRequested;
+    public event EventHandler? PreviousRequested;
+    public event EventHandler? PlayPauseRequested;
+    public event EventHandler? NextRequested;
 
     public OverlayWindow()
     {
@@ -21,6 +24,7 @@ public partial class OverlayWindow : Window
         TrackTitle.Text = track.Name;
         ArtistText.Text = track.Artists;
         SetFavoriteState(track.IsLiked);
+        SetPlaybackState(track.IsPlaying);
         SetAlbumArt(track.AlbumImageUrl);
     }
 
@@ -30,6 +34,7 @@ public partial class OverlayWindow : Window
         ArtistText.Text = message;
         FavoriteText.Text = "Избранное недоступно";
         FavoriteButton.Content = "♡";
+        PlayPauseButton.Content = "⏯";
         AlbumArt.Source = null;
         AlbumPlaceholder.Visibility = Visibility.Visible;
     }
@@ -70,9 +75,19 @@ public partial class OverlayWindow : Window
         FavoriteRequested?.Invoke(this, EventArgs.Empty);
     }
 
-    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    private void PreviousButton_Click(object sender, RoutedEventArgs e)
     {
-        Close();
+        PreviousRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void PlayPauseButton_Click(object sender, RoutedEventArgs e)
+    {
+        PlayPauseRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void NextButton_Click(object sender, RoutedEventArgs e)
+    {
+        NextRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private void SetFavoriteState(bool? isLiked)
@@ -93,6 +108,11 @@ public partial class OverlayWindow : Window
 
         FavoriteText.Text = "Статус Избранного неизвестен";
         FavoriteButton.Content = "♡";
+    }
+
+    private void SetPlaybackState(bool? isPlaying)
+    {
+        PlayPauseButton.Content = isPlaying == true ? "⏸" : "▶";
     }
 
     private void SetAlbumArt(string? imageUrl)

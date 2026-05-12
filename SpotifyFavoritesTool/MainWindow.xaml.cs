@@ -28,7 +28,6 @@ public partial class MainWindow : Window
     private bool _isExiting;
     private DispatcherTimer? _trackMonitorTimer;
     private TrayIconController? _trayIcon;
-    private PlaybackTrack? _lastOverlayTrack;
 
     public MainWindow()
     {
@@ -146,7 +145,6 @@ public partial class MainWindow : Window
         _settingsWindow.AuthChanged += (_, _) =>
         {
             _favorites.ClearCache();
-            _lastOverlayTrack = null;
             _overlayWindow?.ShowMessage(
                 _auth.HasRefreshToken ? "Spotify подключен" : "Spotify отключен",
                 _auth.HasRefreshToken ? "Жду текущий трек" : "Открой настройки и войди в Spotify");
@@ -343,11 +341,14 @@ public partial class MainWindow : Window
     {
         _overlayWindow = new OverlayWindow();
         _overlayWindow.FavoriteRequested += OverlayWindow_FavoriteRequested;
+        _overlayWindow.PreviousRequested += OverlayWindow_PreviousRequested;
+        _overlayWindow.PlayPauseRequested += OverlayWindow_PlayPauseRequested;
+        _overlayWindow.NextRequested += OverlayWindow_NextRequested;
         _overlayWindow.Closed += OverlayWindow_Closed;
 
-        if (_lastOverlayTrack is not null)
+        if (_favorites.LastObservedTrack is { } cachedTrack)
         {
-            _overlayWindow.ShowTrack(_lastOverlayTrack);
+            _overlayWindow.ShowTrack(cachedTrack);
         }
         else
         {
@@ -385,7 +386,7 @@ public partial class MainWindow : Window
                 var result = await _favorites.GetCurrentTrackWithFavoriteStatusAsync();
                 if (result is null)
                 {
-                    _lastOverlayTrack = null;
+                    _favorites.ResetObservation();
                     _overlayWindow?.ShowMessage("Spotify молчит", "Сейчас ничего не играет");
                     Log("Overlay не обновлен: Spotify сейчас ничего не играет.");
                     return;
@@ -411,8 +412,8 @@ public partial class MainWindow : Window
 
     private void UpdateOverlayTrack(PlaybackTrack track)
     {
-        _lastOverlayTrack = track;
-        _overlayWindow?.ShowTrack(track);
+        var cachedTrack = _favorites.StoreObservedTrack(track);
+        _overlayWindow?.ShowTrack(cachedTrack);
     }
 
     private void OverlayWindow_FavoriteRequested(object? sender, EventArgs e)
@@ -420,11 +421,101 @@ public partial class MainWindow : Window
         _ = ToggleFavoriteAsync();
     }
 
+    private void OverlayWindow_PreviousRequested(object? sender, EventArgs e)
+    {
+        _ = RunPlaybackCommandAsync(PlaybackCommand.Previous);
+    }
+
+    private void OverlayWindow_PlayPauseRequested(object? sender, EventArgs e)
+    {
+        _ = RunPlaybackCommandAsync(PlaybackCommand.PlayPause);
+    }
+
+    private void OverlayWindow_NextRequested(object? sender, EventArgs e)
+    {
+        _ = RunPlaybackCommandAsync(PlaybackCommand.Next);
+    }
+
+    private async Task RunPlaybackCommandAsync(PlaybackCommand command)
+    {
+        if (!_userActionGate.TryEnter(out var action))
+        {
+            return;
+        }
+
+        using (action)
+        {
+            try
+            {
+                switch (command)
+                {
+                    case PlaybackCommand.Previous:
+                        StatusText.Text = "Переключаю на предыдущий трек...";
+                        await _spotify.SkipToPreviousTrackAsync();
+                        Log("Overlay: предыдущий трек.");
+                        break;
+                    case PlaybackCommand.PlayPause:
+                        var knownTrack = _favorites.LastObservedTrack;
+                        if (knownTrack?.IsPlaying == true)
+                        {
+                            StatusText.Text = "Ставлю Spotify на паузу...";
+                            await _spotify.PausePlaybackAsync();
+                            if (knownTrack is not null)
+                            {
+                                UpdateOverlayTrack(knownTrack.WithPlaybackState(false));
+                            }
+
+                            Log("Overlay: пауза.");
+                        }
+                        else
+                        {
+                            StatusText.Text = "Запускаю воспроизведение Spotify...";
+                            await _spotify.ResumePlaybackAsync();
+                            if (knownTrack is not null)
+                            {
+                                UpdateOverlayTrack(knownTrack.WithPlaybackState(true));
+                            }
+
+                            Log("Overlay: воспроизведение.");
+                        }
+
+                        break;
+                    case PlaybackCommand.Next:
+                        StatusText.Text = "Переключаю на следующий трек...";
+                        await _spotify.SkipToNextTrackAsync();
+                        Log("Overlay: следующий трек.");
+                        break;
+                }
+
+                await Task.Delay(650);
+                await RefreshOverlayAsync();
+            }
+            catch (SpotifyRateLimitException ex)
+            {
+                StopTrackMonitor(clearCache: false);
+                StatusText.Text = Shorten(ex.Message, 160);
+                _overlayWindow?.ShowMessage("Spotify ограничил запросы", ex.Message);
+                _toasts.ShowError("Spotify ограничил запросы", ex.Message);
+                Log($"Команда Overlay остановлена: Spotify вернул 429 ({ex.Endpoint}).");
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = Shorten(ex.Message, 140);
+                _overlayWindow?.ShowMessage("Команда Overlay не выполнена", Shorten(ex.Message, 90));
+                _toasts.ShowError("Команда Overlay не выполнена", ex.Message);
+                Log($"Команда Overlay не выполнена: {Shorten(ex.Message, 90)}");
+            }
+        }
+    }
+
     private void OverlayWindow_Closed(object? sender, EventArgs e)
     {
         if (sender is OverlayWindow overlay)
         {
             overlay.FavoriteRequested -= OverlayWindow_FavoriteRequested;
+            overlay.PreviousRequested -= OverlayWindow_PreviousRequested;
+            overlay.PlayPauseRequested -= OverlayWindow_PlayPauseRequested;
+            overlay.NextRequested -= OverlayWindow_NextRequested;
             overlay.Closed -= OverlayWindow_Closed;
         }
 
@@ -524,7 +615,7 @@ public partial class MainWindow : Window
         var account = _auth.HasRefreshToken ? "Spotify подключен." : "Spotify не подключен.";
         if (_auth.KnowsGrantedScopes && !_auth.HasRequiredScopes)
         {
-            account += " Не хватает прав на Избранное: открой настройки, нажми «Выйти», затем «Войти в Spotify».";
+            account += " Не хватает прав на Избранное или управление плеером: открой настройки, нажми «Выйти», затем «Войти в Spotify».";
         }
 
         var registration = _hotkeys.GetRegistrationMessage();
@@ -597,4 +688,11 @@ public partial class MainWindow : Window
     {
         _activityLog.Add(message);
     }
+}
+
+internal enum PlaybackCommand
+{
+    Previous,
+    PlayPause,
+    Next
 }

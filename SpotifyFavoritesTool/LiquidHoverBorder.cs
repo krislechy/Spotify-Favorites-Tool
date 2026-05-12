@@ -25,6 +25,20 @@ public class LiquidHoverBorder : Border
                 FrameworkPropertyMetadataOptions.AffectsRender,
                 OnBaseColorChanged));
 
+    public static readonly DependencyProperty IsLiquidEnabledProperty =
+        DependencyProperty.Register(
+            nameof(IsLiquidEnabled),
+            typeof(bool),
+            typeof(LiquidHoverBorder),
+            new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+
+    public static readonly DependencyProperty SurfaceOpacityProperty =
+        DependencyProperty.Register(
+            nameof(SurfaceOpacity),
+            typeof(double),
+            typeof(LiquidHoverBorder),
+            new FrameworkPropertyMetadata(1.0, FrameworkPropertyMetadataOptions.AffectsRender, OnSurfaceOpacityChanged));
+
     private static readonly DependencyProperty HoverProgressProperty =
         DependencyProperty.Register(
             nameof(HoverProgress),
@@ -72,6 +86,18 @@ public class LiquidHoverBorder : Border
         set => SetValue(BaseColorProperty, value);
     }
 
+    public bool IsLiquidEnabled
+    {
+        get => (bool)GetValue(IsLiquidEnabledProperty);
+        set => SetValue(IsLiquidEnabledProperty, value);
+    }
+
+    public double SurfaceOpacity
+    {
+        get => (double)GetValue(SurfaceOpacityProperty);
+        set => SetValue(SurfaceOpacityProperty, value);
+    }
+
     private double HoverProgress
     {
         get => (double)GetValue(HoverProgressProperty);
@@ -81,6 +107,11 @@ public class LiquidHoverBorder : Border
     protected override void OnMouseEnter(WpfMouseEventArgs e)
     {
         base.OnMouseEnter(e);
+        if (!IsLiquidEnabled)
+        {
+            return;
+        }
+
         SetPointer(e.GetPosition(this), snap: true);
         AnimateHover(1);
         StartRendering();
@@ -89,6 +120,11 @@ public class LiquidHoverBorder : Border
     protected override void OnMouseMove(WpfMouseEventArgs e)
     {
         base.OnMouseMove(e);
+        if (!IsLiquidEnabled)
+        {
+            return;
+        }
+
         SetPointer(e.GetPosition(this), snap: false);
         StartRendering();
     }
@@ -96,6 +132,11 @@ public class LiquidHoverBorder : Border
     protected override void OnMouseLeave(WpfMouseEventArgs e)
     {
         base.OnMouseLeave(e);
+        if (!IsLiquidEnabled)
+        {
+            return;
+        }
+
         AnimateHover(0);
         StartRendering();
     }
@@ -118,7 +159,7 @@ public class LiquidHoverBorder : Border
         drawingContext.DrawRoundedRectangle(GetBaseBrush(), null, fillRect, fillRadius, fillRadius);
 
         var hoverProgress = HoverProgress;
-        if (hoverProgress > 0.001)
+        if (IsLiquidEnabled && hoverProgress > 0.001)
         {
             var clip = new RectangleGeometry(fillRect, fillRadius, fillRadius);
             drawingContext.PushClip(clip);
@@ -216,7 +257,9 @@ public class LiquidHoverBorder : Border
             return _baseBrush;
         }
 
-        var brush = new SolidColorBrush(BaseColor);
+        var opacity = Math.Clamp(SurfaceOpacity, 0, 1);
+        var alpha = (byte)Math.Round(BaseColor.A * opacity);
+        var brush = new SolidColorBrush(WpfColor.FromArgb(alpha, BaseColor.R, BaseColor.G, BaseColor.B));
         brush.Freeze();
         _baseBrush = brush;
         return _baseBrush;
@@ -404,6 +447,12 @@ public class LiquidHoverBorder : Border
         liquidHoverBorder._baseBrush = null;
         liquidHoverBorder._blobBrushes = null;
         liquidHoverBorder._motionBlobBrushes = null;
+    }
+
+    private static void OnSurfaceOpacityChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
+    {
+        var liquidHoverBorder = (LiquidHoverBorder)dependencyObject;
+        liquidHoverBorder._baseBrush = null;
     }
 
     private double GetAnimationSeconds()

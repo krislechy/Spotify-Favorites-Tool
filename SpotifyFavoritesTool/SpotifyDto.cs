@@ -19,6 +19,9 @@ internal sealed class TokenResponse
 
 internal sealed class PlaybackResponse
 {
+    [JsonPropertyName("is_playing")]
+    public bool IsPlaying { get; set; }
+
     [JsonPropertyName("item")]
     public SpotifyItem? Item { get; set; }
 }

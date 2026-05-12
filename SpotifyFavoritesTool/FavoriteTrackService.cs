@@ -11,15 +11,23 @@ public sealed class FavoriteTrackService
         _spotify = spotify;
     }
 
+    public PlaybackTrack? LastObservedTrack { get; private set; }
+
     public void ResetObservation()
     {
         _lastObservedTrackUri = null;
+        LastObservedTrack = null;
     }
 
     public void ClearCache()
     {
         _cache.Clear();
         ResetObservation();
+    }
+
+    public PlaybackTrack StoreObservedTrack(PlaybackTrack track)
+    {
+        return CacheObservedTrack(track);
     }
 
     public async Task<FavoriteToggleResult> ToggleCurrentTrackAsync()
@@ -87,6 +95,7 @@ public sealed class FavoriteTrackService
     private PlaybackTrack CacheObservedTrack(PlaybackTrack track)
     {
         _lastObservedTrackUri = track.Uri;
-        return _cache.Store(track);
+        LastObservedTrack = _cache.Store(track);
+        return LastObservedTrack;
     }
 }

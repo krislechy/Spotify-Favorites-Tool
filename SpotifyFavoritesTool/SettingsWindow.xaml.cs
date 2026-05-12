@@ -200,7 +200,7 @@ public partial class SettingsWindow : Window
         var account = _auth.HasRefreshToken ? "Аккаунт подключен." : "Аккаунт не подключен.";
         if (_auth.KnowsGrantedScopes && !_auth.HasRequiredScopes)
         {
-            account += " Не хватает прав на Избранное: нажми «Выйти», затем «Войти в Spotify».";
+            account += " Не хватает прав на Избранное или управление плеером: нажми «Выйти», затем «Войти в Spotify».";
         }
 
         StatusText.Text = string.IsNullOrWhiteSpace(prefix)

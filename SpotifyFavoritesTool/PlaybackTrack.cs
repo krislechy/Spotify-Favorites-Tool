@@ -6,11 +6,17 @@ public sealed record PlaybackTrack(
     string Name,
     string Artists,
     string? AlbumImageUrl,
-    bool? IsLiked = null)
+    bool? IsLiked = null,
+    bool? IsPlaying = null)
 {
     public PlaybackTrack WithFavoriteStatus(bool isLiked)
     {
         return this with { IsLiked = isLiked };
+    }
+
+    public PlaybackTrack WithPlaybackState(bool? isPlaying)
+    {
+        return this with { IsPlaying = isPlaying };
     }
 }
 
