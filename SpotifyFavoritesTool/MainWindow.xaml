@@ -12,7 +12,6 @@
         AllowsTransparency="True"
         ShowInTaskbar="True"
         Background="Transparent"
-        Opacity="0.80"
         Loaded="Window_Loaded"
         Closing="Window_Closing"
         PreviewKeyDown="Window_PreviewKeyDown"
@@ -93,7 +92,7 @@
     <local:LiquidHoverBorder Margin="8"
                              CornerRadius="12"
                              BaseColor="#101512"
-                             SurfaceOpacity="0.20"
+                             SurfaceOpacity="1"
                              BorderBrush="#2A3A31"
                              BorderThickness="1"
                              SnapsToDevicePixels="True">
