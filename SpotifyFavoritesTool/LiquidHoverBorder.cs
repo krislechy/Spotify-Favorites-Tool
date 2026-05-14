@@ -132,7 +132,7 @@ public class LiquidHoverBorder : Border
         {
             var clip = new RectangleGeometry(fillRect, fillRadius, fillRadius);
             drawingContext.PushClip(clip);
-            drawingContext.PushOpacity(0.70);
+            drawingContext.PushOpacity(GetLiquidOpacity());
             DrawLiquidGradient(drawingContext, fillRect, GetAnimationSeconds());
             drawingContext.Pop();
             drawingContext.Pop();
@@ -211,6 +211,11 @@ public class LiquidHoverBorder : Border
         brush.Freeze();
         _baseBrush = brush;
         return _baseBrush;
+    }
+
+    private double GetLiquidOpacity()
+    {
+        return Math.Clamp(SurfaceOpacity * 0.70, 0, 0.70);
     }
 
     private WpfBrush[] GetBlobBrushes()
