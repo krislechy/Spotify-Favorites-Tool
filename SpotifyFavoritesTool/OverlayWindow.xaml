@@ -89,6 +89,7 @@
                              Padding="12"
                              CornerRadius="12"
                              BaseColor="#101512"
+                             SurfaceOpacity="0.20"
                              BorderBrush="#365142"
                              BorderThickness="1"
                              SnapsToDevicePixels="True"
@@ -243,7 +244,7 @@
                                      BorderBrush="#32483C"
                                      BorderThickness="1"
                                      IsLiquidEnabled="False"
-                                     SurfaceOpacity="0.52">
+                                     SurfaceOpacity="0.20">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />

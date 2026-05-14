@@ -152,6 +152,7 @@
     <local:LiquidHoverBorder Margin="8"
                              CornerRadius="12"
                              BaseColor="#101512"
+                             SurfaceOpacity="0.20"
                              BorderBrush="#2A3A31"
                              BorderThickness="1"
                              SnapsToDevicePixels="True">
@@ -239,7 +240,7 @@
                                      CornerRadius="10"
                                      BaseColor="#101512"
                                      IsLiquidEnabled="False"
-                                     SurfaceOpacity="0.70"
+                                     SurfaceOpacity="0.20"
                                      BorderBrush="#25342C"
                                      BorderThickness="1">
     <DockPanel LastChildFill="True">
@@ -276,7 +277,7 @@
                                          BorderBrush="#334139"
                                          BorderThickness="1"
                                          IsLiquidEnabled="False"
-                                         SurfaceOpacity="0.58"
+                                         SurfaceOpacity="0.20"
                                          BaseColor="#18201B">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -362,7 +363,7 @@
                                          BorderBrush="#334139"
                                          BorderThickness="1"
                                          IsLiquidEnabled="False"
-                                         SurfaceOpacity="0.58"
+                                         SurfaceOpacity="0.20"
                                          BaseColor="#18201B">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -410,7 +411,7 @@
                                          BorderBrush="#334139"
                                          BorderThickness="1"
                                          IsLiquidEnabled="False"
-                                         SurfaceOpacity="0.58"
+                                         SurfaceOpacity="0.20"
                                          BaseColor="#18201B">
                     <Grid>
                         <Grid.RowDefinitions>

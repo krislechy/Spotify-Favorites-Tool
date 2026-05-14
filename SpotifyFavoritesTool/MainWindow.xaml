@@ -92,6 +92,7 @@
     <local:LiquidHoverBorder Margin="8"
                              CornerRadius="12"
                              BaseColor="#101512"
+                             SurfaceOpacity="0.20"
                              BorderBrush="#2A3A31"
                              BorderThickness="1"
                              SnapsToDevicePixels="True">
@@ -167,7 +168,7 @@
                                      CornerRadius="10"
                                      BaseColor="#141B17"
                                      IsLiquidEnabled="False"
-                                     SurfaceOpacity="0.73"
+                                     SurfaceOpacity="0.20"
                                      BorderBrush="#25342C"
                                      BorderThickness="1">
                 <Grid>
@@ -190,7 +191,7 @@
                                              CornerRadius="8"
                                              BaseColor="#18201B"
                                              IsLiquidEnabled="False"
-                                             SurfaceOpacity="0.61"
+                                             SurfaceOpacity="0.20"
                                              BorderBrush="#28362E"
                                              BorderThickness="1">
                         <StackPanel>
@@ -237,9 +238,9 @@
 
                         <local:LiquidHoverBorder Grid.Row="1"
                                                  CornerRadius="8"
-                                                 BaseColor="#111714"
-                                                 IsLiquidEnabled="False"
-                                                 SurfaceOpacity="0.55"
+                                                  BaseColor="#111714"
+                                                  IsLiquidEnabled="False"
+                                                  SurfaceOpacity="0.20"
                                                  BorderBrush="#25342C"
                                                  BorderThickness="1">
                             <ListBox x:Name="ActivityLogList"
