@@ -17,6 +17,11 @@ public sealed class TrackFavoriteCache
             ? Merge(existingTrack, track)
             : track;
 
+        if (storedTrack.IsPlaying == true)
+        {
+            MarkOtherTracksAsNotPlaying(storedTrack.Uri);
+        }
+
         _tracks[track.Uri] = storedTrack;
         _trackOrder.Remove(track.Uri);
         _trackOrder.Insert(0, track.Uri);
@@ -50,8 +55,25 @@ public sealed class TrackFavoriteCache
             Name = string.IsNullOrWhiteSpace(latestTrack.Name) ? storedTrack.Name : latestTrack.Name,
             Artists = string.IsNullOrWhiteSpace(latestTrack.Artists) ? storedTrack.Artists : latestTrack.Artists,
             AlbumImageUrl = string.IsNullOrWhiteSpace(latestTrack.AlbumImageUrl) ? storedTrack.AlbumImageUrl : latestTrack.AlbumImageUrl,
+            ContextUri = string.IsNullOrWhiteSpace(latestTrack.ContextUri) ? storedTrack.ContextUri : latestTrack.ContextUri,
             IsLiked = latestTrack.IsLiked ?? storedTrack.IsLiked,
             IsPlaying = latestTrack.IsPlaying ?? storedTrack.IsPlaying
         };
+    }
+
+    private void MarkOtherTracksAsNotPlaying(string currentTrackUri)
+    {
+        foreach (var uri in _trackOrder)
+        {
+            if (string.Equals(uri, currentTrackUri, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (_tracks.TryGetValue(uri, out var track) && track.IsPlaying == true)
+            {
+                _tracks[uri] = track.WithPlaybackState(false);
+            }
+        }
     }
 }

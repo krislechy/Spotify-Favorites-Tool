@@ -22,8 +22,17 @@ internal sealed class PlaybackResponse
     [JsonPropertyName("is_playing")]
     public bool IsPlaying { get; set; }
 
+    [JsonPropertyName("context")]
+    public SpotifyPlaybackContext? Context { get; set; }
+
     [JsonPropertyName("item")]
     public SpotifyItem? Item { get; set; }
+}
+
+internal sealed class SpotifyPlaybackContext
+{
+    [JsonPropertyName("uri")]
+    public string? Uri { get; set; }
 }
 
 internal sealed class SpotifyItem

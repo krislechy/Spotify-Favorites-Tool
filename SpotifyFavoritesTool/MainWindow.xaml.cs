@@ -364,6 +364,7 @@ public partial class MainWindow : Window
         overlay.PlayPauseRequested += OverlayWindow_PlayPauseRequested;
         overlay.NextRequested += OverlayWindow_NextRequested;
         overlay.CachedTrackPlayRequested += OverlayWindow_CachedTrackPlayRequested;
+        overlay.CachedTrackFavoriteRequested += OverlayWindow_CachedTrackFavoriteRequested;
         overlay.Closed += OverlayWindow_Closed;
     }
 
@@ -374,6 +375,7 @@ public partial class MainWindow : Window
         overlay.PlayPauseRequested -= OverlayWindow_PlayPauseRequested;
         overlay.NextRequested -= OverlayWindow_NextRequested;
         overlay.CachedTrackPlayRequested -= OverlayWindow_CachedTrackPlayRequested;
+        overlay.CachedTrackFavoriteRequested -= OverlayWindow_CachedTrackFavoriteRequested;
         overlay.Closed -= OverlayWindow_Closed;
     }
 
@@ -436,6 +438,11 @@ public partial class MainWindow : Window
     {
         var cachedTrack = _favorites.StoreObservedTrack(track);
         _overlayWindow?.ShowTrack(cachedTrack);
+        RefreshOverlayCache();
+    }
+
+    private void RefreshOverlayCache()
+    {
         _overlayWindow?.SetCachedTracks(_favorites.CachedTracks);
     }
 
@@ -462,6 +469,11 @@ public partial class MainWindow : Window
     private void OverlayWindow_CachedTrackPlayRequested(object? sender, TrackRequestedEventArgs e)
     {
         _ = PlayCachedTrackAsync(e.Track);
+    }
+
+    private void OverlayWindow_CachedTrackFavoriteRequested(object? sender, TrackRequestedEventArgs e)
+    {
+        _ = ToggleCachedTrackFavoriteAsync(e.Track);
     }
 
     private async Task RunPlaybackCommandAsync(PlaybackCommand command)
@@ -589,6 +601,47 @@ public partial class MainWindow : Window
                 _overlayWindow?.ShowMessage("Трек не запущен", Shorten(ex.Message, 90));
                 _toasts.ShowError("Трек не запущен", ex.Message);
                 Log($"Трек из кеша не запущен: {Shorten(ex.Message, 90)}");
+            }
+        }
+    }
+
+    private async Task ToggleCachedTrackFavoriteAsync(PlaybackTrack track)
+    {
+        if (!_userActionGate.TryEnter(out var action))
+        {
+            return;
+        }
+
+        using (action)
+        {
+            try
+            {
+                StatusText.Text = $"Меняю Избранное: {track.Name}...";
+                var result = await _favorites.ToggleCachedTrackAsync(track);
+                StatusText.Text = $"{result.Message}: {result.Track.Name}";
+                RefreshOverlayCache();
+                if (string.Equals(_favorites.LastObservedTrack?.Uri, result.Track.Uri, StringComparison.Ordinal))
+                {
+                    _overlayWindow?.ShowTrack(result.Track);
+                }
+
+                _toasts.Show(result);
+                Log($"Overlay: {result.Message.ToLowerInvariant()} для трека из истории: {result.Track.Name}.");
+            }
+            catch (SpotifyRateLimitException ex)
+            {
+                StopTrackMonitor(clearCache: false);
+                StatusText.Text = Shorten(ex.Message, 160);
+                _overlayWindow?.ShowMessage("Spotify ограничил запросы", ex.Message);
+                _toasts.ShowError("Spotify ограничил запросы", ex.Message);
+                Log($"Избранное для трека из истории остановлено: Spotify вернул 429 ({ex.Endpoint}).");
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = Shorten(ex.Message, 140);
+                _overlayWindow?.ShowMessage("Избранное не изменено", Shorten(ex.Message, 90));
+                _toasts.ShowError("Избранное не изменено", ex.Message);
+                Log($"Избранное для трека из истории не изменено: {Shorten(ex.Message, 90)}");
             }
         }
     }

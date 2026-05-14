@@ -85,11 +85,6 @@ public partial class SettingsWindow : Window
         Close();
     }
 
-    private void MinimizeButton_Click(object sender, RoutedEventArgs e)
-    {
-        WindowState = WindowState.Minimized;
-    }
-
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key != Key.Tab)
@@ -208,6 +203,11 @@ public partial class SettingsWindow : Window
         StatusText.Text = string.IsNullOrWhiteSpace(prefix)
             ? account
             : $"{prefix} {account}";
+        SpotifyConnectionStatusText.Text = _auth.HasRefreshToken
+            ? "Статус: подключен"
+            : "Статус: не подключен";
+        LoginButton.Visibility = _auth.HasRefreshToken ? Visibility.Collapsed : Visibility.Visible;
+        LogoutButton.Visibility = _auth.HasRefreshToken ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private static bool TryCaptureHotkey(System.Windows.Input.KeyEventArgs e, out uint virtualKey, out string displayName)

@@ -47,7 +47,7 @@ public sealed class SpotifyClient
             throw new InvalidOperationException("Сейчас играет не трек.");
         }
 
-        return CreateTrack(item, playback?.IsPlaying == true);
+        return CreateTrack(item, playback?.Context?.Uri, playback?.IsPlaying == true);
     }
 
     public async Task<bool> GetTrackLikedStateAsync(PlaybackTrack track, CancellationToken cancellationToken = default)
@@ -87,7 +87,7 @@ public sealed class SpotifyClient
             throw new InvalidOperationException(BuildScopeError("управления плеером", SpotifyAuthService.PlaybackControlScopes));
         }
 
-        var body = JsonSerializer.Serialize(new { uris = new[] { track.Uri } }, JsonOptions);
+        var body = JsonSerializer.Serialize(CreatePlaybackBody(track), JsonOptions);
         using var content = new StringContent(body, Encoding.UTF8, "application/json");
         await SendAsync(HttpMethod.Put, $"{ApiRoot}/me/player/play", cancellationToken, content);
     }
@@ -122,7 +122,7 @@ public sealed class SpotifyClient
         await SendAsync(method, $"{ApiRoot}/me/player/{command}", cancellationToken);
     }
 
-    private static PlaybackTrack CreateTrack(SpotifyItem item, bool isPlaying)
+    private static PlaybackTrack CreateTrack(SpotifyItem item, string? contextUri, bool isPlaying)
     {
         var artists = item.Artists is { Length: > 0 }
             ? string.Join(", ", item.Artists.Select(artist => artist.Name).Where(name => !string.IsNullOrWhiteSpace(name)))
@@ -133,7 +133,21 @@ public sealed class SpotifyClient
             .FirstOrDefault()
             ?.Url;
 
-        return new PlaybackTrack(item.Id!, item.Uri!, item.Name!, artists, image, IsPlaying: isPlaying);
+        return new PlaybackTrack(item.Id!, item.Uri!, item.Name!, artists, image, contextUri, IsPlaying: isPlaying);
+    }
+
+    private static object CreatePlaybackBody(PlaybackTrack track)
+    {
+        if (track.ContextUri?.StartsWith("spotify:playlist:", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            return new
+            {
+                context_uri = track.ContextUri,
+                offset = new { uri = track.Uri }
+            };
+        }
+
+        return new { uris = new[] { track.Uri } };
     }
 
     private async Task<ApiResponse> SendAsync(HttpMethod method, string url, CancellationToken cancellationToken, HttpContent? content = null)

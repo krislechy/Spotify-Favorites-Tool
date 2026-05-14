@@ -6,9 +6,14 @@ public sealed record PlaybackTrack(
     string Name,
     string Artists,
     string? AlbumImageUrl,
+    string? ContextUri = null,
     bool? IsLiked = null,
     bool? IsPlaying = null)
 {
+    public string DisplayLine => $"{Name} · {Artists}";
+    public string FavoriteGlyph => IsLiked == true ? "♥" : "♡";
+    public string NowPlayingText => IsPlaying == true ? "сейчас играет" : string.Empty;
+
     public PlaybackTrack WithFavoriteStatus(bool isLiked)
     {
         return this with { IsLiked = isLiked };

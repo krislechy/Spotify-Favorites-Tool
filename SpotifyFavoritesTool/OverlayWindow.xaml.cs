@@ -25,6 +25,7 @@ public partial class OverlayWindow : Window, IDisposable
     public event EventHandler? PlayPauseRequested;
     public event EventHandler? NextRequested;
     public event EventHandler<TrackRequestedEventArgs>? CachedTrackPlayRequested;
+    public event EventHandler<TrackRequestedEventArgs>? CachedTrackFavoriteRequested;
 
     public OverlayWindow()
     {
@@ -80,6 +81,7 @@ public partial class OverlayWindow : Window, IDisposable
         PlayPauseRequested = null;
         NextRequested = null;
         CachedTrackPlayRequested = null;
+        CachedTrackFavoriteRequested = null;
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -152,6 +154,14 @@ public partial class OverlayWindow : Window, IDisposable
         if (sender is Controls.Button { Tag: PlaybackTrack track })
         {
             CachedTrackPlayRequested?.Invoke(this, new TrackRequestedEventArgs(track));
+        }
+    }
+
+    private void CachedTrackFavoriteButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Controls.Button { Tag: PlaybackTrack track })
+        {
+            CachedTrackFavoriteRequested?.Invoke(this, new TrackRequestedEventArgs(track));
         }
     }
 

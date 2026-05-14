@@ -78,7 +78,6 @@
 
         <Style TargetType="{x:Type ScrollBar}">
             <Setter Property="Width" Value="12" />
-            <Setter Property="Height" Value="12" />
             <Setter Property="Background" Value="#111714" />
             <Setter Property="Foreground" Value="#496353" />
             <Setter Property="Focusable" Value="False" />

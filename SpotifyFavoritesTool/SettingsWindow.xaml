@@ -206,13 +206,17 @@
                             Orientation="Horizontal"
                             VerticalAlignment="Center">
                     <Button Style="{StaticResource TitleButton}"
-                            Click="MinimizeButton_Click"
-                            ToolTip="Свернуть">
+                            Click="SaveButton_Click"
+                            ToolTip="Сохранить">
                         <Canvas Width="16"
                                 Height="16"
                                 IsHitTestVisible="False">
                             <Path Style="{StaticResource ButtonIconPath}"
-                                  Data="M 4,9 L 12,9" />
+                                  Data="M 3,2.5 L 11.5,2.5 L 13.5,4.5 L 13.5,13.5 L 2.5,13.5 L 2.5,2.5 Z" />
+                            <Path Style="{StaticResource ButtonIconPath}"
+                                  Data="M 5,2.5 L 5,6 L 11,6 L 11,2.5" />
+                            <Path Style="{StaticResource ButtonIconPath}"
+                                  Data="M 5,10.5 L 11,10.5 L 11,13.5 L 5,13.5 Z" />
                         </Canvas>
                     </Button>
                     <Button Style="{StaticResource TitleButton}"
@@ -239,44 +243,6 @@
                                      BorderBrush="#25342C"
                                      BorderThickness="1">
     <DockPanel LastChildFill="True">
-        <StackPanel DockPanel.Dock="Bottom"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                    Margin="0,14,0,0">
-            <Button Style="{StaticResource SettingsButton}"
-                    Width="126"
-                    Margin="0,0,8,0"
-                    Click="SaveButton_Click">
-                <StackPanel Orientation="Horizontal"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center">
-                    <Canvas Width="16"
-                            Height="16"
-                            Margin="0,0,7,0"
-                            IsHitTestVisible="False">
-                        <Path Style="{StaticResource ButtonIconPath}"
-                              Data="M 3,2.5 L 11.5,2.5 L 13.5,4.5 L 13.5,13.5 L 2.5,13.5 L 2.5,2.5 Z" />
-                        <Path Style="{StaticResource ButtonIconPath}"
-                              Data="M 5,2.5 L 5,6 L 11,6 L 11,2.5" />
-                        <Path Style="{StaticResource ButtonIconPath}"
-                              Data="M 5,10.5 L 11,10.5 L 11,13.5 L 5,13.5 Z" />
-                    </Canvas>
-                    <TextBlock Text="Сохранить" />
-                </StackPanel>
-            </Button>
-            <Button Style="{StaticResource SettingsButton}"
-                    Width="42"
-                    Click="CloseButton_Click"
-                    ToolTip="Закрыть настройки">
-                <Canvas Width="16"
-                        Height="16"
-                        IsHitTestVisible="False">
-                    <Path Style="{StaticResource ButtonIconPath}"
-                          Data="M 4,4 L 12,12 M 12,4 L 4,12" />
-                </Canvas>
-            </Button>
-        </StackPanel>
-
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="0,0,8,0">
@@ -316,6 +282,7 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <TextBlock Text="Подключение Spotify"
@@ -323,7 +290,13 @@
                                    FontWeight="SemiBold"
                                    Margin="0,0,0,10" />
 
-                        <StackPanel Grid.Row="1"
+                        <TextBlock x:Name="SpotifyConnectionStatusText"
+                                   Grid.Row="1"
+                                   Foreground="#9ECFB1"
+                                   FontSize="12"
+                                   Margin="0,0,0,10" />
+
+                        <StackPanel Grid.Row="2"
                                     Orientation="Horizontal"
                                     HorizontalAlignment="Left">
                             <Button x:Name="LoginButton"
@@ -360,7 +333,8 @@
                                     <TextBlock Text="Spotify" />
                                 </StackPanel>
                             </Button>
-                            <Button Style="{StaticResource SettingsButton}"
+                            <Button x:Name="LogoutButton"
+                                    Style="{StaticResource SettingsButton}"
                                     Width="100"
                                     Click="LogoutButton_Click">
                                 <StackPanel Orientation="Horizontal"

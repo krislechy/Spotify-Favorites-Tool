@@ -139,30 +139,23 @@
             <Grid Grid.Column="1"
                   Margin="0,2,12,0">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="19" />
                     <RowDefinition Height="27" />
                     <RowDefinition Height="22" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <TextBlock Text="Spotify Favorites Tool"
-                           Foreground="#8DE6B1"
-                           FontSize="11"
-                           FontWeight="SemiBold"
-                           TextTrimming="CharacterEllipsis" />
                 <TextBlock x:Name="TrackTitle"
-                           Grid.Row="1"
                            Foreground="#F7FAF8"
                            FontSize="15"
                            FontWeight="Bold"
                            TextTrimming="CharacterEllipsis" />
                 <TextBlock x:Name="ArtistText"
-                           Grid.Row="2"
+                           Grid.Row="1"
                            Foreground="#B9C4BE"
                            FontSize="12"
                            TextTrimming="CharacterEllipsis" />
                 <TextBlock x:Name="FavoriteText"
-                           Grid.Row="3"
+                           Grid.Row="2"
                            Foreground="#7F8D84"
                            FontSize="11"
                            TextTrimming="CharacterEllipsis" />
@@ -225,7 +218,7 @@
                         Style="{StaticResource TransportButton}"
                         Margin="0"
                         Click="HistoryToggleButton_Click"
-                        ToolTip="Показать треки из кеша">
+                        ToolTip="Показать воспроизводившиеся ранее треки">
                     <Canvas Width="16"
                             Height="16"
                             IsHitTestVisible="False">
@@ -251,14 +244,19 @@
                                      BorderThickness="1"
                                      IsLiquidEnabled="False"
                                      SurfaceOpacity="0.52">
-                <DockPanel LastChildFill="True">
-                    <TextBlock DockPanel.Dock="Top"
-                               Text="Треки из кеша"
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Воспроизводилось ранее"
                                Foreground="#F4F8F5"
                                FontWeight="SemiBold"
                                FontSize="12"
                                Margin="0,0,0,8" />
                     <ListBox x:Name="CachedTracksList"
+                             Grid.Row="1"
                              Background="Transparent"
                              BorderThickness="0"
                              ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -285,45 +283,100 @@
                         </ListBox.ItemContainerStyle>
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="#40202A24"
-                                        BorderBrush="#3B5144"
+                                <Border x:Name="HistoryItemRoot"
+                                        Background="Transparent"
+                                        BorderBrush="Transparent"
                                         BorderThickness="1"
                                         CornerRadius="8"
-                                        Padding="9,7">
+                                        Padding="8,6">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
+                                            <ColumnDefinition x:Name="CoverColumn" Width="0" />
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Name}"
+
+                                        <Border x:Name="HistoryCover"
+                                                Width="34"
+                                                Height="34"
+                                                Margin="0,0,8,0"
+                                                CornerRadius="6"
+                                                Background="#202824"
+                                                ClipToBounds="True"
+                                                Visibility="Collapsed">
+                                            <Image Source="{Binding AlbumImageUrl}"
+                                                   Stretch="UniformToFill"
+                                                   RenderOptions.BitmapScalingMode="HighQuality" />
+                                        </Border>
+
+                                        <Grid Grid.Column="1"
+                                              VerticalAlignment="Center">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Text="{Binding DisplayLine}"
                                                        Foreground="#F4F8F5"
                                                        FontSize="12"
                                                        FontWeight="SemiBold"
                                                        TextTrimming="CharacterEllipsis" />
-                                            <TextBlock Text="{Binding Artists}"
-                                                       Foreground="#AEBDB4"
-                                                       FontSize="11"
-                                                       TextTrimming="CharacterEllipsis" />
+
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding NowPlayingText}"
+                                                       Foreground="#8DE6B1"
+                                                       FontSize="10"
+                                                       FontWeight="SemiBold"
+                                                       Margin="8,0,0,0"
+                                                       VerticalAlignment="Center" />
+                                        </Grid>
+
+                                        <StackPanel x:Name="HistoryActions"
+                                                    Grid.Column="2"
+                                                    Orientation="Horizontal"
+                                                    Visibility="Collapsed">
+                                            <Button Style="{StaticResource HistoryPlayButton}"
+                                                    Tag="{Binding}"
+                                                    Click="CachedTrackPlayButton_Click"
+                                                    ToolTip="Запустить этот трек">
+                                                <Canvas Width="14"
+                                                        Height="14"
+                                                        IsHitTestVisible="False">
+                                                    <Path Data="M 4,2.5 L 12,7 L 4,11.5 Z"
+                                                          Fill="#F4F8F5" />
+                                                </Canvas>
+                                            </Button>
+                                            <Button Style="{StaticResource HistoryPlayButton}"
+                                                    Tag="{Binding}"
+                                                    Content="{Binding FavoriteGlyph}"
+                                                    Click="CachedTrackFavoriteButton_Click"
+                                                    ToolTip="Переключить Избранное" />
                                         </StackPanel>
-                                        <Button Grid.Column="1"
-                                                Style="{StaticResource HistoryPlayButton}"
-                                                Tag="{Binding}"
-                                                Click="CachedTrackPlayButton_Click"
-                                                ToolTip="Запустить этот трек">
-                                            <Canvas Width="14"
-                                                    Height="14"
-                                                    IsHitTestVisible="False">
-                                                <Path Data="M 4,2.5 L 12,7 L 4,11.5 Z"
-                                                      Fill="#F4F8F5" />
-                                            </Canvas>
-                                        </Button>
+
+                                        <TextBlock x:Name="HistoryFavoriteGlyph"
+                                                   Grid.Column="2"
+                                                   Text="{Binding FavoriteGlyph}"
+                                                   Foreground="#8DE6B1"
+                                                   FontSize="14"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center"
+                                                   Margin="8,0,0,0" />
                                     </Grid>
                                 </Border>
+                                <DataTemplate.Triggers>
+                                    <Trigger SourceName="HistoryItemRoot" Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="HistoryItemRoot" Property="Background" Value="#40202A24" />
+                                        <Setter TargetName="HistoryItemRoot" Property="BorderBrush" Value="#314638" />
+                                        <Setter TargetName="CoverColumn" Property="Width" Value="42" />
+                                        <Setter TargetName="HistoryCover" Property="Visibility" Value="Visible" />
+                                        <Setter TargetName="HistoryActions" Property="Visibility" Value="Visible" />
+                                        <Setter TargetName="HistoryFavoriteGlyph" Property="Visibility" Value="Collapsed" />
+                                    </Trigger>
+                                </DataTemplate.Triggers>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-                </DockPanel>
+                </Grid>
             </local:LiquidHoverBorder>
         </Grid>
     </local:LiquidHoverBorder>

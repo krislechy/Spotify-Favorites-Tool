@@ -34,13 +34,23 @@ public sealed class FavoriteTrackService
     public async Task<FavoriteToggleResult> ToggleCurrentTrackAsync()
     {
         var track = await GetCurrentTrackOrThrowAsync();
-        var currentStatus = await GetTrackWithFavoriteStatusAsync(track);
+        return await ToggleTrackAsync(track, updateObservation: true);
+    }
+
+    public async Task<FavoriteToggleResult> ToggleCachedTrackAsync(PlaybackTrack track)
+    {
+        return await ToggleTrackAsync(track, updateObservation: false);
+    }
+
+    private async Task<FavoriteToggleResult> ToggleTrackAsync(PlaybackTrack track, bool updateObservation)
+    {
+        var currentStatus = await GetTrackWithFavoriteStatusAsync(track, updateObservation);
         var nextLiked = currentStatus.Track.IsLiked != true;
 
         await _spotify.SetTrackFavoriteAsync(currentStatus.Track, nextLiked);
 
         var updatedTrack = currentStatus.Track.WithFavoriteStatus(nextLiked);
-        CacheObservedTrack(updatedTrack);
+        updatedTrack = CacheTrack(updatedTrack, updateObservation);
 
         var message = nextLiked ? "Добавлено в Избранное" : "Убрано из Избранного";
         return new FavoriteToggleResult(updatedTrack, message, currentStatus.Source);
@@ -54,7 +64,7 @@ public sealed class FavoriteTrackService
             return null;
         }
 
-        return await GetTrackWithFavoriteStatusAsync(track);
+        return await GetTrackWithFavoriteStatusAsync(track, updateObservation: true);
     }
 
     public async Task<FavoriteStatusResult?> GetChangedTrackWithFavoriteStatusAsync()
@@ -71,7 +81,7 @@ public sealed class FavoriteTrackService
             return null;
         }
 
-        return await GetTrackWithFavoriteStatusAsync(track);
+        return await GetTrackWithFavoriteStatusAsync(track, updateObservation: true);
     }
 
     private async Task<PlaybackTrack> GetCurrentTrackOrThrowAsync()
@@ -80,23 +90,33 @@ public sealed class FavoriteTrackService
             ?? throw new InvalidOperationException("Spotify сейчас ничего не играет.");
     }
 
-    private async Task<FavoriteStatusResult> GetTrackWithFavoriteStatusAsync(PlaybackTrack track)
+    private async Task<FavoriteStatusResult> GetTrackWithFavoriteStatusAsync(PlaybackTrack track, bool updateObservation)
     {
         if (_cache.TryGetWithFavoriteStatus(track, out var cachedTrack))
         {
-            return new FavoriteStatusResult(CacheObservedTrack(cachedTrack), FavoriteStatusSource.Cache);
+            return new FavoriteStatusResult(CacheTrack(cachedTrack, updateObservation), FavoriteStatusSource.Cache);
         }
 
         var isLiked = await _spotify.GetTrackLikedStateAsync(track);
         return new FavoriteStatusResult(
-            CacheObservedTrack(track.WithFavoriteStatus(isLiked)),
+            CacheTrack(track.WithFavoriteStatus(isLiked), updateObservation),
             FavoriteStatusSource.SpotifyApi);
     }
 
     private PlaybackTrack CacheObservedTrack(PlaybackTrack track)
     {
         _lastObservedTrackUri = track.Uri;
-        LastObservedTrack = _cache.Store(track);
-        return LastObservedTrack;
+        return CacheTrack(track, updateObservation: true);
+    }
+
+    private PlaybackTrack CacheTrack(PlaybackTrack track, bool updateObservation)
+    {
+        var cachedTrack = _cache.Store(track);
+        if (updateObservation || string.Equals(LastObservedTrack?.Uri, cachedTrack.Uri, StringComparison.Ordinal))
+        {
+            LastObservedTrack = cachedTrack;
+        }
+
+        return cachedTrack;
     }
 }

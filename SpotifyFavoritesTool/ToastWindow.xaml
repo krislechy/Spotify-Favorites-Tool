@@ -55,7 +55,6 @@
                     <RowDefinition Height="24" />
                     <RowDefinition Height="30" />
                     <RowDefinition Height="22" />
-                    <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
                 <TextBlock x:Name="ActionText"
@@ -74,12 +73,6 @@
                            Foreground="#B9C4BE"
                            FontSize="12"
                            TextTrimming="CharacterEllipsis" />
-                <TextBlock x:Name="FooterText"
-                           Text="Spotify Favorites Tool"
-                           Grid.Row="3"
-                           Foreground="#7F8D84"
-                           FontSize="10"
-                           VerticalAlignment="Bottom" />
             </Grid>
 
             <Grid x:Name="IconStage"

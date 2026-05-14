@@ -93,7 +93,6 @@ public partial class ToastWindow : Window
         AlbumPlaceholder.Visibility = Visibility.Collapsed;
         AlbumArt.Visibility = Visibility.Collapsed;
         ArtistText.Visibility = Visibility.Collapsed;
-        FooterText.Visibility = Visibility.Collapsed;
 
         TrackTitle.FontSize = 13;
         TrackTitle.FontWeight = FontWeights.SemiBold;

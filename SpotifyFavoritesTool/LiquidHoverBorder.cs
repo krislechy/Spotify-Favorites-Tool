@@ -47,6 +47,7 @@ public class LiquidHoverBorder : Border
             new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
 
     private static readonly Duration HoverFadeDuration = TimeSpan.FromMilliseconds(220);
+    private static readonly TimeSpan AmbientFrameInterval = TimeSpan.FromMilliseconds(84);
     private static readonly IEasingFunction HoverFadeEase = new QuadraticEase { EasingMode = EasingMode.EaseOut };
     private static readonly WpfColor SpotifyGreen = WpfColor.FromRgb(0x1E, 0xD7, 0x60);
     private static readonly WpfColor MintGreen = WpfColor.FromRgb(0x8D, 0xE6, 0xB1);
@@ -66,6 +67,7 @@ public class LiquidHoverBorder : Border
     private WpfPoint _lastVelocityPoint;
     private long _animationStartedAt;
     private long _lastFrameAt;
+    private long _lastAmbientFrameAt;
     private WpfBrush? _baseBrush;
     private WpfBrush[]? _blobBrushes;
     private WpfBrush[]? _motionBlobBrushes;
@@ -179,7 +181,7 @@ public class LiquidHoverBorder : Border
         {
             var clip = new RectangleGeometry(fillRect, fillRadius, fillRadius);
             drawingContext.PushClip(clip);
-            drawingContext.PushOpacity(0.48 + HoverProgress * 0.52);
+            drawingContext.PushOpacity(0.58 + HoverProgress * 0.42);
             DrawLiquidGradient(drawingContext, fillRect, GetAnimationSeconds());
             drawingContext.Pop();
             drawingContext.Pop();
@@ -344,6 +346,7 @@ public class LiquidHoverBorder : Border
         CompositionTarget.Rendering += CompositionTarget_Rendering;
         _animationStartedAt = Stopwatch.GetTimestamp();
         _lastFrameAt = _animationStartedAt;
+        _lastAmbientFrameAt = _animationStartedAt;
         _lastVelocityPoint = _targetPoint;
         _isRendering = true;
     }
@@ -371,6 +374,12 @@ public class LiquidHoverBorder : Border
         var distance = Math.Sqrt(distanceX * distanceX + distanceY * distanceY);
 
         var pointerMoved = distance > 0.15;
+        var ambientOnly = HoverProgress <= 0.02 && !pointerMoved;
+        if (ambientOnly && Stopwatch.GetElapsedTime(_lastAmbientFrameAt, now) < AmbientFrameInterval)
+        {
+            return;
+        }
+
         if (pointerMoved)
         {
             _currentPoint = new WpfPoint(
@@ -383,6 +392,11 @@ public class LiquidHoverBorder : Border
         }
 
         UpdateSpeedPressure(frameSeconds);
+        if (ambientOnly)
+        {
+            _lastAmbientFrameAt = now;
+        }
+
         InvalidateVisual();
 
         if (!IsLiquidEnabled || !IsVisible)
