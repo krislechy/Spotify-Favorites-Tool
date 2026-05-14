@@ -1,11 +1,8 @@
-using System.IO;
-using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Media.Imaging;
 using MediaColor = System.Windows.Media.Color;
 
 namespace SpotifyFavoritesTool;
@@ -14,7 +11,7 @@ public partial class ToastWindow : Window
 {
     private readonly TimeSpan _visibleDuration = TimeSpan.FromSeconds(3.2);
     private FavoriteIconMode _iconMode = FavoriteIconMode.StaticUnliked;
-    private static readonly HttpClient _httpClient = new();
+    private bool _isClosed;
 
     public ToastWindow(FavoriteToggleResult result)
     {
@@ -70,6 +67,11 @@ public partial class ToastWindow : Window
         {
             Close();
         }
+    }
+
+    private void Window_Closed(object sender, EventArgs e)
+    {
+        _isClosed = true;
     }
 
     private void ConfigureTrackLayout(PlaybackTrack track)
@@ -354,19 +356,10 @@ public partial class ToastWindow : Window
 
         try
         {
-            var bytes = await _httpClient.GetByteArrayAsync(imageUrl);
-
-            await using var ms = new MemoryStream(bytes);
-
-            var image = new BitmapImage();
-            image.BeginInit();
-            image.CacheOption = BitmapCacheOption.OnLoad;
-            image.StreamSource = ms;
-            image.EndInit();
-
-            if (image.CanFreeze)
+            var image = await AlbumArtLoader.LoadAsync(imageUrl);
+            if (_isClosed || image is null)
             {
-                image.Freeze();
+                return;
             }
 
             AlbumArt.Source = image;
@@ -374,6 +367,11 @@ public partial class ToastWindow : Window
         }
         catch
         {
+            if (_isClosed)
+            {
+                return;
+            }
+
             AlbumArt.Source = null;
             AlbumPlaceholder.Visibility = Visibility.Visible;
         }

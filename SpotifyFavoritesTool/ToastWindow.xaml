@@ -12,7 +12,8 @@
         Topmost="True"
         KeyboardNavigation.TabNavigation="None"
         KeyboardNavigation.ControlTabNavigation="None"
-        Loaded="Window_Loaded">
+        Loaded="Window_Loaded"
+        Closed="Window_Closed">
     <Border CornerRadius="8"
             Background="#F0161B18"
             BorderBrush="#4936D87B"

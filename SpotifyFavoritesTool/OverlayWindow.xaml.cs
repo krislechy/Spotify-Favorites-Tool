@@ -1,6 +1,4 @@
 using System.Collections.ObjectModel;
-using System.IO;
-using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -13,12 +11,12 @@ namespace SpotifyFavoritesTool;
 
 public partial class OverlayWindow : Window, IDisposable
 {
-    private static readonly HttpClient _httpClient = new();
     private const double CollapsedHeight = 150;
     private const double ExpandedHeight = 438;
 
     private readonly ObservableCollection<PlaybackTrack> _cachedTracks = [];
     private readonly Dictionary<string, BitmapImage> _albumArtCache = new(StringComparer.Ordinal);
+    private string? _requestedAlbumImageUrl;
     private bool _isHistoryExpanded;
     private bool _disposed;
 
@@ -41,6 +39,7 @@ public partial class OverlayWindow : Window, IDisposable
         ArtistText.Text = track.Artists;
         SetFavoriteState(track.IsLiked);
         SetPlaybackState(track.IsPlaying);
+        _requestedAlbumImageUrl = track.AlbumImageUrl;
         _ = SetAlbumArtAsync(track.AlbumImageUrl);
     }
 
@@ -51,6 +50,7 @@ public partial class OverlayWindow : Window, IDisposable
         FavoriteText.Text = "Избранное недоступно";
         FavoriteButton.Content = "♡";
         SetPlaybackState(isPlaying: true);
+        _requestedAlbumImageUrl = null;
         AlbumArt.Source = null;
         AlbumPlaceholder.Visibility = Visibility.Visible;
     }
@@ -207,23 +207,10 @@ public partial class OverlayWindow : Window, IDisposable
 
         try
         {
-            var bytes = await _httpClient.GetByteArrayAsync(imageUrl);
-            if (_disposed)
+            var image = await AlbumArtLoader.LoadAsync(imageUrl);
+            if (_disposed || image is null || !string.Equals(_requestedAlbumImageUrl, imageUrl, StringComparison.Ordinal))
             {
                 return;
-            }
-
-            await using var ms = new MemoryStream(bytes);
-
-            var image = new BitmapImage();
-            image.BeginInit();
-            image.CacheOption = BitmapCacheOption.OnLoad;
-            image.StreamSource = ms;
-            image.EndInit();
-
-            if (image.CanFreeze)
-            {
-                image.Freeze();
             }
 
             _albumArtCache[imageUrl] = image;
@@ -232,6 +219,11 @@ public partial class OverlayWindow : Window, IDisposable
         }
         catch
         {
+            if (_disposed || !string.Equals(_requestedAlbumImageUrl, imageUrl, StringComparison.Ordinal))
+            {
+                return;
+            }
+
             AlbumArt.Source = null;
             AlbumPlaceholder.Visibility = Visibility.Visible;
         }

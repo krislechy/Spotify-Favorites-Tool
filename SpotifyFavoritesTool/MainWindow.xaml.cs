@@ -342,22 +342,9 @@ public partial class MainWindow : Window
     private void OpenOverlayWindow()
     {
         _overlayWindow = new OverlayWindow();
-        _overlayWindow.FavoriteRequested += OverlayWindow_FavoriteRequested;
-        _overlayWindow.PreviousRequested += OverlayWindow_PreviousRequested;
-        _overlayWindow.PlayPauseRequested += OverlayWindow_PlayPauseRequested;
-        _overlayWindow.NextRequested += OverlayWindow_NextRequested;
-        _overlayWindow.CachedTrackPlayRequested += OverlayWindow_CachedTrackPlayRequested;
-        _overlayWindow.Closed += OverlayWindow_Closed;
+        SubscribeOverlayEvents(_overlayWindow);
         _overlayWindow.SetCachedTracks(_favorites.CachedTracks);
-
-        if (_favorites.LastObservedTrack is { } cachedTrack)
-        {
-            _overlayWindow.ShowTrack(cachedTrack);
-        }
-        else
-        {
-            _overlayWindow.ShowMessage("Overlay запущен", "Получаю текущий трек");
-        }
+        ShowInitialOverlayContent(_overlayWindow);
 
         _overlayWindow.Show();
         UpdateOverlayButton();
@@ -368,6 +355,37 @@ public partial class MainWindow : Window
     private void CloseOverlayWindow()
     {
         _overlayWindow?.Close();
+    }
+
+    private void SubscribeOverlayEvents(OverlayWindow overlay)
+    {
+        overlay.FavoriteRequested += OverlayWindow_FavoriteRequested;
+        overlay.PreviousRequested += OverlayWindow_PreviousRequested;
+        overlay.PlayPauseRequested += OverlayWindow_PlayPauseRequested;
+        overlay.NextRequested += OverlayWindow_NextRequested;
+        overlay.CachedTrackPlayRequested += OverlayWindow_CachedTrackPlayRequested;
+        overlay.Closed += OverlayWindow_Closed;
+    }
+
+    private void UnsubscribeOverlayEvents(OverlayWindow overlay)
+    {
+        overlay.FavoriteRequested -= OverlayWindow_FavoriteRequested;
+        overlay.PreviousRequested -= OverlayWindow_PreviousRequested;
+        overlay.PlayPauseRequested -= OverlayWindow_PlayPauseRequested;
+        overlay.NextRequested -= OverlayWindow_NextRequested;
+        overlay.CachedTrackPlayRequested -= OverlayWindow_CachedTrackPlayRequested;
+        overlay.Closed -= OverlayWindow_Closed;
+    }
+
+    private void ShowInitialOverlayContent(OverlayWindow overlay)
+    {
+        if (_favorites.LastObservedTrack is { } cachedTrack)
+        {
+            overlay.ShowTrack(cachedTrack);
+            return;
+        }
+
+        overlay.ShowMessage("Overlay запущен", "Получаю текущий трек");
     }
 
     private async Task RefreshOverlayAsync()
@@ -457,46 +475,7 @@ public partial class MainWindow : Window
         {
             try
             {
-                switch (command)
-                {
-                    case PlaybackCommand.Previous:
-                        StatusText.Text = "Переключаю на предыдущий трек...";
-                        await _spotify.SkipToPreviousTrackAsync();
-                        Log("Overlay: предыдущий трек.");
-                        break;
-                    case PlaybackCommand.PlayPause:
-                        var knownTrack = _favorites.LastObservedTrack;
-                        if (knownTrack?.IsPlaying == true)
-                        {
-                            StatusText.Text = "Ставлю Spotify на паузу...";
-                            await _spotify.PausePlaybackAsync();
-                            if (knownTrack is not null)
-                            {
-                                UpdateOverlayTrack(knownTrack.WithPlaybackState(false));
-                            }
-
-                            Log("Overlay: пауза.");
-                        }
-                        else
-                        {
-                            StatusText.Text = "Запускаю воспроизведение Spotify...";
-                            await _spotify.ResumePlaybackAsync();
-                            if (knownTrack is not null)
-                            {
-                                UpdateOverlayTrack(knownTrack.WithPlaybackState(true));
-                            }
-
-                            Log("Overlay: воспроизведение.");
-                        }
-
-                        break;
-                    case PlaybackCommand.Next:
-                        StatusText.Text = "Переключаю на следующий трек...";
-                        await _spotify.SkipToNextTrackAsync();
-                        Log("Overlay: следующий трек.");
-                        break;
-                }
-
+                await ExecutePlaybackCommandAsync(command);
                 await Task.Delay(650);
                 await RefreshOverlayAsync();
             }
@@ -522,6 +501,52 @@ public partial class MainWindow : Window
                 _toasts.ShowError("Команда Overlay не выполнена", ex.Message);
                 Log($"Команда Overlay не выполнена: {Shorten(ex.Message, 90)}");
             }
+        }
+    }
+
+    private async Task ExecutePlaybackCommandAsync(PlaybackCommand command)
+    {
+        switch (command)
+        {
+            case PlaybackCommand.Previous:
+                StatusText.Text = "Переключаю на предыдущий трек...";
+                await _spotify.SkipToPreviousTrackAsync();
+                Log("Overlay: предыдущий трек.");
+                break;
+            case PlaybackCommand.PlayPause:
+                await TogglePlaybackAsync();
+                break;
+            case PlaybackCommand.Next:
+                StatusText.Text = "Переключаю на следующий трек...";
+                await _spotify.SkipToNextTrackAsync();
+                Log("Overlay: следующий трек.");
+                break;
+        }
+    }
+
+    private async Task TogglePlaybackAsync()
+    {
+        var knownTrack = _favorites.LastObservedTrack;
+        if (knownTrack?.IsPlaying == true)
+        {
+            StatusText.Text = "Ставлю Spotify на паузу...";
+            await _spotify.PausePlaybackAsync();
+            UpdateKnownPlaybackState(knownTrack, isPlaying: false);
+            Log("Overlay: пауза.");
+            return;
+        }
+
+        StatusText.Text = "Запускаю воспроизведение Spotify...";
+        await _spotify.ResumePlaybackAsync();
+        UpdateKnownPlaybackState(knownTrack, isPlaying: true);
+        Log("Overlay: воспроизведение.");
+    }
+
+    private void UpdateKnownPlaybackState(PlaybackTrack? knownTrack, bool isPlaying)
+    {
+        if (knownTrack is not null)
+        {
+            UpdateOverlayTrack(knownTrack.WithPlaybackState(isPlaying));
         }
     }
 
@@ -572,12 +597,7 @@ public partial class MainWindow : Window
     {
         if (sender is OverlayWindow overlay)
         {
-            overlay.FavoriteRequested -= OverlayWindow_FavoriteRequested;
-            overlay.PreviousRequested -= OverlayWindow_PreviousRequested;
-            overlay.PlayPauseRequested -= OverlayWindow_PlayPauseRequested;
-            overlay.NextRequested -= OverlayWindow_NextRequested;
-            overlay.CachedTrackPlayRequested -= OverlayWindow_CachedTrackPlayRequested;
-            overlay.Closed -= OverlayWindow_Closed;
+            UnsubscribeOverlayEvents(overlay);
         }
 
         if (ReferenceEquals(_overlayWindow, sender))
