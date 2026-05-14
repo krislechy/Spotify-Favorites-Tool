@@ -57,7 +57,9 @@ public partial class SettingsWindow : Window
             LoginButton.IsEnabled = false;
             UpdateStatus("Открыл браузер для входа в Spotify...");
             await _auth.LoginAsync();
+            SaveSettings();
             UpdateStatus("Spotify подключен.");
+            SettingsChanged?.Invoke(this, EventArgs.Empty);
             AuthChanged?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception ex)

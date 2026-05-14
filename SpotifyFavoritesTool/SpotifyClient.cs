@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 
 namespace SpotifyFavoritesTool;
@@ -79,6 +80,18 @@ public sealed class SpotifyClient
         await SendPlaybackCommandAsync(HttpMethod.Put, "play", cancellationToken);
     }
 
+    public async Task PlayTrackAsync(PlaybackTrack track, CancellationToken cancellationToken = default)
+    {
+        if (_auth.KnowsGrantedScopes && !_auth.HasPlaybackControlScopes)
+        {
+            throw new InvalidOperationException(BuildScopeError("управления плеером", SpotifyAuthService.PlaybackControlScopes));
+        }
+
+        var body = JsonSerializer.Serialize(new { uris = new[] { track.Uri } }, JsonOptions);
+        using var content = new StringContent(body, Encoding.UTF8, "application/json");
+        await SendAsync(HttpMethod.Put, $"{ApiRoot}/me/player/play", cancellationToken, content);
+    }
+
     private async Task<bool> IsTrackLikedAsync(PlaybackTrack track, CancellationToken cancellationToken)
     {
         var uri = Uri.EscapeDataString(track.Uri);
@@ -123,7 +136,7 @@ public sealed class SpotifyClient
         return new PlaybackTrack(item.Id!, item.Uri!, item.Name!, artists, image, IsPlaying: isPlaying);
     }
 
-    private async Task<ApiResponse> SendAsync(HttpMethod method, string url, CancellationToken cancellationToken)
+    private async Task<ApiResponse> SendAsync(HttpMethod method, string url, CancellationToken cancellationToken, HttpContent? content = null)
     {
         await _requestGate.WaitAsync(cancellationToken);
         try
@@ -136,6 +149,7 @@ public sealed class SpotifyClient
 
             using var request = new HttpRequestMessage(method, url);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            request.Content = content;
 
             using var response = await Http.SendAsync(request, cancellationToken);
             var body = await response.Content.ReadAsStringAsync(cancellationToken);

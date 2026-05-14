@@ -46,7 +46,7 @@ public class LiquidHoverBorder : Border
             typeof(LiquidHoverBorder),
             new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
 
-    private static readonly Duration HoverFadeDuration = TimeSpan.FromMilliseconds(180);
+    private static readonly Duration HoverFadeDuration = TimeSpan.FromMilliseconds(220);
     private static readonly IEasingFunction HoverFadeEase = new QuadraticEase { EasingMode = EasingMode.EaseOut };
     private static readonly WpfColor SpotifyGreen = WpfColor.FromRgb(0x1E, 0xD7, 0x60);
     private static readonly WpfColor MintGreen = WpfColor.FromRgb(0x8D, 0xE6, 0xB1);
@@ -78,6 +78,23 @@ public class LiquidHoverBorder : Border
     public LiquidHoverBorder()
     {
         Background = WpfBrushes.Transparent;
+        Loaded += (_, _) =>
+        {
+            if (IsLiquidEnabled)
+            {
+                StartRendering();
+            }
+        };
+        IsVisibleChanged += (_, _) =>
+        {
+            if (IsVisible && IsLiquidEnabled)
+            {
+                StartRendering();
+                return;
+            }
+
+            StopRendering();
+        };
     }
 
     public WpfColor BaseColor
@@ -158,12 +175,11 @@ public class LiquidHoverBorder : Border
 
         drawingContext.DrawRoundedRectangle(GetBaseBrush(), null, fillRect, fillRadius, fillRadius);
 
-        var hoverProgress = HoverProgress;
-        if (IsLiquidEnabled && hoverProgress > 0.001)
+        if (IsLiquidEnabled)
         {
             var clip = new RectangleGeometry(fillRect, fillRadius, fillRadius);
             drawingContext.PushClip(clip);
-            drawingContext.PushOpacity(hoverProgress);
+            drawingContext.PushOpacity(0.48 + HoverProgress * 0.52);
             DrawLiquidGradient(drawingContext, fillRect, GetAnimationSeconds());
             drawingContext.Pop();
             drawingContext.Pop();
@@ -188,9 +204,10 @@ public class LiquidHoverBorder : Border
     {
         var blobBrushes = GetBlobBrushes();
         var motionBlobBrushes = GetMotionBlobBrushes();
+        var ambientPoint = CreateAmbientPoint(bounds, seconds);
         var pointer = _hasPoint
-            ? _currentPoint
-            : new WpfPoint(bounds.Left + bounds.Width / 2, bounds.Top + bounds.Height / 2);
+            ? Lerp(ambientPoint, _currentPoint, HoverProgress)
+            : ambientPoint;
 
         var normalX = bounds.Width <= 0 ? 0 : pointer.X / bounds.Width - 0.5;
         var normalY = bounds.Height <= 0 ? 0 : pointer.Y / bounds.Height - 0.5;
@@ -368,7 +385,7 @@ public class LiquidHoverBorder : Border
         UpdateSpeedPressure(frameSeconds);
         InvalidateVisual();
 
-        if (!IsMouseOver && HoverProgress <= 0.01 && !pointerMoved)
+        if (!IsLiquidEnabled || !IsVisible)
         {
             StopRendering();
         }
@@ -453,6 +470,27 @@ public class LiquidHoverBorder : Border
     {
         var liquidHoverBorder = (LiquidHoverBorder)dependencyObject;
         liquidHoverBorder._baseBrush = null;
+    }
+
+    private static WpfPoint Lerp(WpfPoint from, WpfPoint to, double amount)
+    {
+        var progress = Math.Clamp(amount, 0, 1);
+        return new WpfPoint(
+            from.X + (to.X - from.X) * progress,
+            from.Y + (to.Y - from.Y) * progress);
+    }
+
+    private static WpfPoint CreateAmbientPoint(Rect bounds, double seconds)
+    {
+        var centerX = bounds.Left + bounds.Width / 2;
+        var centerY = bounds.Top + bounds.Height / 2;
+        return new WpfPoint(
+            centerX
+                + Math.Sin(seconds * 0.31) * bounds.Width * 0.18
+                + Math.Cos(seconds * 0.17 + 1.2) * bounds.Width * 0.11,
+            centerY
+                + Math.Cos(seconds * 0.27 + 0.8) * bounds.Height * 0.19
+                + Math.Sin(seconds * 0.14 + 2.4) * bounds.Height * 0.10);
     }
 
     private double GetAnimationSeconds()

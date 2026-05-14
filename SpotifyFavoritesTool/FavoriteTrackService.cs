@@ -12,6 +12,7 @@ public sealed class FavoriteTrackService
     }
 
     public PlaybackTrack? LastObservedTrack { get; private set; }
+    public IReadOnlyList<PlaybackTrack> CachedTracks => _cache.GetTracks();
 
     public void ResetObservation()
     {

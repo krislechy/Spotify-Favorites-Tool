@@ -1,3 +1,4 @@
+using System.Net;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
@@ -148,6 +149,7 @@ public partial class MainWindow : Window
             _overlayWindow?.ShowMessage(
                 _auth.HasRefreshToken ? "Spotify подключен" : "Spotify отключен",
                 _auth.HasRefreshToken ? "Жду текущий трек" : "Открой настройки и войди в Spotify");
+            _overlayWindow?.SetCachedTracks(_favorites.CachedTracks);
             StartTrackMonitorIfReady();
             UpdateStatus();
             Log(_auth.HasRefreshToken ? "Spotify подключен, кеш треков очищен." : "Spotify отключен, кеш треков очищен.");
@@ -344,7 +346,9 @@ public partial class MainWindow : Window
         _overlayWindow.PreviousRequested += OverlayWindow_PreviousRequested;
         _overlayWindow.PlayPauseRequested += OverlayWindow_PlayPauseRequested;
         _overlayWindow.NextRequested += OverlayWindow_NextRequested;
+        _overlayWindow.CachedTrackPlayRequested += OverlayWindow_CachedTrackPlayRequested;
         _overlayWindow.Closed += OverlayWindow_Closed;
+        _overlayWindow.SetCachedTracks(_favorites.CachedTracks);
 
         if (_favorites.LastObservedTrack is { } cachedTrack)
         {
@@ -414,6 +418,7 @@ public partial class MainWindow : Window
     {
         var cachedTrack = _favorites.StoreObservedTrack(track);
         _overlayWindow?.ShowTrack(cachedTrack);
+        _overlayWindow?.SetCachedTracks(_favorites.CachedTracks);
     }
 
     private void OverlayWindow_FavoriteRequested(object? sender, EventArgs e)
@@ -434,6 +439,11 @@ public partial class MainWindow : Window
     private void OverlayWindow_NextRequested(object? sender, EventArgs e)
     {
         _ = RunPlaybackCommandAsync(PlaybackCommand.Next);
+    }
+
+    private void OverlayWindow_CachedTrackPlayRequested(object? sender, TrackRequestedEventArgs e)
+    {
+        _ = PlayCachedTrackAsync(e.Track);
     }
 
     private async Task RunPlaybackCommandAsync(PlaybackCommand command)
@@ -498,12 +508,62 @@ public partial class MainWindow : Window
                 _toasts.ShowError("Spotify ограничил запросы", ex.Message);
                 Log($"Команда Overlay остановлена: Spotify вернул 429 ({ex.Endpoint}).");
             }
+            catch (SpotifyApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound && command == PlaybackCommand.PlayPause)
+            {
+                const string message = "Сейчас ничего не играет.";
+                StatusText.Text = message;
+                _overlayWindow?.ShowMessage("Spotify", message);
+                Log("Пауза/воспроизведение из Overlay недоступны: сейчас ничего не играет.");
+            }
             catch (Exception ex)
             {
                 StatusText.Text = Shorten(ex.Message, 140);
                 _overlayWindow?.ShowMessage("Команда Overlay не выполнена", Shorten(ex.Message, 90));
                 _toasts.ShowError("Команда Overlay не выполнена", ex.Message);
                 Log($"Команда Overlay не выполнена: {Shorten(ex.Message, 90)}");
+            }
+        }
+    }
+
+    private async Task PlayCachedTrackAsync(PlaybackTrack track)
+    {
+        if (!_userActionGate.TryEnter(out var action))
+        {
+            return;
+        }
+
+        using (action)
+        {
+            try
+            {
+                StatusText.Text = $"Запускаю из кеша: {track.Name}...";
+                await _spotify.PlayTrackAsync(track);
+                Log($"Overlay: запущен трек из кеша: {track.Name}.");
+
+                await Task.Delay(650);
+                await RefreshOverlayAsync();
+            }
+            catch (SpotifyApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+            {
+                const string message = "Сейчас ничего не играет.";
+                StatusText.Text = message;
+                _overlayWindow?.ShowMessage("Spotify", message);
+                Log("Запуск трека из кеша недоступен: сейчас ничего не играет.");
+            }
+            catch (SpotifyRateLimitException ex)
+            {
+                StopTrackMonitor(clearCache: false);
+                StatusText.Text = Shorten(ex.Message, 160);
+                _overlayWindow?.ShowMessage("Spotify ограничил запросы", ex.Message);
+                _toasts.ShowError("Spotify ограничил запросы", ex.Message);
+                Log($"Запуск трека из кеша остановлен: Spotify вернул 429 ({ex.Endpoint}).");
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = Shorten(ex.Message, 140);
+                _overlayWindow?.ShowMessage("Трек не запущен", Shorten(ex.Message, 90));
+                _toasts.ShowError("Трек не запущен", ex.Message);
+                Log($"Трек из кеша не запущен: {Shorten(ex.Message, 90)}");
             }
         }
     }
@@ -516,6 +576,7 @@ public partial class MainWindow : Window
             overlay.PreviousRequested -= OverlayWindow_PreviousRequested;
             overlay.PlayPauseRequested -= OverlayWindow_PlayPauseRequested;
             overlay.NextRequested -= OverlayWindow_NextRequested;
+            overlay.CachedTrackPlayRequested -= OverlayWindow_CachedTrackPlayRequested;
             overlay.Closed -= OverlayWindow_Closed;
         }
 

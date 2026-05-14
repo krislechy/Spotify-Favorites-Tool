@@ -17,6 +17,7 @@
         KeyboardNavigation.TabNavigation="None"
         KeyboardNavigation.ControlTabNavigation="None"
         Loaded="Window_Loaded"
+        Closed="Window_Closed"
         PreviewKeyDown="Window_PreviewKeyDown">
     <Window.Resources>
         <Style x:Key="OverlayIconButton" TargetType="Button">
@@ -75,6 +76,12 @@
             <Setter Property="Height" Value="32" />
             <Setter Property="Margin" Value="0,0,8,0" />
         </Style>
+
+        <Style x:Key="HistoryPlayButton" BasedOn="{StaticResource OverlayIconButton}" TargetType="Button">
+            <Setter Property="Width" Value="30" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+        </Style>
     </Window.Resources>
 
     <local:LiquidHoverBorder x:Name="OverlayRoot"
@@ -97,6 +104,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="36" />
+                <RowDefinition x:Name="HistoryRow" Height="0" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="74" />
@@ -116,7 +124,8 @@
                 <Grid>
                     <Image x:Name="AlbumArt"
                            Stretch="UniformToFill"
-                           RenderOptions.BitmapScalingMode="HighQuality" />
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           ImageFailed="AlbumArt_ImageFailed" />
                     <TextBlock x:Name="AlbumPlaceholder"
                                Text="SP"
                                Foreground="#6F7D74"
@@ -180,16 +189,142 @@
                         ToolTip="Предыдущий трек" />
                 <Button x:Name="PlayPauseButton"
                         Style="{StaticResource TransportButton}"
-                        Content="⏯"
                         Click="PlayPauseButton_Click"
-                        ToolTip="Пауза / воспроизведение" />
+                        ToolTip="Пауза / воспроизведение">
+                    <Canvas Width="16"
+                            Height="16"
+                            IsHitTestVisible="False">
+                        <Path x:Name="PlayGlyph"
+                              Data="M 4,3 L 13,8 L 4,13 Z"
+                              Fill="#F4F8F5"
+                              Visibility="Collapsed" />
+                        <Rectangle x:Name="PauseGlyphLeft"
+                                   Width="3.2"
+                                   Height="10"
+                                   RadiusX="1"
+                                   RadiusY="1"
+                                   Fill="#F4F8F5"
+                                   Canvas.Left="4"
+                                   Canvas.Top="3" />
+                        <Rectangle x:Name="PauseGlyphRight"
+                                   Width="3.2"
+                                   Height="10"
+                                   RadiusX="1"
+                                   RadiusY="1"
+                                   Fill="#F4F8F5"
+                                   Canvas.Left="9"
+                                   Canvas.Top="3" />
+                    </Canvas>
+                </Button>
                 <Button x:Name="NextButton"
                         Style="{StaticResource TransportButton}"
-                        Margin="0"
                         Content="⏭"
                         Click="NextButton_Click"
                         ToolTip="Следующий трек" />
+                <Button x:Name="HistoryToggleButton"
+                        Style="{StaticResource TransportButton}"
+                        Margin="0"
+                        Click="HistoryToggleButton_Click"
+                        ToolTip="Показать треки из кеша">
+                    <Canvas Width="16"
+                            Height="16"
+                            IsHitTestVisible="False">
+                        <Path Data="M 3,4 L 13,4 M 3,8 L 13,8 M 3,12 L 13,12"
+                              Stroke="#F4F8F5"
+                              StrokeThickness="1.8"
+                              StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round" />
+                    </Canvas>
+                </Button>
             </StackPanel>
+
+            <local:LiquidHoverBorder x:Name="HistoryPanel"
+                                     Grid.Row="2"
+                                     Grid.ColumnSpan="3"
+                                     Margin="0,12,0,0"
+                                     Padding="10"
+                                     Height="276"
+                                     Visibility="Collapsed"
+                                     CornerRadius="10"
+                                     BaseColor="#141B17"
+                                     BorderBrush="#32483C"
+                                     BorderThickness="1"
+                                     IsLiquidEnabled="False"
+                                     SurfaceOpacity="0.52">
+                <DockPanel LastChildFill="True">
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="Треки из кеша"
+                               Foreground="#F4F8F5"
+                               FontWeight="SemiBold"
+                               FontSize="12"
+                               Margin="0,0,0,8" />
+                    <ListBox x:Name="CachedTracksList"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0,0,0,6" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                <Setter Property="IsTabStop" Value="False" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    CornerRadius="8">
+                                                <ContentPresenter />
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#40202A24"
+                                        BorderBrush="#3B5144"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Padding="9,7">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}"
+                                                       Foreground="#F4F8F5"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding Artists}"
+                                                       Foreground="#AEBDB4"
+                                                       FontSize="11"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1"
+                                                Style="{StaticResource HistoryPlayButton}"
+                                                Tag="{Binding}"
+                                                Click="CachedTrackPlayButton_Click"
+                                                ToolTip="Запустить этот трек">
+                                            <Canvas Width="14"
+                                                    Height="14"
+                                                    IsHitTestVisible="False">
+                                                <Path Data="M 4,2.5 L 12,7 L 4,11.5 Z"
+                                                      Fill="#F4F8F5" />
+                                            </Canvas>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </local:LiquidHoverBorder>
         </Grid>
     </local:LiquidHoverBorder>
 </Window>

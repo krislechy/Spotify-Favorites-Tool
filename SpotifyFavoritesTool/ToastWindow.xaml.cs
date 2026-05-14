@@ -1,3 +1,5 @@
+using System.IO;
+using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
@@ -12,6 +14,7 @@ public partial class ToastWindow : Window
 {
     private readonly TimeSpan _visibleDuration = TimeSpan.FromSeconds(3.2);
     private FavoriteIconMode _iconMode = FavoriteIconMode.StaticUnliked;
+    private static readonly HttpClient _httpClient = new();
 
     public ToastWindow(FavoriteToggleResult result)
     {
@@ -74,7 +77,7 @@ public partial class ToastWindow : Window
         TrackTitle.Text = track.Name;
         ArtistText.Text = track.Artists;
         SetFavoriteIcon(track.IsLiked == true);
-        SetAlbumArt(track.AlbumImageUrl);
+        _ = SetAlbumArtAsync(track.AlbumImageUrl);
     }
 
     private void ConfigureErrorLayout()
@@ -340,7 +343,7 @@ public partial class ToastWindow : Window
         return new CubicEase { EasingMode = EasingMode.EaseInOut };
     }
 
-    private void SetAlbumArt(string? imageUrl)
+    private async Task SetAlbumArtAsync(string? imageUrl)
     {
         if (string.IsNullOrWhiteSpace(imageUrl))
         {
@@ -351,12 +354,20 @@ public partial class ToastWindow : Window
 
         try
         {
+            var bytes = await _httpClient.GetByteArrayAsync(imageUrl);
+
+            await using var ms = new MemoryStream(bytes);
+
             var image = new BitmapImage();
             image.BeginInit();
             image.CacheOption = BitmapCacheOption.OnLoad;
-            image.UriSource = new Uri(imageUrl, UriKind.Absolute);
+            image.StreamSource = ms;
             image.EndInit();
-            image.Freeze();
+
+            if (image.CanFreeze)
+            {
+                image.Freeze();
+            }
 
             AlbumArt.Source = image;
             AlbumPlaceholder.Visibility = Visibility.Collapsed;

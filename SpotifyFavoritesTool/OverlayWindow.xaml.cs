@@ -1,21 +1,37 @@
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Net.Http;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
+using Controls = System.Windows.Controls;
 using Forms = System.Windows.Forms;
 
 namespace SpotifyFavoritesTool;
 
-public partial class OverlayWindow : Window
+public partial class OverlayWindow : Window, IDisposable
 {
+    private static readonly HttpClient _httpClient = new();
+    private const double CollapsedHeight = 150;
+    private const double ExpandedHeight = 438;
+
+    private readonly ObservableCollection<PlaybackTrack> _cachedTracks = [];
+    private readonly Dictionary<string, BitmapImage> _albumArtCache = new(StringComparer.Ordinal);
+    private bool _isHistoryExpanded;
+    private bool _disposed;
+
     public event EventHandler? FavoriteRequested;
     public event EventHandler? PreviousRequested;
     public event EventHandler? PlayPauseRequested;
     public event EventHandler? NextRequested;
+    public event EventHandler<TrackRequestedEventArgs>? CachedTrackPlayRequested;
 
     public OverlayWindow()
     {
         InitializeComponent();
+        CachedTracksList.ItemsSource = _cachedTracks;
         ShowMessage("Overlay готов", "Жду текущий трек");
     }
 
@@ -25,7 +41,7 @@ public partial class OverlayWindow : Window
         ArtistText.Text = track.Artists;
         SetFavoriteState(track.IsLiked);
         SetPlaybackState(track.IsPlaying);
-        SetAlbumArt(track.AlbumImageUrl);
+        _ = SetAlbumArtAsync(track.AlbumImageUrl);
     }
 
     public void ShowMessage(string title, string message)
@@ -34,15 +50,47 @@ public partial class OverlayWindow : Window
         ArtistText.Text = message;
         FavoriteText.Text = "Избранное недоступно";
         FavoriteButton.Content = "♡";
-        PlayPauseButton.Content = "⏯";
+        SetPlaybackState(isPlaying: true);
         AlbumArt.Source = null;
         AlbumPlaceholder.Visibility = Visibility.Visible;
+    }
+
+    public void SetCachedTracks(IEnumerable<PlaybackTrack> tracks)
+    {
+        _cachedTracks.Clear();
+        foreach (var track in tracks)
+        {
+            _cachedTracks.Add(track);
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        AlbumArt.Source = null;
+        _albumArtCache.Clear();
+        _cachedTracks.Clear();
+        FavoriteRequested = null;
+        PreviousRequested = null;
+        PlayPauseRequested = null;
+        NextRequested = null;
+        CachedTrackPlayRequested = null;
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
         PlaceNearTopRight();
         NativeMethods.ForceTopmost(new WindowInteropHelper(this).Handle);
+    }
+
+    private void Window_Closed(object? sender, EventArgs e)
+    {
+        Dispose();
     }
 
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -90,6 +138,29 @@ public partial class OverlayWindow : Window
         NextRequested?.Invoke(this, EventArgs.Empty);
     }
 
+    private void HistoryToggleButton_Click(object sender, RoutedEventArgs e)
+    {
+        _isHistoryExpanded = !_isHistoryExpanded;
+        HistoryPanel.Visibility = _isHistoryExpanded ? Visibility.Visible : Visibility.Collapsed;
+        HistoryRow.Height = _isHistoryExpanded ? new GridLength(288) : new GridLength(0);
+        Height = _isHistoryExpanded ? ExpandedHeight : CollapsedHeight;
+        HistoryToggleButton.ToolTip = _isHistoryExpanded ? "Скрыть треки из кеша" : "Показать треки из кеша";
+    }
+
+    private void CachedTrackPlayButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Controls.Button { Tag: PlaybackTrack track })
+        {
+            CachedTrackPlayRequested?.Invoke(this, new TrackRequestedEventArgs(track));
+        }
+    }
+
+    private void AlbumArt_ImageFailed(object sender, ExceptionRoutedEventArgs e)
+    {
+        AlbumArt.Source = null;
+        AlbumPlaceholder.Visibility = Visibility.Visible;
+    }
+
     private void SetFavoriteState(bool? isLiked)
     {
         if (isLiked == true)
@@ -112,10 +183,13 @@ public partial class OverlayWindow : Window
 
     private void SetPlaybackState(bool? isPlaying)
     {
-        PlayPauseButton.Content = isPlaying == true ? "⏸" : "▶";
+        var showPause = isPlaying != false;
+        PlayGlyph.Visibility = showPause ? Visibility.Collapsed : Visibility.Visible;
+        PauseGlyphLeft.Visibility = showPause ? Visibility.Visible : Visibility.Collapsed;
+        PauseGlyphRight.Visibility = showPause ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    private void SetAlbumArt(string? imageUrl)
+    private async Task SetAlbumArtAsync(string? imageUrl)
     {
         if (string.IsNullOrWhiteSpace(imageUrl))
         {
@@ -124,15 +198,35 @@ public partial class OverlayWindow : Window
             return;
         }
 
+        if (_albumArtCache.TryGetValue(imageUrl, out var cachedImage))
+        {
+            AlbumArt.Source = cachedImage;
+            AlbumPlaceholder.Visibility = Visibility.Collapsed;
+            return;
+        }
+
         try
         {
+            var bytes = await _httpClient.GetByteArrayAsync(imageUrl);
+            if (_disposed)
+            {
+                return;
+            }
+
+            await using var ms = new MemoryStream(bytes);
+
             var image = new BitmapImage();
             image.BeginInit();
             image.CacheOption = BitmapCacheOption.OnLoad;
-            image.UriSource = new Uri(imageUrl, UriKind.Absolute);
+            image.StreamSource = ms;
             image.EndInit();
-            image.Freeze();
 
+            if (image.CanFreeze)
+            {
+                image.Freeze();
+            }
+
+            _albumArtCache[imageUrl] = image;
             AlbumArt.Source = image;
             AlbumPlaceholder.Visibility = Visibility.Collapsed;
         }
@@ -149,4 +243,14 @@ public partial class OverlayWindow : Window
         Left = workArea.Right - Width - 18;
         Top = workArea.Top + 18;
     }
+}
+
+public sealed class TrackRequestedEventArgs : EventArgs
+{
+    public TrackRequestedEventArgs(PlaybackTrack track)
+    {
+        Track = track;
+    }
+
+    public PlaybackTrack Track { get; }
 }
