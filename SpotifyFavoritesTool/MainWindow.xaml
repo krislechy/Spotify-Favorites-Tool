@@ -12,6 +12,7 @@
         AllowsTransparency="True"
         ShowInTaskbar="True"
         Background="Transparent"
+        Opacity="0.80"
         Loaded="Window_Loaded"
         Closing="Window_Closing"
         PreviewKeyDown="Window_PreviewKeyDown"
