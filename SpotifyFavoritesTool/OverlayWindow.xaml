@@ -113,7 +113,8 @@
                 <ColumnDefinition Width="42" />
             </Grid.ColumnDefinitions>
 
-            <Border Width="64"
+            <Border x:Name="ArtworkFrame"
+                    Width="64"
                     Height="64"
                     CornerRadius="8"
                     Background="#202824"
@@ -122,6 +123,23 @@
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     ClipToBounds="True">
+                <Border.ToolTip>
+                    <ToolTip x:Name="AlbumArtPreviewToolTip"
+                             Placement="Mouse"
+                             IsEnabled="False">
+                        <Border Width="256"
+                                Height="256"
+                                CornerRadius="10"
+                                Background="#101512"
+                                BorderBrush="#365142"
+                                BorderThickness="1"
+                                ClipToBounds="True">
+                            <Image x:Name="AlbumArtPreview"
+                                   Stretch="UniformToFill"
+                                   RenderOptions.BitmapScalingMode="HighQuality" />
+                        </Border>
+                    </ToolTip>
+                </Border.ToolTip>
                 <Grid>
                     <Image x:Name="AlbumArt"
                            Stretch="UniformToFill"

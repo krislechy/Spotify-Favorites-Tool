@@ -53,6 +53,8 @@ public partial class OverlayWindow : Window, IDisposable
         SetPlaybackState(isPlaying: true);
         _requestedAlbumImageUrl = null;
         AlbumArt.Source = null;
+        AlbumArtPreview.Source = null;
+        AlbumArtPreviewToolTip.IsEnabled = false;
         AlbumPlaceholder.Visibility = Visibility.Visible;
     }
 
@@ -204,14 +206,15 @@ public partial class OverlayWindow : Window, IDisposable
         if (string.IsNullOrWhiteSpace(imageUrl))
         {
             AlbumArt.Source = null;
+            AlbumArtPreview.Source = null;
+            AlbumArtPreviewToolTip.IsEnabled = false;
             AlbumPlaceholder.Visibility = Visibility.Visible;
             return;
         }
 
         if (_albumArtCache.TryGetValue(imageUrl, out var cachedImage))
         {
-            AlbumArt.Source = cachedImage;
-            AlbumPlaceholder.Visibility = Visibility.Collapsed;
+            SetAlbumArt(cachedImage);
             return;
         }
 
@@ -224,8 +227,7 @@ public partial class OverlayWindow : Window, IDisposable
             }
 
             _albumArtCache[imageUrl] = image;
-            AlbumArt.Source = image;
-            AlbumPlaceholder.Visibility = Visibility.Collapsed;
+            SetAlbumArt(image);
         }
         catch
         {
@@ -235,8 +237,18 @@ public partial class OverlayWindow : Window, IDisposable
             }
 
             AlbumArt.Source = null;
+            AlbumArtPreview.Source = null;
+            AlbumArtPreviewToolTip.IsEnabled = false;
             AlbumPlaceholder.Visibility = Visibility.Visible;
         }
+    }
+
+    private void SetAlbumArt(BitmapImage image)
+    {
+        AlbumArt.Source = image;
+        AlbumArtPreview.Source = image;
+        AlbumArtPreviewToolTip.IsEnabled = true;
+        AlbumPlaceholder.Visibility = Visibility.Collapsed;
     }
 
     private void PlaceNearTopRight()
