@@ -11,7 +11,7 @@ public sealed class ToastPresenter : IDisposable
 
     public void ShowFavoriteStatus(PlaybackTrack track)
     {
-        ShowCore(new ToastWindow(track, "Статус трека"));
+        ShowCore(new ToastWindow(track, "Играет"));
     }
 
     public void ShowTrackChanged(PlaybackTrack track)

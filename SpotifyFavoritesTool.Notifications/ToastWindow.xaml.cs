@@ -28,7 +28,8 @@ public partial class ToastWindow : Window
 
         var isLiked = track.IsLiked == true;
         _iconMode = isLiked ? FavoriteIconMode.StaticLiked : FavoriteIconMode.StaticUnliked;
-        ActionText.Text = "Сейчас играет";
+        ActionText.Text = "Играет";
+        PlayingEqualizer.Visibility = Visibility.Visible;
         ConfigureTrackLayout(track);
     }
 
@@ -37,6 +38,7 @@ public partial class ToastWindow : Window
         InitializeComponent();
 
         ActionText.Text = actionText;
+        PlayingEqualizer.Visibility = Visibility.Visible;
         _iconMode = track.IsLiked == true ? FavoriteIconMode.StaticLiked : FavoriteIconMode.StaticUnliked;
         ConfigureTrackLayout(track);
     }
