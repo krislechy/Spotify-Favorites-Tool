@@ -50,22 +50,71 @@
     </Style>
 
     <Style x:Key="ScrollBarThumbStyle" TargetType="{x:Type Thumb}">
-        <Setter Property="MinHeight" Value="28" />
-        <Setter Property="MinWidth" Value="28" />
-        <Setter Property="Background" Value="#496353" />
+        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="MinWidth" Value="34" />
+        <Setter Property="Background" Value="#5F806B" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Thumb}">
                     <Border x:Name="ThumbRoot"
-                            Background="{TemplateBinding Background}"
-                            CornerRadius="5"
-                            Margin="2" />
+                            CornerRadius="6"
+                            Margin="2"
+                            RenderTransformOrigin="0.5,0.5"
+                            SnapsToDevicePixels="True">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0"
+                                                 EndPoint="1,1">
+                                <GradientStop Color="#8DE6B1"
+                                              Offset="0" />
+                                <GradientStop Color="#5F806B"
+                                              Offset="0.42" />
+                                <GradientStop Color="#2E4F3A"
+                                              Offset="1" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="12"
+                                              ShadowDepth="0"
+                                              Opacity="0.34"
+                                              Color="#1ED760" />
+                        </Border.Effect>
+                    </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ThumbRoot" Property="Background" Value="#648874" />
+                            <Setter TargetName="ThumbRoot" Property="Background">
+                                <Setter.Value>
+                                    <LinearGradientBrush StartPoint="0,0"
+                                                         EndPoint="1,1">
+                                        <GradientStop Color="#A2F0C1"
+                                                      Offset="0" />
+                                        <GradientStop Color="#79AD8F"
+                                                      Offset="0.45" />
+                                        <GradientStop Color="#3A6D4D"
+                                                      Offset="1" />
+                                    </LinearGradientBrush>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                         <Trigger Property="IsDragging" Value="True">
-                            <Setter TargetName="ThumbRoot" Property="Background" Value="#1ED760" />
+                            <Setter TargetName="ThumbRoot" Property="Background">
+                                <Setter.Value>
+                                    <LinearGradientBrush StartPoint="0,0"
+                                                         EndPoint="1,1">
+                                        <GradientStop Color="#C2FFD8"
+                                                      Offset="0" />
+                                        <GradientStop Color="#1ED760"
+                                                      Offset="0.48" />
+                                        <GradientStop Color="#0FA84A"
+                                                      Offset="1" />
+                                    </LinearGradientBrush>
+                                </Setter.Value>
+                            </Setter>
+                            <Setter TargetName="ThumbRoot" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="1.04"
+                                                    ScaleY="1.04" />
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -74,18 +123,40 @@
     </Style>
 
     <Style TargetType="{x:Type ScrollBar}">
-        <Setter Property="Width" Value="12" />
-        <Setter Property="Background" Value="#111714" />
-        <Setter Property="Foreground" Value="#496353" />
+        <Setter Property="Width" Value="13" />
+        <Setter Property="Background" Value="#33111714" />
+        <Setter Property="Foreground" Value="#5F806B" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ScrollBar}">
-                    <Grid>
+                    <Grid SnapsToDevicePixels="True">
                         <Border Background="{TemplateBinding Background}"
-                                CornerRadius="6"
-                                Margin="1" />
+                                CornerRadius="7"
+                                Margin="2">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="8"
+                                                  ShadowDepth="0"
+                                                  Opacity="0.18"
+                                                  Color="#000000" />
+                            </Border.Effect>
+                        </Border>
+                        <Border Margin="4"
+                                CornerRadius="5"
+                                Opacity="0.18">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0"
+                                                     EndPoint="1,0">
+                                    <GradientStop Color="#00FFFFFF"
+                                                  Offset="0" />
+                                    <GradientStop Color="#FFFFFFFF"
+                                                  Offset="0.5" />
+                                    <GradientStop Color="#00FFFFFF"
+                                                  Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
                         <Track x:Name="PART_Track"
                                Orientation="{TemplateBinding Orientation}"
                                IsDirectionReversed="True">
@@ -102,7 +173,7 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Orientation" Value="Horizontal">
-                            <Setter Property="Height" Value="12" />
+                            <Setter Property="Height" Value="13" />
                             <Setter Property="Width" Value="Auto" />
                             <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False" />
                         </Trigger>
