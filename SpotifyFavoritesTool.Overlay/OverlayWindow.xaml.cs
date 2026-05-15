@@ -13,6 +13,7 @@ public partial class OverlayWindow : Window, IDisposable
 {
     private const double CollapsedHeight = 150;
     private const double ExpandedHeight = 438;
+    private const double MaxAlbumArtPreviewSize = 320;
 
     private readonly ObservableCollection<PlaybackTrack> _cachedTracks = [];
     private readonly Dictionary<string, BitmapImage> _albumArtCache = new(StringComparer.Ordinal);
@@ -55,6 +56,7 @@ public partial class OverlayWindow : Window, IDisposable
         AlbumArt.Source = null;
         AlbumArtPreview.Source = null;
         AlbumArtPreviewToolTip.IsEnabled = false;
+        ResetAlbumArtPreviewSize();
         AlbumPlaceholder.Visibility = Visibility.Visible;
     }
 
@@ -208,6 +210,7 @@ public partial class OverlayWindow : Window, IDisposable
             AlbumArt.Source = null;
             AlbumArtPreview.Source = null;
             AlbumArtPreviewToolTip.IsEnabled = false;
+            ResetAlbumArtPreviewSize();
             AlbumPlaceholder.Visibility = Visibility.Visible;
             return;
         }
@@ -239,6 +242,7 @@ public partial class OverlayWindow : Window, IDisposable
             AlbumArt.Source = null;
             AlbumArtPreview.Source = null;
             AlbumArtPreviewToolTip.IsEnabled = false;
+            ResetAlbumArtPreviewSize();
             AlbumPlaceholder.Visibility = Visibility.Visible;
         }
     }
@@ -248,7 +252,25 @@ public partial class OverlayWindow : Window, IDisposable
         AlbumArt.Source = image;
         AlbumArtPreview.Source = image;
         AlbumArtPreviewToolTip.IsEnabled = true;
+        SetAlbumArtPreviewSize(image);
         AlbumPlaceholder.Visibility = Visibility.Collapsed;
+    }
+
+    private void SetAlbumArtPreviewSize(BitmapImage image)
+    {
+        AlbumArtPreviewFrame.Width = GetPreviewDimension(image.PixelWidth);
+        AlbumArtPreviewFrame.Height = GetPreviewDimension(image.PixelHeight);
+    }
+
+    private void ResetAlbumArtPreviewSize()
+    {
+        AlbumArtPreviewFrame.Width = MaxAlbumArtPreviewSize;
+        AlbumArtPreviewFrame.Height = MaxAlbumArtPreviewSize;
+    }
+
+    private static double GetPreviewDimension(int pixelSize)
+    {
+        return pixelSize <= 0 ? MaxAlbumArtPreviewSize : Math.Min(pixelSize, MaxAlbumArtPreviewSize);
     }
 
     private void PlaceNearTopRight()

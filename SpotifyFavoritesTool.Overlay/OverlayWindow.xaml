@@ -82,6 +82,40 @@
             <Setter Property="Height" Value="28" />
             <Setter Property="Margin" Value="8,0,0,0" />
         </Style>
+
+        <Style x:Key="ArtworkFrameStyle" TargetType="Border">
+            <Setter Property="Width" Value="64" />
+            <Setter Property="Height" Value="64" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="#202824" />
+            <Setter Property="BorderBrush" Value="#334139" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="ClipToBounds" Value="True" />
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="0"
+                                      ShadowDepth="0"
+                                      Opacity="0"
+                                      Color="#1ED760" />
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="#1ED760" />
+                    <Setter Property="Background" Value="#243A2B" />
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect BlurRadius="14"
+                                              ShadowDepth="0"
+                                              Opacity="0.42"
+                                              Color="#1ED760" />
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
 
     <ui:LiquidHoverBorder x:Name="OverlayRoot"
@@ -114,21 +148,14 @@
             </Grid.ColumnDefinitions>
 
             <Border x:Name="ArtworkFrame"
-                    Width="64"
-                    Height="64"
-                    CornerRadius="8"
-                    Background="#202824"
-                    BorderBrush="#334139"
-                    BorderThickness="1"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center"
-                    ClipToBounds="True">
+                    Style="{StaticResource ArtworkFrameStyle}">
                 <Border.ToolTip>
                     <ToolTip x:Name="AlbumArtPreviewToolTip"
                              Placement="Mouse"
                              IsEnabled="False">
-                        <Border Width="256"
-                                Height="256"
+                        <Border x:Name="AlbumArtPreviewFrame"
+                                Width="320"
+                                Height="320"
                                 CornerRadius="10"
                                 Background="#101512"
                                 BorderBrush="#365142"
