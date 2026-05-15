@@ -152,16 +152,6 @@
                     ToolTipService.InitialShowDelay="80"
                     ToolTipService.BetweenShowDelay="0"
                     ToolTipService.ShowDuration="60000">
-                <Border.OpacityMask>
-                    <VisualBrush>
-                        <VisualBrush.Visual>
-                            <Border Width="64"
-                                    Height="64"
-                                    Background="Black"
-                                    CornerRadius="8" />
-                        </VisualBrush.Visual>
-                    </VisualBrush>
-                </Border.OpacityMask>
                 <Border.ToolTip>
                     <ToolTip x:Name="AlbumArtPreviewToolTip"
                              Placement="Mouse"
@@ -174,13 +164,35 @@
                                 BorderBrush="#365142"
                                 BorderThickness="1"
                                 ClipToBounds="True">
-                            <Image x:Name="AlbumArtPreview"
-                                   Stretch="UniformToFill"
-                                   RenderOptions.BitmapScalingMode="HighQuality" />
+                            <Grid>
+                                <Grid.OpacityMask>
+                                    <VisualBrush>
+                                        <VisualBrush.Visual>
+                                            <Border Width="320"
+                                                    Height="320"
+                                                    Background="Black"
+                                                    CornerRadius="10" />
+                                        </VisualBrush.Visual>
+                                    </VisualBrush>
+                                </Grid.OpacityMask>
+                                <Image x:Name="AlbumArtPreview"
+                                       Stretch="UniformToFill"
+                                       RenderOptions.BitmapScalingMode="HighQuality" />
+                            </Grid>
                         </Border>
                     </ToolTip>
                 </Border.ToolTip>
                 <Grid>
+                    <Grid.OpacityMask>
+                        <VisualBrush>
+                            <VisualBrush.Visual>
+                                <Border Width="64"
+                                        Height="64"
+                                        Background="Black"
+                                        CornerRadius="8" />
+                            </VisualBrush.Visual>
+                        </VisualBrush>
+                    </Grid.OpacityMask>
                     <Image x:Name="AlbumArt"
                            Stretch="UniformToFill"
                            RenderOptions.BitmapScalingMode="HighQuality"
@@ -202,7 +214,7 @@
                     <Border x:Name="ArtworkInnerGlow"
                             BorderBrush="#708DE6B1"
                             BorderThickness="1"
-                            CornerRadius="7"
+                            CornerRadius="8"
                             Opacity="0"
                             IsHitTestVisible="False" />
                     <TextBlock x:Name="AlbumPlaceholder"
