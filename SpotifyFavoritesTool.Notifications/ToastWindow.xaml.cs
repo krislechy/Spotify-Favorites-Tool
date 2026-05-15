@@ -113,6 +113,7 @@ public partial class ToastWindow : Window
         if (_iconMode == FavoriteIconMode.Removed)
         {
             HeartFill.Opacity = 1;
+            HeartTexture.Opacity = 0.24;
             HeartScale.ScaleX = 1;
             HeartScale.ScaleY = 1;
             return;
@@ -121,6 +122,7 @@ public partial class ToastWindow : Window
         if (isLiked)
         {
             HeartFill.Opacity = 1;
+            HeartTexture.Opacity = 0.24;
             HeartScale.ScaleX = 1;
             HeartScale.ScaleY = 1;
             return;
@@ -154,6 +156,7 @@ public partial class ToastWindow : Window
         ResetFavoriteIcon();
 
         HeartFill.Opacity = 0;
+        HeartTexture.Opacity = 0;
         HeartScale.ScaleX = 0.26;
         HeartScale.ScaleY = 0.26;
         HeartRotate.Angle = -4;
@@ -163,6 +166,7 @@ public partial class ToastWindow : Window
         GlowScale.ScaleY = 0.36;
 
         Animate(HeartFill, UIElement.OpacityProperty, 0, 1, 120);
+        Animate(HeartTexture, UIElement.OpacityProperty, 0, 0.24, 160);
         AnimateKeyFrames(HeartScale, ScaleTransform.ScaleXProperty, (0.26, 0), (1.34, 170), (0.86, 330), (1.2, 500), (0.96, 650), (1.05, 800), (1, 980));
         AnimateKeyFrames(HeartScale, ScaleTransform.ScaleYProperty, (0.26, 0), (1.34, 170), (0.86, 330), (1.2, 500), (0.96, 650), (1.05, 800), (1, 980));
         Animate(HeartRotate, RotateTransform.AngleProperty, -4, 0, 280, easing: EaseOut());
@@ -191,6 +195,7 @@ public partial class ToastWindow : Window
         var dryingBrush = CreateBrush(22, 178, 78);
         HeartFill.Fill = dryingBrush;
         HeartFill.Opacity = 1;
+        HeartTexture.Opacity = 0.24;
         HeartScale.ScaleX = 1;
         HeartScale.ScaleY = 1;
 
@@ -206,6 +211,7 @@ public partial class ToastWindow : Window
         Animate(HeartScale, ScaleTransform.ScaleYProperty, 1, 0.76, 420, 80, EaseInOut());
         Animate(CrackLines, UIElement.OpacityProperty, 0, 0.92, 120, 320);
         Animate(HeartFill, UIElement.OpacityProperty, 1, 0, 180, 560);
+        Animate(HeartTexture, UIElement.OpacityProperty, 0.24, 0, 180, 560);
         Animate(CrackLines, UIElement.OpacityProperty, 0.92, 0, 160, 600);
 
         AnimateBrokenPiece(HeartPieceLeft, LeftPieceTranslate, LeftPieceRotate, -10, -3, -18, 500);
@@ -237,6 +243,7 @@ public partial class ToastWindow : Window
         SparkleLeft.BeginAnimation(UIElement.OpacityProperty, null);
         SparkleRight.BeginAnimation(UIElement.OpacityProperty, null);
         HeartFill.BeginAnimation(UIElement.OpacityProperty, null);
+        HeartTexture.BeginAnimation(UIElement.OpacityProperty, null);
         HeartOutline.BeginAnimation(UIElement.OpacityProperty, null);
         CrackLines.BeginAnimation(UIElement.OpacityProperty, null);
         HeartPieceLeft.BeginAnimation(UIElement.OpacityProperty, null);
@@ -249,6 +256,7 @@ public partial class ToastWindow : Window
         SparkleLeft.Opacity = 0;
         SparkleRight.Opacity = 0;
         HeartFill.Opacity = 0;
+        HeartTexture.Opacity = 0;
         HeartOutline.Opacity = 0;
         CrackLines.Opacity = 0;
         HeartPieceLeft.Opacity = 0;

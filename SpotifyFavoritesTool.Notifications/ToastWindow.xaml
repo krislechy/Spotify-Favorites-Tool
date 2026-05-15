@@ -176,23 +176,9 @@
 
                     <Path x:Name="HeartFill"
                           Data="M 27,47 C 22,42 7,31.5 5.8,19 C 4.8,9 12.5,4 19.4,8.5 C 23.3,11 25.7,14.6 27,17.8 C 28.3,14.6 30.7,11 34.6,8.5 C 41.5,4 49.2,9 48.2,19 C 47,31.5 32,42 27,47 Z"
+                          Fill="#18B653"
                           Opacity="0"
                           RenderTransformOrigin="0.5,0.5">
-                        <Path.Fill>
-                            <RadialGradientBrush Center="0.38,0.24"
-                                                 GradientOrigin="0.30,0.14"
-                                                 RadiusX="0.78"
-                                                 RadiusY="0.86">
-                                <GradientStop Color="#BFFFE0"
-                                              Offset="0" />
-                                <GradientStop Color="#28F071"
-                                              Offset="0.24" />
-                                <GradientStop Color="#16B24E"
-                                              Offset="0.62" />
-                                <GradientStop Color="#0B6F32"
-                                              Offset="1" />
-                            </RadialGradientBrush>
-                        </Path.Fill>
                         <Path.Effect>
                             <DropShadowEffect BlurRadius="12"
                                               ShadowDepth="1"
@@ -229,15 +215,22 @@
                         </Path.Effect>
                     </Path>
 
-                    <Path x:Name="HeartHighlight"
-                          Data="M 18,13 C 14,11 10,14 10,19 C 10,24 15,29 20,33"
-                          Fill="Transparent"
-                          Stroke="#DFFFF0"
-                          StrokeThickness="2.2"
-                          StrokeStartLineCap="Round"
-                          StrokeEndLineCap="Round"
-                          Opacity="0.72"
-                          IsHitTestVisible="False" />
+                    <Path x:Name="HeartTexture"
+                          Data="M 27,47 C 22,42 7,31.5 5.8,19 C 4.8,9 12.5,4 19.4,8.5 C 23.3,11 25.7,14.6 27,17.8 C 28.3,14.6 30.7,11 34.6,8.5 C 41.5,4 49.2,9 48.2,19 C 47,31.5 32,42 27,47 Z"
+                          Opacity="0"
+                          IsHitTestVisible="False">
+                        <Path.Fill>
+                            <DrawingBrush Viewport="0,0,7,7"
+                                          ViewportUnits="Absolute"
+                                          TileMode="Tile"
+                                          Opacity="0.24">
+                                <DrawingBrush.Drawing>
+                                    <GeometryDrawing Brush="#0D7A39"
+                                                     Geometry="M 0,6 L 6,0 L 7,1 L 1,7 Z" />
+                                </DrawingBrush.Drawing>
+                            </DrawingBrush>
+                        </Path.Fill>
+                    </Path>
 
                     <Path x:Name="CrackLines"
                           Data="M 27,17 L 23,25 L 29,29 L 24,39 M 35,12 L 31,22 L 36,26"
