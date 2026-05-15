@@ -182,49 +182,53 @@
                         </Border>
                     </ToolTip>
                 </Border.ToolTip>
-                <Grid>
-                    <Grid.OpacityMask>
-                        <VisualBrush>
-                            <VisualBrush.Visual>
-                                <Border Width="64"
-                                        Height="64"
-                                        Background="Black"
-                                        CornerRadius="8" />
-                            </VisualBrush.Visual>
-                        </VisualBrush>
-                    </Grid.OpacityMask>
-                    <Image x:Name="AlbumArt"
-                           Stretch="UniformToFill"
-                           RenderOptions.BitmapScalingMode="HighQuality"
-                           ImageFailed="AlbumArt_ImageFailed" />
-                    <Border x:Name="ArtworkHoverWash"
-                            Opacity="0"
-                            IsHitTestVisible="False">
-                        <Border.Background>
-                            <RadialGradientBrush Center="0.34,0.22"
-                                                 GradientOrigin="0.28,0.18"
-                                                 RadiusX="0.78"
-                                                 RadiusY="0.78">
-                                <GradientStop Color="#661ED760" Offset="0" />
-                                <GradientStop Color="#338DE6B1" Offset="0.42" />
-                                <GradientStop Color="#00000000" Offset="1" />
-                            </RadialGradientBrush>
-                        </Border.Background>
-                    </Border>
-                    <Border x:Name="ArtworkInnerGlow"
-                            BorderBrush="#708DE6B1"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Opacity="0"
-                            IsHitTestVisible="False" />
-                    <TextBlock x:Name="AlbumPlaceholder"
-                               Text="SP"
-                               Foreground="#6F7D74"
-                               FontWeight="Bold"
-                               FontSize="17"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center" />
-                </Grid>
+                <Border CornerRadius="8"
+                        ClipToBounds="True">
+                    <Grid>
+                        <Grid.OpacityMask>
+                            <VisualBrush>
+                                <VisualBrush.Visual>
+                                    <Border Width="64"
+                                            Height="64"
+                                            Background="Black"
+                                            CornerRadius="8" />
+                                </VisualBrush.Visual>
+                            </VisualBrush>
+                        </Grid.OpacityMask>
+                        <Image x:Name="AlbumArt"
+                               Stretch="UniformToFill"
+                               RenderOptions.BitmapScalingMode="HighQuality"
+                               ImageFailed="AlbumArt_ImageFailed" />
+                        <Border x:Name="ArtworkHoverWash"
+                                CornerRadius="8"
+                                Opacity="0"
+                                IsHitTestVisible="False">
+                            <Border.Background>
+                                <RadialGradientBrush Center="0.34,0.22"
+                                                     GradientOrigin="0.28,0.18"
+                                                     RadiusX="0.78"
+                                                     RadiusY="0.78">
+                                    <GradientStop Color="#661ED760" Offset="0" />
+                                    <GradientStop Color="#338DE6B1" Offset="0.42" />
+                                    <GradientStop Color="#00000000" Offset="1" />
+                                </RadialGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Border x:Name="ArtworkInnerGlow"
+                                BorderBrush="#708DE6B1"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Opacity="0"
+                                IsHitTestVisible="False" />
+                        <TextBlock x:Name="AlbumPlaceholder"
+                                   Text="SP"
+                                   Foreground="#6F7D74"
+                                   FontWeight="Bold"
+                                   FontSize="17"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+                </Border>
                 <Border.Triggers>
                     <EventTrigger RoutedEvent="MouseEnter">
                         <BeginStoryboard>
