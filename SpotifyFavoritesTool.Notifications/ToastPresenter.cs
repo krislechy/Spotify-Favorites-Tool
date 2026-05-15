@@ -11,8 +11,7 @@ public sealed class ToastPresenter : IDisposable
 
     public void ShowFavoriteStatus(PlaybackTrack track)
     {
-        var message = track.IsLiked == true ? "Уже в Избранном" : "Не в Избранном";
-        ShowCore(new ToastWindow(track, message));
+        ShowCore(new ToastWindow(track, "Статус трека"));
     }
 
     public void ShowTrackChanged(PlaybackTrack track)

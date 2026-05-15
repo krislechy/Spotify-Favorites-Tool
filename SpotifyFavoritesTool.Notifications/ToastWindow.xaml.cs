@@ -27,8 +27,8 @@ public partial class ToastWindow : Window
         InitializeComponent();
 
         var isLiked = track.IsLiked == true;
-        ActionText.Text = isLiked ? "Сейчас играет · В Избранном" : "Сейчас играет · Не в Избранном";
         _iconMode = isLiked ? FavoriteIconMode.StaticLiked : FavoriteIconMode.StaticUnliked;
+        ActionText.Text = "Сейчас играет";
         ConfigureTrackLayout(track);
     }
 
@@ -112,7 +112,7 @@ public partial class ToastWindow : Window
 
         if (_iconMode == FavoriteIconMode.Removed)
         {
-            HeartFill.Fill = CreateBrush(30, 215, 96);
+            HeartFill.Fill = CreateBrush(22, 178, 78);
             HeartFill.Opacity = 1;
             HeartScale.ScaleX = 1;
             HeartScale.ScaleY = 1;
@@ -121,7 +121,7 @@ public partial class ToastWindow : Window
 
         if (isLiked)
         {
-            HeartFill.Fill = CreateBrush(30, 215, 96);
+            HeartFill.Fill = CreateBrush(22, 178, 78);
             HeartFill.Opacity = 1;
             HeartScale.ScaleX = 1;
             HeartScale.ScaleY = 1;
@@ -155,7 +155,7 @@ public partial class ToastWindow : Window
     {
         ResetFavoriteIcon();
 
-        HeartFill.Fill = CreateBrush(30, 215, 96);
+        HeartFill.Fill = CreateBrush(22, 178, 78);
         HeartFill.Opacity = 0;
         HeartScale.ScaleX = 0.26;
         HeartScale.ScaleY = 0.26;
@@ -191,7 +191,7 @@ public partial class ToastWindow : Window
     {
         ResetFavoriteIcon();
 
-        var dryingBrush = CreateBrush(30, 215, 96);
+        var dryingBrush = CreateBrush(22, 178, 78);
         HeartFill.Fill = dryingBrush;
         HeartFill.Opacity = 1;
         HeartScale.ScaleX = 1;
@@ -199,7 +199,7 @@ public partial class ToastWindow : Window
 
         dryingBrush.BeginAnimation(
             SolidColorBrush.ColorProperty,
-            new ColorAnimation(MediaColor.FromRgb(30, 215, 96), MediaColor.FromRgb(132, 154, 138), new Duration(TimeSpan.FromMilliseconds(430)))
+            new ColorAnimation(MediaColor.FromRgb(22, 178, 78), MediaColor.FromRgb(104, 128, 112), new Duration(TimeSpan.FromMilliseconds(430)))
             {
                 BeginTime = TimeSpan.FromMilliseconds(60),
                 EasingFunction = EaseOut()

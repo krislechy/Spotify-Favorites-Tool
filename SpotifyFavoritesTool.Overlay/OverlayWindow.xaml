@@ -148,7 +148,20 @@
             </Grid.ColumnDefinitions>
 
             <Border x:Name="ArtworkFrame"
-                    Style="{StaticResource ArtworkFrameStyle}">
+                    Style="{StaticResource ArtworkFrameStyle}"
+                    ToolTipService.InitialShowDelay="80"
+                    ToolTipService.BetweenShowDelay="0"
+                    ToolTipService.ShowDuration="60000">
+                <Border.OpacityMask>
+                    <VisualBrush>
+                        <VisualBrush.Visual>
+                            <Border Width="64"
+                                    Height="64"
+                                    Background="Black"
+                                    CornerRadius="8" />
+                        </VisualBrush.Visual>
+                    </VisualBrush>
+                </Border.OpacityMask>
                 <Border.ToolTip>
                     <ToolTip x:Name="AlbumArtPreviewToolTip"
                              Placement="Mouse"
@@ -249,11 +262,6 @@
                            Grid.Row="1"
                            Foreground="#B9C4BE"
                            FontSize="12"
-                           TextTrimming="CharacterEllipsis" />
-                <TextBlock x:Name="FavoriteText"
-                           Grid.Row="2"
-                           Foreground="#7F8D84"
-                           FontSize="11"
                            TextTrimming="CharacterEllipsis" />
             </Grid>
 
@@ -387,7 +395,7 @@
                                         Padding="8,6">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition x:Name="CoverColumn" Width="0" />
+                                            <ColumnDefinition Width="42" />
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
@@ -399,7 +407,7 @@
                                                 CornerRadius="6"
                                                 Background="#202824"
                                                 ClipToBounds="True"
-                                                Visibility="Collapsed">
+                                                Visibility="Visible">
                                             <Image Source="{Binding AlbumImageUrl}"
                                                    Stretch="UniformToFill"
                                                    RenderOptions.BitmapScalingMode="HighQuality" />
@@ -412,7 +420,8 @@
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
 
-                                            <TextBlock Text="{Binding DisplayLine}"
+                                            <TextBlock x:Name="HistoryTrackLine"
+                                                       Text="{Binding DisplayLine}"
                                                        Foreground="#F4F8F5"
                                                        FontSize="12"
                                                        FontWeight="SemiBold"
@@ -528,19 +537,32 @@
                                                    FontWeight="SemiBold"
                                                    VerticalAlignment="Center"
                                                    Margin="8,0,0,0" />
+                                        <TextBlock x:Name="HistoryDuration"
+                                                   Grid.Column="2"
+                                                   Text="{Binding DurationText}"
+                                                   Foreground="#7F8D84"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center"
+                                                   Margin="8,0,26,0" />
                                     </Grid>
                                 </Border>
                                 <DataTemplate.Triggers>
                                     <Trigger SourceName="HistoryItemRoot" Property="IsMouseOver" Value="True">
                                         <Setter TargetName="HistoryItemRoot" Property="Background" Value="#40202A24" />
                                         <Setter TargetName="HistoryItemRoot" Property="BorderBrush" Value="#314638" />
-                                        <Setter TargetName="CoverColumn" Property="Width" Value="42" />
-                                        <Setter TargetName="HistoryCover" Property="Visibility" Value="Visible" />
                                         <Setter TargetName="HistoryActions" Property="Visibility" Value="Visible" />
                                         <Setter TargetName="HistoryFavoriteGlyph" Property="Visibility" Value="Collapsed" />
+                                        <Setter TargetName="HistoryDuration" Property="Visibility" Value="Collapsed" />
                                     </Trigger>
                                     <DataTrigger Binding="{Binding IsPlaying}" Value="True">
                                         <Setter TargetName="NowPlayingEqualizer" Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsPlaying}" Value="False">
+                                        <Setter TargetName="HistoryItemRoot" Property="Opacity" Value="0.58" />
+                                        <Setter TargetName="HistoryTrackLine" Property="Foreground" Value="#A3AEA7" />
+                                        <Setter TargetName="HistoryCover" Property="Opacity" Value="0.56" />
+                                        <Setter TargetName="HistoryFavoriteGlyph" Property="Foreground" Value="#7F8D84" />
                                     </DataTrigger>
                                 </DataTemplate.Triggers>
                             </DataTemplate>

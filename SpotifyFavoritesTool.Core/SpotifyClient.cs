@@ -133,7 +133,7 @@ public sealed class SpotifyClient
             .FirstOrDefault()
             ?.Url;
 
-        return new PlaybackTrack(item.Id!, item.Uri!, item.Name!, artists, image, contextUri, IsPlaying: isPlaying);
+        return new PlaybackTrack(item.Id!, item.Uri!, item.Name!, artists, image, contextUri, IsPlaying: isPlaying, DurationMs: item.DurationMs);
     }
 
     private static object CreatePlaybackBody(PlaybackTrack track)

@@ -49,7 +49,6 @@ public partial class OverlayWindow : Window, IDisposable
     {
         TrackTitle.Text = title;
         ArtistText.Text = message;
-        FavoriteText.Text = "Избранное недоступно";
         FavoriteButton.Content = "♡";
         SetPlaybackState(isPlaying: true);
         _requestedAlbumImageUrl = null;
@@ -150,7 +149,7 @@ public partial class OverlayWindow : Window, IDisposable
         HistoryPanel.Visibility = _isHistoryExpanded ? Visibility.Visible : Visibility.Collapsed;
         HistoryRow.Height = _isHistoryExpanded ? new GridLength(288) : new GridLength(0);
         Height = _isHistoryExpanded ? ExpandedHeight : CollapsedHeight;
-        HistoryToggleButton.ToolTip = _isHistoryExpanded ? "Скрыть треки из кеша" : "Показать треки из кеша";
+        HistoryToggleButton.ToolTip = _isHistoryExpanded ? "Скрыть историю" : "Показать историю";
     }
 
     private void CachedTrackPlayButton_Click(object sender, RoutedEventArgs e)
@@ -177,22 +176,7 @@ public partial class OverlayWindow : Window, IDisposable
 
     private void SetFavoriteState(bool? isLiked)
     {
-        if (isLiked == true)
-        {
-            FavoriteText.Text = "В Избранном";
-            FavoriteButton.Content = "♥";
-            return;
-        }
-
-        if (isLiked == false)
-        {
-            FavoriteText.Text = "Не в Избранном";
-            FavoriteButton.Content = "♡";
-            return;
-        }
-
-        FavoriteText.Text = "Статус Избранного неизвестен";
-        FavoriteButton.Content = "♡";
+        FavoriteButton.Content = isLiked == true ? "♥" : "♡";
     }
 
     private void SetPlaybackState(bool? isPlaying)
