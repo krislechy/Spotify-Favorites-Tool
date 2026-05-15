@@ -57,27 +57,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Thumb}">
                     <Grid Margin="1"
-                          RenderTransformOrigin="0.5,0.5"
                           SnapsToDevicePixels="True">
-                        <Border x:Name="ThumbGlow"
-                                Margin="-2"
-                                CornerRadius="7"
-                                Opacity="0.48">
-                            <Border.Background>
-                                <RadialGradientBrush Center="0.5,0.48"
-                                                     GradientOrigin="0.5,0.48"
-                                                     RadiusX="0.72"
-                                                     RadiusY="0.72">
-                                    <GradientStop Color="#801ED760"
-                                                  Offset="0" />
-                                    <GradientStop Color="#001ED760"
-                                                  Offset="1" />
-                                </RadialGradientBrush>
-                            </Border.Background>
-                            <Border.Effect>
-                                <BlurEffect Radius="5" />
-                            </Border.Effect>
-                        </Border>
                         <Border x:Name="ThumbRoot"
                                 CornerRadius="6"
                                 BorderBrush="#668DE6B1"
@@ -117,8 +97,8 @@
                                     </LinearGradientBrush>
                                 </Setter.Value>
                             </Setter>
-                            <Setter TargetName="ThumbGlow" Property="Opacity" Value="0.72" />
                             <Setter TargetName="ThumbRoot" Property="BorderBrush" Value="#991ED760" />
+                            <Setter TargetName="ThumbShine" Property="Opacity" Value="0.72" />
                         </Trigger>
                         <Trigger Property="IsDragging" Value="True">
                             <Setter TargetName="ThumbRoot" Property="Background">
@@ -134,14 +114,8 @@
                                     </LinearGradientBrush>
                                 </Setter.Value>
                             </Setter>
-                            <Setter TargetName="ThumbGlow" Property="Opacity" Value="0.90" />
                             <Setter TargetName="ThumbRoot" Property="BorderBrush" Value="#CCBFFFD3" />
-                            <Setter Property="RenderTransform">
-                                <Setter.Value>
-                                    <ScaleTransform ScaleX="1.08"
-                                                    ScaleY="1.02" />
-                                </Setter.Value>
-                            </Setter>
+                            <Setter TargetName="ThumbShine" Property="Opacity" Value="0.92" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
