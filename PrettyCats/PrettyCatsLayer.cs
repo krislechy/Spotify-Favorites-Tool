@@ -7,8 +7,8 @@ namespace PrettyCats;
 public sealed class PrettyCatsLayer : FrameworkElement
 {
     private const int ActorCount = 3;
-    private const double Pixel = 2.0;
-    private const double GroundY = 7.0;
+    private const double Pixel = 2.4;
+    private const double GroundY = 1.0;
     private static readonly Random Random = new();
 
     private readonly DispatcherTimer _timer;
@@ -105,32 +105,39 @@ public sealed class PrettyCatsLayer : FrameworkElement
         var sleep = cat.State == CatState.Sleeping;
         var grooming = cat.State == CatState.Grooming;
 
-        PixelRect(dc, dark, x, y + 5 * Pixel, 12, 1, direction);
-        PixelRect(dc, body, x, y + 4 * Pixel, 10, 4, direction);
-        PixelRect(dc, body, x + 8 * Pixel * direction, y + 2 * Pixel, 5, 5, direction);
-        PixelRect(dc, body, x + 9 * Pixel * direction, y, 1, 2, direction);
-        PixelRect(dc, body, x + 12 * Pixel * direction, y, 1, 2, direction);
-        PixelRect(dc, light, x + 10 * Pixel * direction, y + 4 * Pixel, 2, 1, direction);
+        PixelRect(dc, dark, x, y + 9 * Pixel, 16, 1, direction);
+        PixelRect(dc, body, x + 1 * Pixel * direction, y + 5 * Pixel, 13, 5, direction);
+        PixelRect(dc, body, x + 4 * Pixel * direction, y + 4 * Pixel, 8, 1, direction);
+        PixelRect(dc, light, x + 3 * Pixel * direction, y + 8 * Pixel, 8, 1, direction);
+        PixelRect(dc, dark, x + 2 * Pixel * direction, y + 5 * Pixel, 2, 1, direction);
+        PixelRect(dc, dark, x + 8 * Pixel * direction, y + 5 * Pixel, 2, 1, direction);
+
+        PixelRect(dc, body, x + 11 * Pixel * direction, y + 3 * Pixel, 7, 6, direction);
+        PixelRect(dc, body, x + 12 * Pixel * direction, y + 1 * Pixel, 2, 3, direction);
+        PixelRect(dc, body, x + 16 * Pixel * direction, y + 1 * Pixel, 2, 3, direction);
+        PixelRect(dc, light, x + 13 * Pixel * direction, y + 6 * Pixel, 3, 1, direction);
+        PixelRect(dc, dark, x + 17 * Pixel * direction, y + 5 * Pixel, 1, 1, direction);
 
         if (sleep)
         {
-            PixelRect(dc, dark, x + 10 * Pixel * direction, y + 3 * Pixel, 3, 1, direction);
-            DrawSleepMarks(dc, x + 15 * Pixel * direction, y - 5 * Pixel, direction, cat.Frame);
+            PixelRect(dc, dark, x + 13 * Pixel * direction, y + 5 * Pixel, 4, 1, direction);
+            DrawSleepMarks(dc, x + 20 * Pixel * direction, y - 4 * Pixel, direction, cat.Frame);
         }
         else
         {
-            PixelRect(dc, eye, x + 10 * Pixel * direction, y + 3 * Pixel, 1, 1, direction);
-            PixelRect(dc, eye, x + 12 * Pixel * direction, y + 3 * Pixel, 1, 1, direction);
+            PixelRect(dc, eye, x + 13 * Pixel * direction, y + 5 * Pixel, 1, 1, direction);
+            PixelRect(dc, eye, x + 16 * Pixel * direction, y + 5 * Pixel, 1, 1, direction);
         }
 
         var tailLift = cat.State == CatState.Walking && frame == 0 ? -1 : 0;
-        PixelRect(dc, body, x - 2 * Pixel * direction, y + (3 + tailLift) * Pixel, 3, 1, direction);
-        PixelRect(dc, body, x - 3 * Pixel * direction, y + (2 + tailLift) * Pixel, 1, 2, direction);
+        PixelRect(dc, body, x - 2 * Pixel * direction, y + (6 + tailLift) * Pixel, 4, 1, direction);
+        PixelRect(dc, body, x - 4 * Pixel * direction, y + (5 + tailLift) * Pixel, 2, 2, direction);
+        PixelRect(dc, dark, x - 5 * Pixel * direction, y + (4 + tailLift) * Pixel, 1, 1, direction);
 
         if (grooming)
         {
-            PixelRect(dc, light, x + 7 * Pixel * direction, y + 2 * Pixel, 2, 3, direction);
-            PixelRect(dc, Brushes.HotPink, x + 10 * Pixel * direction, y + 6 * Pixel, 1, 1, direction);
+            PixelRect(dc, light, x + 9 * Pixel * direction, y + 5 * Pixel, 3, 4, direction);
+            PixelRect(dc, Brushes.HotPink, x + 13 * Pixel * direction, y + 8 * Pixel, 1, 1, direction);
         }
         else
         {
@@ -142,13 +149,15 @@ public sealed class PrettyCatsLayer : FrameworkElement
     {
         if (frame == 0)
         {
-            PixelRect(dc, brush, x + 2 * Pixel * direction, y + 8 * Pixel, 2, 2, direction);
-            PixelRect(dc, brush, x + 7 * Pixel * direction, y + 8 * Pixel, 2, 2, direction);
+            PixelRect(dc, brush, x + 3 * Pixel * direction, y + 10 * Pixel, 2, 2, direction);
+            PixelRect(dc, brush, x + 10 * Pixel * direction, y + 10 * Pixel, 2, 2, direction);
+            PixelRect(dc, brush, x + 14 * Pixel * direction, y + 9 * Pixel, 2, 2, direction);
             return;
         }
 
-        PixelRect(dc, brush, x + 1 * Pixel * direction, y + 8 * Pixel, 2, 2, direction);
-        PixelRect(dc, brush, x + 8 * Pixel * direction, y + 8 * Pixel, 2, 2, direction);
+        PixelRect(dc, brush, x + 2 * Pixel * direction, y + 10 * Pixel, 2, 2, direction);
+        PixelRect(dc, brush, x + 8 * Pixel * direction, y + 10 * Pixel, 2, 2, direction);
+        PixelRect(dc, brush, x + 15 * Pixel * direction, y + 9 * Pixel, 2, 2, direction);
     }
 
     private static void DrawPortal(DrawingContext dc, CatActor cat)
@@ -159,16 +168,16 @@ public sealed class PrettyCatsLayer : FrameworkElement
         }
 
         dc.PushOpacity(cat.PortalOpacity);
-        var center = new Point(cat.PortalX, GroundY + 10);
+        var center = new Point(cat.PortalX, GroundY + 15);
         var phase = cat.Frame % 4;
         var outer = phase % 2 == 0 ? Brushes.MediumPurple : Brushes.DeepSkyBlue;
         var inner = phase % 2 == 0 ? Brushes.DeepSkyBlue : Brushes.MediumPurple;
 
-        PixelRect(dc, outer, center.X - 5 * Pixel, center.Y - 7 * Pixel, 2, 12, 1);
-        PixelRect(dc, outer, center.X + 3 * Pixel, center.Y - 7 * Pixel, 2, 12, 1);
-        PixelRect(dc, inner, center.X - 3 * Pixel, center.Y - 8 * Pixel, 6, 2, 1);
-        PixelRect(dc, inner, center.X - 3 * Pixel, center.Y + 4 * Pixel, 6, 2, 1);
-        PixelRect(dc, Brushes.Black, center.X - 3 * Pixel, center.Y - 5 * Pixel, 6, 8, 1);
+        PixelRect(dc, outer, center.X - 6 * Pixel, center.Y - 9 * Pixel, 2, 15, 1);
+        PixelRect(dc, outer, center.X + 4 * Pixel, center.Y - 9 * Pixel, 2, 15, 1);
+        PixelRect(dc, inner, center.X - 4 * Pixel, center.Y - 10 * Pixel, 8, 2, 1);
+        PixelRect(dc, inner, center.X - 4 * Pixel, center.Y + 5 * Pixel, 8, 2, 1);
+        PixelRect(dc, Brushes.Black, center.X - 4 * Pixel, center.Y - 7 * Pixel, 8, 11, 1);
         dc.Pop();
     }
 
@@ -217,7 +226,7 @@ public sealed class PrettyCatsLayer : FrameworkElement
             return new CatActor
             {
                 Index = index,
-                X = 34 + index * 92,
+                X = 42 + index * 96,
                 Y = GroundY + index % 2,
                 BodyBrush = CreateBrush(palette.Body),
                 DarkBrush = CreateBrush(palette.Dark),
@@ -364,7 +373,7 @@ public sealed class PrettyCatsLayer : FrameworkElement
 
         private static double RandomX(double width)
         {
-            return 26 + Random.NextDouble() * Math.Max(80, width - 58);
+            return 34 + Random.NextDouble() * Math.Max(80, width - 76);
         }
     }
 

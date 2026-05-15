@@ -102,7 +102,7 @@
                               Color="#000000" />
         </local:LiquidHoverBorder.Effect>
 
-        <Grid>
+        <Grid x:Name="OverlayContent">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="36" />
@@ -399,13 +399,17 @@
                 </Grid>
             </local:LiquidHoverBorder>
 
-            <cats:PrettyCatsLayer Grid.Row="0"
-                                  Grid.ColumnSpan="3"
-                                  Height="34"
-                                  Margin="4,-5,4,0"
-                                  VerticalAlignment="Top"
-                                  Panel.ZIndex="50"
-                                  IsHitTestVisible="False" />
+            <Canvas Grid.RowSpan="3"
+                    Grid.ColumnSpan="3"
+                    ClipToBounds="False"
+                    IsHitTestVisible="False"
+                    Panel.ZIndex="50">
+                <cats:PrettyCatsLayer Width="{Binding ActualWidth, ElementName=OverlayContent}"
+                                      Height="42"
+                                      Canvas.Left="0"
+                                      Canvas.Top="-14"
+                                      IsHitTestVisible="False" />
+            </Canvas>
         </Grid>
     </local:LiquidHoverBorder>
 </Window>
