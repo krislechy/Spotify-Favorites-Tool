@@ -1,7 +1,7 @@
 <Window x:Class="SpotifyFavoritesTool.ToastWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Width="432"
+        Width="388"
         Height="96"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -15,7 +15,7 @@
         Loaded="Window_Loaded"
         Closed="Window_Closed">
     <Border CornerRadius="8"
-            Background="#F0161B18"
+            Background="#FC161B18"
             BorderBrush="#4936D87B"
             BorderThickness="1"
             Padding="8"
@@ -24,7 +24,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="ArtworkColumn" Width="66" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition x:Name="IconColumn" Width="42" />
+                <ColumnDefinition x:Name="IconColumn" Width="48" />
             </Grid.ColumnDefinitions>
 
             <Border x:Name="ArtworkFrame"
@@ -78,9 +78,9 @@
 
             <Grid x:Name="IconStage"
                   Grid.Column="2"
-                  Width="48"
+                  Width="42"
                   Height="48"
-                  HorizontalAlignment="Left"
+                  HorizontalAlignment="Center"
                   VerticalAlignment="Center">
                 <Canvas x:Name="FavoriteIconCanvas"
                         Width="40"
