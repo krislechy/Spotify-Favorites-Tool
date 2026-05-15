@@ -50,15 +50,15 @@
     </Style>
 
     <Style x:Key="ScrollBarThumbStyle" TargetType="{x:Type Thumb}">
-        <Setter Property="MinHeight" Value="34" />
-        <Setter Property="MinWidth" Value="34" />
+        <Setter Property="MinHeight" Value="30" />
+        <Setter Property="MinWidth" Value="30" />
         <Setter Property="Background" Value="#5F806B" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Thumb}">
                     <Border x:Name="ThumbRoot"
-                            CornerRadius="6"
-                            Margin="2"
+                            CornerRadius="5"
+                            Margin="1"
                             RenderTransformOrigin="0.5,0.5"
                             SnapsToDevicePixels="True">
                         <Border.Background>
@@ -73,9 +73,9 @@
                             </LinearGradientBrush>
                         </Border.Background>
                         <Border.Effect>
-                            <DropShadowEffect BlurRadius="12"
+                            <DropShadowEffect BlurRadius="9"
                                               ShadowDepth="0"
-                                              Opacity="0.34"
+                                              Opacity="0.28"
                                               Color="#1ED760" />
                         </Border.Effect>
                     </Border>
@@ -123,7 +123,7 @@
     </Style>
 
     <Style TargetType="{x:Type ScrollBar}">
-        <Setter Property="Width" Value="13" />
+        <Setter Property="Width" Value="9" />
         <Setter Property="Background" Value="#33111714" />
         <Setter Property="Foreground" Value="#5F806B" />
         <Setter Property="Focusable" Value="False" />
@@ -131,20 +131,21 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ScrollBar}">
-                    <Grid SnapsToDevicePixels="True">
+                    <Grid ClipToBounds="False"
+                          SnapsToDevicePixels="True">
                         <Border Background="{TemplateBinding Background}"
-                                CornerRadius="7"
-                                Margin="2">
+                                CornerRadius="5"
+                                Margin="1">
                             <Border.Effect>
-                                <DropShadowEffect BlurRadius="8"
+                                <DropShadowEffect BlurRadius="5"
                                                   ShadowDepth="0"
-                                                  Opacity="0.18"
+                                                  Opacity="0.14"
                                                   Color="#000000" />
                             </Border.Effect>
                         </Border>
-                        <Border Margin="4"
-                                CornerRadius="5"
-                                Opacity="0.18">
+                        <Border Margin="3"
+                                CornerRadius="3"
+                                Opacity="0.14">
                             <Border.Background>
                                 <LinearGradientBrush StartPoint="0,0"
                                                      EndPoint="1,0">
@@ -173,7 +174,7 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Orientation" Value="Horizontal">
-                            <Setter Property="Height" Value="13" />
+                            <Setter Property="Height" Value="9" />
                             <Setter Property="Width" Value="Auto" />
                             <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False" />
                         </Trigger>
@@ -249,6 +250,7 @@
     <Style TargetType="{x:Type ListBox}">
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
     </Style>
 
     <Style TargetType="{x:Type ListBoxItem}">

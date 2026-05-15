@@ -10,6 +10,8 @@ namespace SpotifyFavoritesTool;
 public partial class MainWindow : Window
 {
     private static readonly TimeSpan TrackMonitorInterval = TimeSpan.FromSeconds(8);
+    private const double CompactHeight = 390;
+    private const double ExpandedLogHeight = 540;
     private const string GenericErrorTitle = "Произошла ошибка";
     private const string GenericErrorMessage = "Смотри в главном окне";
 
@@ -109,6 +111,7 @@ public partial class MainWindow : Window
         var shouldShow = ActivityLogPanel.Visibility != Visibility.Visible;
         ActivityLogPanel.Visibility = shouldShow ? Visibility.Visible : Visibility.Collapsed;
         ActivityLogToggleButton.ToolTip = shouldShow ? "Скрыть журнал действий" : "Показать журнал действий";
+        Height = shouldShow ? ExpandedLogHeight : CompactHeight;
     }
 
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
