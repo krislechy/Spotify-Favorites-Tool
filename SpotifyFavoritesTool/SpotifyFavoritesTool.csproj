@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SpotifyFavoritesTool.Core\SpotifyFavoritesTool.Core.csproj" />
     <ProjectReference Include="..\SpotifyFavoritesTool.Models\SpotifyFavoritesTool.Models.csproj" />
+    <ProjectReference Include="..\SpotifyFavoritesTool.UI\SpotifyFavoritesTool.UI.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

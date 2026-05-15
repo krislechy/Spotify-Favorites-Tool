@@ -8,7 +8,7 @@ using WpfColor = System.Windows.Media.Color;
 using WpfPen = System.Windows.Media.Pen;
 using WpfPoint = System.Windows.Point;
 
-namespace SpotifyFavoritesTool;
+namespace SpotifyFavoritesTool.UI;
 
 public class LiquidHoverBorder : Border
 {

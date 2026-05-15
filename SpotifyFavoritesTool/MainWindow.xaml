@@ -1,7 +1,7 @@
 <Window x:Class="SpotifyFavoritesTool.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:SpotifyFavoritesTool"
+        xmlns:ui="clr-namespace:SpotifyFavoritesTool.UI;assembly=SpotifyFavoritesTool.UI"
         Title="Spotify Favorites Tool"
         Width="720"
         Height="540"
@@ -32,10 +32,10 @@
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="IsTabStop" Value="False" />
-            <Setter Property="local:RippleEffectBehavior.IsEnabled" Value="True" />
-            <Setter Property="local:RippleEffectBehavior.RippleBrush" Value="#1ED760" />
-            <Setter Property="local:RippleEffectBehavior.PressedOpacity" Value="0.24" />
-            <Setter Property="local:RippleEffectBehavior.DurationMilliseconds" Value="460" />
+            <Setter Property="ui:RippleEffectBehavior.IsEnabled" Value="True" />
+            <Setter Property="ui:RippleEffectBehavior.RippleBrush" Value="#1ED760" />
+            <Setter Property="ui:RippleEffectBehavior.PressedOpacity" Value="0.24" />
+            <Setter Property="ui:RippleEffectBehavior.DurationMilliseconds" Value="460" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -89,19 +89,19 @@
         </Style>
     </Window.Resources>
 
-    <local:LiquidHoverBorder Margin="8"
+    <ui:LiquidHoverBorder Margin="8"
                              CornerRadius="12"
                              BaseColor="#101512"
                              SurfaceOpacity="1"
                              BorderBrush="#2A3A31"
                              BorderThickness="1"
                              SnapsToDevicePixels="True">
-        <local:LiquidHoverBorder.Effect>
+        <ui:LiquidHoverBorder.Effect>
             <DropShadowEffect BlurRadius="18"
                               ShadowDepth="0"
                               Opacity="0.28"
                               Color="#000000" />
-        </local:LiquidHoverBorder.Effect>
+        </ui:LiquidHoverBorder.Effect>
 
         <Grid>
             <Grid.RowDefinitions>
@@ -162,7 +162,7 @@
                 </StackPanel>
             </Grid>
 
-            <local:LiquidHoverBorder Grid.Row="1"
+            <ui:LiquidHoverBorder Grid.Row="1"
                                      Margin="12,10,12,12"
                                      Padding="16"
                                      CornerRadius="10"
@@ -185,7 +185,7 @@
                                FontWeight="SemiBold"
                                TextWrapping="Wrap" />
 
-                    <local:LiquidHoverBorder Grid.Row="1"
+                    <ui:LiquidHoverBorder Grid.Row="1"
                                              Margin="0,14,0,0"
                                              Padding="12"
                                              CornerRadius="8"
@@ -206,7 +206,7 @@
                                        FontSize="12"
                                        TextWrapping="Wrap" />
                         </StackPanel>
-                    </local:LiquidHoverBorder>
+                    </ui:LiquidHoverBorder>
 
                     <StackPanel Grid.Row="2"
                                 Margin="0,14,0,0"
@@ -236,7 +236,7 @@
                                        FontSize="11" />
                         </DockPanel>
 
-                        <local:LiquidHoverBorder Grid.Row="1"
+                        <ui:LiquidHoverBorder Grid.Row="1"
                                                  CornerRadius="8"
                                                   BaseColor="#111714"
                                                   IsLiquidEnabled="False"
@@ -289,10 +289,10 @@
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
-                        </local:LiquidHoverBorder>
+                        </ui:LiquidHoverBorder>
                     </Grid>
                 </Grid>
-            </local:LiquidHoverBorder>
+            </ui:LiquidHoverBorder>
         </Grid>
-    </local:LiquidHoverBorder>
+    </ui:LiquidHoverBorder>
 </Window>

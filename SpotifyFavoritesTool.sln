@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpotifyFavoritesTool.Core",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpotifyFavoritesTool.Models", "SpotifyFavoritesTool.Models\SpotifyFavoritesTool.Models.csproj", "{B9052F8C-390C-4884-B413-7C2C42F57D73}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpotifyFavoritesTool.UI", "SpotifyFavoritesTool.UI\SpotifyFavoritesTool.UI.csproj", "{7FFB5348-8947-4CA4-8163-E5C297F1D50D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{B9052F8C-390C-4884-B413-7C2C42F57D73}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B9052F8C-390C-4884-B413-7C2C42F57D73}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B9052F8C-390C-4884-B413-7C2C42F57D73}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7FFB5348-8947-4CA4-8163-E5C297F1D50D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7FFB5348-8947-4CA4-8163-E5C297F1D50D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7FFB5348-8947-4CA4-8163-E5C297F1D50D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7FFB5348-8947-4CA4-8163-E5C297F1D50D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
