@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36915.13 d17.14
@@ -10,6 +10,14 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpotifyFavoritesTool.Models", "SpotifyFavoritesTool.Models\SpotifyFavoritesTool.Models.csproj", "{B9052F8C-390C-4884-B413-7C2C42F57D73}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpotifyFavoritesTool.UI", "SpotifyFavoritesTool.UI\SpotifyFavoritesTool.UI.csproj", "{7FFB5348-8947-4CA4-8163-E5C297F1D50D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpotifyFavoritesTool.Logging", "SpotifyFavoritesTool.Logging\SpotifyFavoritesTool.Logging.csproj", "{2869BF21-B0E7-41E9-85E7-AEC9ACC61C86}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpotifyFavoritesTool.Windows", "SpotifyFavoritesTool.Windows\SpotifyFavoritesTool.Windows.csproj", "{C1EF2591-A238-4B21-BBF5-9CB2866496CF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpotifyFavoritesTool.Notifications", "SpotifyFavoritesTool.Notifications\SpotifyFavoritesTool.Notifications.csproj", "{10DAEB90-FAE5-4459-AAED-486D1B2B2716}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpotifyFavoritesTool.Overlay", "SpotifyFavoritesTool.Overlay\SpotifyFavoritesTool.Overlay.csproj", "{CC0636AD-F58F-48BD-A0EA-B03B5C40CE0C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +41,22 @@ Global
 		{7FFB5348-8947-4CA4-8163-E5C297F1D50D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7FFB5348-8947-4CA4-8163-E5C297F1D50D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7FFB5348-8947-4CA4-8163-E5C297F1D50D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2869BF21-B0E7-41E9-85E7-AEC9ACC61C86}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2869BF21-B0E7-41E9-85E7-AEC9ACC61C86}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2869BF21-B0E7-41E9-85E7-AEC9ACC61C86}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2869BF21-B0E7-41E9-85E7-AEC9ACC61C86}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1EF2591-A238-4B21-BBF5-9CB2866496CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1EF2591-A238-4B21-BBF5-9CB2866496CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1EF2591-A238-4B21-BBF5-9CB2866496CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1EF2591-A238-4B21-BBF5-9CB2866496CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10DAEB90-FAE5-4459-AAED-486D1B2B2716}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10DAEB90-FAE5-4459-AAED-486D1B2B2716}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10DAEB90-FAE5-4459-AAED-486D1B2B2716}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10DAEB90-FAE5-4459-AAED-486D1B2B2716}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC0636AD-F58F-48BD-A0EA-B03B5C40CE0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC0636AD-F58F-48BD-A0EA-B03B5C40CE0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC0636AD-F58F-48BD-A0EA-B03B5C40CE0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC0636AD-F58F-48BD-A0EA-B03B5C40CE0C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

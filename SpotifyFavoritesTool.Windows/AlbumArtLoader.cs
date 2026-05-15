@@ -4,7 +4,7 @@ using System.Windows.Media.Imaging;
 
 namespace SpotifyFavoritesTool;
 
-internal static class AlbumArtLoader
+public static class AlbumArtLoader
 {
     private static readonly HttpClient HttpClient = new();
 

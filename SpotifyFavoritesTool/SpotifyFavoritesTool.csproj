@@ -2,8 +2,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SpotifyFavoritesTool.Core\SpotifyFavoritesTool.Core.csproj" />
+    <ProjectReference Include="..\SpotifyFavoritesTool.Logging\SpotifyFavoritesTool.Logging.csproj" />
     <ProjectReference Include="..\SpotifyFavoritesTool.Models\SpotifyFavoritesTool.Models.csproj" />
+    <ProjectReference Include="..\SpotifyFavoritesTool.Notifications\SpotifyFavoritesTool.Notifications.csproj" />
+    <ProjectReference Include="..\SpotifyFavoritesTool.Overlay\SpotifyFavoritesTool.Overlay.csproj" />
     <ProjectReference Include="..\SpotifyFavoritesTool.UI\SpotifyFavoritesTool.UI.csproj" />
+    <ProjectReference Include="..\SpotifyFavoritesTool.Windows\SpotifyFavoritesTool.Windows.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

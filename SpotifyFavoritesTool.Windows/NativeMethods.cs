@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace SpotifyFavoritesTool;
 
-internal static class NativeMethods
+public static class NativeMethods
 {
     public const int WmHotkey = 0x0312;
     public const int HotkeyToggleFavorite = 1001;
