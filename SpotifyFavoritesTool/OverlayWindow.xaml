@@ -2,7 +2,6 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:SpotifyFavoritesTool"
-        xmlns:cats="clr-namespace:PrettyCats;assembly=PrettyCats"
         Width="462"
         Height="150"
         MinWidth="390"
@@ -85,8 +84,7 @@
         </Style>
     </Window.Resources>
 
-    <Grid ClipToBounds="False">
-        <local:LiquidHoverBorder x:Name="OverlayRoot"
+    <local:LiquidHoverBorder x:Name="OverlayRoot"
                              Margin="7"
                              Padding="12"
                              CornerRadius="12"
@@ -103,7 +101,7 @@
                               Color="#000000" />
         </local:LiquidHoverBorder.Effect>
 
-        <Grid x:Name="OverlayContent">
+        <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="36" />
@@ -399,14 +397,6 @@
                     </ListBox>
                 </Grid>
             </local:LiquidHoverBorder>
-
         </Grid>
-        </local:LiquidHoverBorder>
-
-        <cats:PrettyCatsLayer Height="44"
-                              Margin="18,-6,18,0"
-                              VerticalAlignment="Top"
-                              Panel.ZIndex="50"
-                              IsHitTestVisible="False" />
-    </Grid>
+    </local:LiquidHoverBorder>
 </Window>
