@@ -88,6 +88,12 @@
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
 
+        <Style x:Key="SquareActionButton" BasedOn="{StaticResource IconButton}" TargetType="Button">
+            <Setter Property="Width" Value="38" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Margin" Value="10,0,0,0" />
+        </Style>
+
         <Style x:Key="LogExpanderToggle" TargetType="ToggleButton">
             <Setter Property="Width" Value="20" />
             <Setter Property="Height" Value="20" />
@@ -313,6 +319,7 @@
                                        Margin="0,8,0,0"
                                        Foreground="#D7E4DC"
                                        FontSize="12"
+                                       LineHeight="18"
                                        TextWrapping="Wrap" />
                         </StackPanel>
                     </ui:LiquidHoverBorder>
@@ -325,9 +332,31 @@
                                 Content="Запустить Overlay"
                                 Click="OverlayButton_Click"
                                 ToolTip="Открыть отдельное окно оверлея поверх окон" />
+                        <Button x:Name="ActivityLogToggleButton"
+                                Style="{StaticResource SquareActionButton}"
+                                Click="ActivityLogToggleButton_Click"
+                                ToolTip="Показать журнал действий">
+                            <Canvas Width="18"
+                                    Height="18"
+                                    IsHitTestVisible="False">
+                                <Path Data="M 4,3 L 14,3 Q 15,3 15,4 L 15,15 L 12,13 L 9,15 L 6,13 L 3,15 L 3,4 Q 3,3 4,3 Z"
+                                      Fill="Transparent"
+                                      Stroke="#F4F8F5"
+                                      StrokeThickness="1.5"
+                                      StrokeLineJoin="Round" />
+                                <Path Data="M 6,7 L 12,7 M 6,10 L 12,10 M 6,13 L 10,13"
+                                      Stroke="#8DE6B1"
+                                      StrokeThickness="1.5"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round" />
+                            </Canvas>
+                        </Button>
                     </StackPanel>
 
-                    <Grid Grid.Row="3" Margin="0,16,0,0">
+                    <Grid x:Name="ActivityLogPanel"
+                          Grid.Row="3"
+                          Margin="0,16,0,0"
+                          Visibility="Collapsed">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />

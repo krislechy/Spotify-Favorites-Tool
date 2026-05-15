@@ -104,6 +104,13 @@ public partial class MainWindow : Window
         OpenOverlayWindow();
     }
 
+    private void ActivityLogToggleButton_Click(object sender, RoutedEventArgs e)
+    {
+        var shouldShow = ActivityLogPanel.Visibility != Visibility.Visible;
+        ActivityLogPanel.Visibility = shouldShow ? Visibility.Visible : Visibility.Collapsed;
+        ActivityLogToggleButton.ToolTip = shouldShow ? "Скрыть журнал действий" : "Показать журнал действий";
+    }
+
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key == Key.Tab)
@@ -731,10 +738,14 @@ public partial class MainWindow : Window
         var account = _auth.HasRefreshToken ? "Spotify подключен." : "Spotify не подключен.";
         var registration = _hotkeys.GetRegistrationMessage();
         var monitor = _trackMonitorTimer?.IsEnabled == true ? " Мониторинг трека: каждые 8 секунд." : string.Empty;
-        var hint = $"Клавиша «Избранное» добавляет или убирает текущий трек. Клавиша «Статус» показывает текущий трек и состояние Избранного. Overlay открывается отдельной кнопкой.{monitor}{registration}";
+        var hint =
+            $"• Клавиша «Избранное» добавляет или убирает текущий трек.{Environment.NewLine}" +
+            $"• Клавиша «Статус» показывает текущий трек и состояние Избранного.{Environment.NewLine}" +
+            $"• Кнопка Overlay открывает отдельное компактное окно поверх остальных окон.{Environment.NewLine}" +
+            $"• Кнопка журнала показывает последние 50 действий и подробности ошибок.{monitor}{registration}";
         StatusText.Text = string.IsNullOrWhiteSpace(prefix)
-            ? $"{account} {hint}"
-            : $"{prefix} {account} {hint}";
+            ? $"{account}{Environment.NewLine}{hint}"
+            : $"{prefix} {account}{Environment.NewLine}{hint}";
     }
 
     private void ExitApplication()
