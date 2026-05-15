@@ -57,9 +57,11 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Thumb}">
                     <Border x:Name="ThumbRoot"
-                            Margin="2"
+                            Width="3"
+                            Margin="0,2"
+                            HorizontalAlignment="Center"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="4"
+                            CornerRadius="2"
                             Opacity="0.74"
                             SnapsToDevicePixels="True" />
                     <ControlTemplate.Triggers>
@@ -78,7 +80,7 @@
     </Style>
 
     <Style TargetType="{x:Type ScrollBar}">
-        <Setter Property="Width" Value="8" />
+        <Setter Property="Width" Value="6" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="#5F7466" />
         <Setter Property="Focusable" Value="False" />
@@ -87,11 +89,11 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ScrollBar}">
                     <Grid SnapsToDevicePixels="True">
-                        <Border Width="3"
+                        <Border Width="2"
                                 HorizontalAlignment="Center"
                                 Margin="0,4"
                                 Background="#241E2A24"
-                                CornerRadius="2" />
+                                CornerRadius="1" />
                         <Track x:Name="PART_Track"
                                Orientation="{TemplateBinding Orientation}"
                                IsDirectionReversed="True">
@@ -108,7 +110,7 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Orientation" Value="Horizontal">
-                            <Setter Property="Height" Value="8" />
+                            <Setter Property="Height" Value="6" />
                             <Setter Property="Width" Value="Auto" />
                             <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False" />
                         </Trigger>
