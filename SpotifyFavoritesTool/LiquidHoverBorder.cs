@@ -36,14 +36,6 @@ public class LiquidHoverBorder : Border
             typeof(LiquidHoverBorder),
             new FrameworkPropertyMetadata(1.0, FrameworkPropertyMetadataOptions.AffectsRender, OnSurfaceOpacityChanged));
 
-    private static readonly DependencyProperty HoverProgressProperty =
-        DependencyProperty.Register(
-            nameof(HoverProgress),
-            typeof(double),
-            typeof(LiquidHoverBorder),
-            new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
-
-    private static readonly TimeSpan AmbientFrameInterval = TimeSpan.FromMilliseconds(84);
     private static readonly WpfColor SpotifyGreen = WpfColor.FromRgb(0x1E, 0xD7, 0x60);
     private static readonly WpfColor MintGreen = WpfColor.FromRgb(0x8D, 0xE6, 0xB1);
     private static readonly WpfColor DeepGreen = WpfColor.FromRgb(0x10, 0x8B, 0x46);
@@ -58,11 +50,8 @@ public class LiquidHoverBorder : Border
     ];
 
     private long _animationStartedAt;
-    private long _lastFrameAt;
-    private long _lastAmbientFrameAt;
     private WpfBrush? _baseBrush;
     private WpfBrush[]? _blobBrushes;
-    private readonly double[] _blobSpeedPressure = new double[BlobSpecs.Length];
     private bool _isRendering;
 
     public LiquidHoverBorder()
@@ -103,12 +92,6 @@ public class LiquidHoverBorder : Border
     {
         get => (double)GetValue(SurfaceOpacityProperty);
         set => SetValue(SurfaceOpacityProperty, value);
-    }
-
-    private double HoverProgress
-    {
-        get => (double)GetValue(HoverProgressProperty);
-        set => SetValue(HoverProgressProperty, value);
     }
 
     protected override void OnRender(DrawingContext drawingContext)
@@ -164,7 +147,7 @@ public class LiquidHoverBorder : Border
         for (var index = 0; index < BlobSpecs.Length; index++)
         {
             var spec = BlobSpecs[index];
-            var pressure = _blobSpeedPressure[index];
+            const double pressure = 0;
             var phase = seconds * spec.Speed + index * 1.618;
             var driftX = Math.Sin(phase) * spec.DriftX
                 + Math.Sin(phase * 0.47 + 1.4) * spec.DriftX * 0.38;
@@ -215,7 +198,7 @@ public class LiquidHoverBorder : Border
 
     private double GetLiquidOpacity()
     {
-        return Math.Clamp(SurfaceOpacity * 0.70, 0, 0.70);
+        return Math.Clamp(SurfaceOpacity * 0.95, 0, 0.95);
     }
 
     private WpfBrush[] GetBlobBrushes()
@@ -240,8 +223,6 @@ public class LiquidHoverBorder : Border
 
         CompositionTarget.Rendering += CompositionTarget_Rendering;
         _animationStartedAt = Stopwatch.GetTimestamp();
-        _lastFrameAt = _animationStartedAt;
-        _lastAmbientFrameAt = _animationStartedAt;
         _isRendering = true;
     }
 
@@ -258,35 +239,11 @@ public class LiquidHoverBorder : Border
 
     private void CompositionTarget_Rendering(object? sender, EventArgs e)
     {
-        var now = Stopwatch.GetTimestamp();
-        var elapsed = Stopwatch.GetElapsedTime(_lastFrameAt, now).TotalSeconds;
-        _lastFrameAt = now;
-        var frameSeconds = Math.Clamp(elapsed, 1.0 / 240, 1.0 / 20);
-
-        if (Stopwatch.GetElapsedTime(_lastAmbientFrameAt, now) < AmbientFrameInterval)
-        {
-            return;
-        }
-
-        UpdateSpeedPressure(frameSeconds);
-        _lastAmbientFrameAt = now;
         InvalidateVisual();
 
         if (!IsLiquidEnabled || !IsVisible)
         {
             StopRendering();
-        }
-    }
-
-    private void UpdateSpeedPressure(double frameSeconds)
-    {
-        for (var index = 0; index < BlobSpecs.Length; index++)
-        {
-            var spec = BlobSpecs[index];
-            const double targetPressure = 0;
-            var response = spec.SpeedRelease;
-            var blend = 1 - Math.Exp(-response * frameSeconds);
-            _blobSpeedPressure[index] += (targetPressure - _blobSpeedPressure[index]) * blend;
         }
     }
 
@@ -410,12 +367,12 @@ public class LiquidHoverBorder : Border
                 MappingMode = BrushMappingMode.RelativeToBoundingBox,
                 Center = new WpfPoint(0.5, 0.5),
                 GradientOrigin = new WpfPoint(0.42, 0.42),
-                RadiusX = 0.74,
-                RadiusY = 0.74
+                RadiusX = 0.58,
+                RadiusY = 0.58
             };
-            brush.GradientStops.Add(new GradientStop(CreateColor(baseColor, coreStrength, coreAlpha), 0));
-            brush.GradientStops.Add(new GradientStop(CreateColor(baseColor, bodyStrength, bodyAlpha), 0.30));
-            brush.GradientStops.Add(new GradientStop(CreateColor(baseColor, tailStrength, tailAlpha), 0.66));
+            brush.GradientStops.Add(new GradientStop(CreateColor(baseColor, Math.Min(1, coreStrength + 0.16), AddAlpha(coreAlpha, 0x26)), 0));
+            brush.GradientStops.Add(new GradientStop(CreateColor(baseColor, Math.Min(1, bodyStrength + 0.14), AddAlpha(bodyAlpha, 0x22)), 0.20));
+            brush.GradientStops.Add(new GradientStop(CreateColor(baseColor, Math.Min(1, tailStrength + 0.12), AddAlpha(tailAlpha, 0x18)), 0.48));
             brush.GradientStops.Add(new GradientStop(WpfColor.FromArgb(0, baseColor.R, baseColor.G, baseColor.B), 1));
             brush.Freeze();
             return brush;
@@ -435,5 +392,9 @@ public class LiquidHoverBorder : Border
             return (byte)Math.Round(current + (target - current) * amount);
         }
 
+        private static byte AddAlpha(byte current, byte amount)
+        {
+            return (byte)Math.Min(byte.MaxValue, current + amount);
+        }
     }
 }
