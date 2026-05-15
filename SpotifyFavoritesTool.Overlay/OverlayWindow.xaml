@@ -415,16 +415,26 @@
 
                                         <Grid Grid.Column="1"
                                               VerticalAlignment="Center">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="16" />
+                                                <RowDefinition Height="14" />
+                                            </Grid.RowDefinitions>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
 
                                             <TextBlock x:Name="HistoryTrackLine"
-                                                       Text="{Binding DisplayLine}"
+                                                       Text="{Binding Name}"
                                                        Foreground="#F4F8F5"
-                                                       FontSize="12"
+                                                       FontSize="11.5"
                                                        FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock x:Name="HistoryArtistLine"
+                                                       Grid.Row="1"
+                                                       Text="{Binding Artists}"
+                                                       Foreground="#9FAAA3"
+                                                       FontSize="10"
                                                        TextTrimming="CharacterEllipsis" />
 
                                             <StackPanel x:Name="NowPlayingEqualizer"
@@ -529,22 +539,31 @@
                                                     ToolTip="Переключить Избранное" />
                                         </StackPanel>
 
-                                        <TextBlock x:Name="HistoryFavoriteGlyph"
-                                                   Grid.Column="2"
-                                                   Text="{Binding FavoriteGlyph}"
-                                                   Foreground="#8DE6B1"
-                                                   FontSize="14"
-                                                   FontWeight="SemiBold"
-                                                   VerticalAlignment="Center"
-                                                   Margin="8,0,0,0" />
-                                        <TextBlock x:Name="HistoryDuration"
-                                                   Grid.Column="2"
-                                                   Text="{Binding DurationText}"
-                                                   Foreground="#7F8D84"
-                                                   FontSize="11"
-                                                   FontWeight="SemiBold"
-                                                   VerticalAlignment="Center"
-                                                   Margin="8,0,26,0" />
+                                        <Grid x:Name="HistoryMeta"
+                                              Grid.Column="2"
+                                              Width="46"
+                                              Margin="8,0,0,0"
+                                              VerticalAlignment="Center">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="15" />
+                                                <RowDefinition Height="16" />
+                                            </Grid.RowDefinitions>
+                                            <TextBlock x:Name="HistoryDuration"
+                                                       Text="{Binding DurationText}"
+                                                       Foreground="#7F8D84"
+                                                       FontSize="10"
+                                                       FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center"
+                                                       TextAlignment="Center" />
+                                            <TextBlock x:Name="HistoryFavoriteGlyph"
+                                                       Grid.Row="1"
+                                                       Text="{Binding FavoriteGlyph}"
+                                                       Foreground="#8DE6B1"
+                                                       FontSize="13"
+                                                       FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center" />
+                                        </Grid>
                                     </Grid>
                                 </Border>
                                 <DataTemplate.Triggers>
@@ -552,8 +571,7 @@
                                         <Setter TargetName="HistoryItemRoot" Property="Background" Value="#40202A24" />
                                         <Setter TargetName="HistoryItemRoot" Property="BorderBrush" Value="#314638" />
                                         <Setter TargetName="HistoryActions" Property="Visibility" Value="Visible" />
-                                        <Setter TargetName="HistoryFavoriteGlyph" Property="Visibility" Value="Collapsed" />
-                                        <Setter TargetName="HistoryDuration" Property="Visibility" Value="Collapsed" />
+                                        <Setter TargetName="HistoryMeta" Property="Visibility" Value="Collapsed" />
                                     </Trigger>
                                     <DataTrigger Binding="{Binding IsPlaying}" Value="True">
                                         <Setter TargetName="NowPlayingEqualizer" Property="Visibility" Value="Visible" />
@@ -561,6 +579,7 @@
                                     <DataTrigger Binding="{Binding IsPlaying}" Value="False">
                                         <Setter TargetName="HistoryItemRoot" Property="Opacity" Value="0.58" />
                                         <Setter TargetName="HistoryTrackLine" Property="Foreground" Value="#A3AEA7" />
+                                        <Setter TargetName="HistoryArtistLine" Property="Foreground" Value="#7F8D84" />
                                         <Setter TargetName="HistoryCover" Property="Opacity" Value="0.56" />
                                         <Setter TargetName="HistoryFavoriteGlyph" Property="Foreground" Value="#7F8D84" />
                                     </DataTrigger>
