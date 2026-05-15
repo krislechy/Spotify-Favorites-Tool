@@ -112,7 +112,6 @@ public partial class ToastWindow : Window
 
         if (_iconMode == FavoriteIconMode.Removed)
         {
-            HeartFill.Fill = CreateBrush(22, 178, 78);
             HeartFill.Opacity = 1;
             HeartScale.ScaleX = 1;
             HeartScale.ScaleY = 1;
@@ -121,7 +120,6 @@ public partial class ToastWindow : Window
 
         if (isLiked)
         {
-            HeartFill.Fill = CreateBrush(22, 178, 78);
             HeartFill.Opacity = 1;
             HeartScale.ScaleX = 1;
             HeartScale.ScaleY = 1;
@@ -155,7 +153,6 @@ public partial class ToastWindow : Window
     {
         ResetFavoriteIcon();
 
-        HeartFill.Fill = CreateBrush(22, 178, 78);
         HeartFill.Opacity = 0;
         HeartScale.ScaleX = 0.26;
         HeartScale.ScaleY = 0.26;
