@@ -48,11 +48,11 @@ public partial class ToastWindow : Window
         InitializeComponent();
         ConfigureErrorLayout();
 
-        ActionText.Text = title;
-        TrackTitle.Text = message;
+        ActionText.Text = "Произошла ошибка";
+        TrackTitle.Text = "Смотри в главном окне";
         ArtistText.Text = string.Empty;
         SetErrorIcon();
-        _visibleDuration = TimeSpan.FromSeconds(9);
+        _visibleDuration = TimeSpan.FromSeconds(4.2);
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -86,21 +86,27 @@ public partial class ToastWindow : Window
 
     private void ConfigureErrorLayout()
     {
-        Width = Math.Min(820, SystemParameters.WorkArea.Width - 36);
-        Height = Math.Min(320, SystemParameters.WorkArea.Height - 36);
+        Width = 388;
+        Height = 96;
 
-        ArtworkColumn.Width = new GridLength(0);
-        IconColumn.Width = new GridLength(42);
-        ArtworkFrame.Visibility = Visibility.Collapsed;
-        AlbumPlaceholder.Visibility = Visibility.Collapsed;
+        ArtworkColumn.Width = new GridLength(66);
+        IconColumn.Width = new GridLength(0);
         AlbumArt.Visibility = Visibility.Collapsed;
         ArtistText.Visibility = Visibility.Collapsed;
+        IconStage.Visibility = Visibility.Collapsed;
 
-        TrackTitle.FontSize = 13;
+        ArtworkFrame.BorderBrush = new SolidColorBrush(MediaColor.FromRgb(255, 196, 87));
+        ArtworkFrame.Background = new SolidColorBrush(MediaColor.FromRgb(39, 34, 23));
+        AlbumPlaceholder.Text = "!";
+        AlbumPlaceholder.Foreground = new SolidColorBrush(MediaColor.FromRgb(255, 196, 87));
+        AlbumPlaceholder.FontSize = 32;
+        AlbumPlaceholder.FontWeight = FontWeights.Black;
+        AlbumPlaceholder.Visibility = Visibility.Visible;
+
+        TrackTitle.FontSize = 14.5;
         TrackTitle.FontWeight = FontWeights.SemiBold;
-        TrackTitle.TextWrapping = TextWrapping.Wrap;
-        TrackTitle.TextTrimming = TextTrimming.None;
-        Grid.SetRowSpan(TrackTitle, 3);
+        TrackTitle.TextWrapping = TextWrapping.NoWrap;
+        TrackTitle.TextTrimming = TextTrimming.CharacterEllipsis;
     }
 
     private void SetFavoriteIcon(bool isLiked)
@@ -137,7 +143,7 @@ public partial class ToastWindow : Window
     {
         ResetFavoriteIcon();
         FavoriteIconCanvas.Visibility = Visibility.Collapsed;
-        ErrorIconText.Visibility = Visibility.Visible;
+        ErrorIconText.Visibility = Visibility.Collapsed;
     }
 
     private void PlayFavoriteIconAnimation()
