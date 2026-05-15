@@ -10,6 +10,8 @@ namespace SpotifyFavoritesTool;
 public partial class MainWindow : Window
 {
     private static readonly TimeSpan TrackMonitorInterval = TimeSpan.FromSeconds(8);
+    private const string GenericErrorTitle = "Произошла ошибка";
+    private const string GenericErrorMessage = "Смотри в главном окне";
 
     private readonly SettingsStore _settings = new();
     private readonly SpotifyAuthService _auth;
@@ -176,10 +178,8 @@ public partial class MainWindow : Window
         {
             try
             {
-                StatusText.Text = "Проверяю текущий трек...";
                 Log("Нажата клавиша Избранного: получаю текущий трек.");
                 var result = await _favorites.ToggleCurrentTrackAsync();
-                StatusText.Text = $"{result.Message}: {result.Track.Name}";
                 UpdateOverlayTrack(result.Track);
                 _toasts.Show(result);
                 Log($"Статус Избранного перед изменением: {DescribeFavoriteStatusSource(result.PreviousStatusSource)}.");
@@ -188,15 +188,13 @@ public partial class MainWindow : Window
             catch (SpotifyRateLimitException ex)
             {
                 StopTrackMonitor(clearCache: false);
-                StatusText.Text = Shorten(ex.Message, 160);
                 _toasts.ShowError("Spotify ограничил запросы", ex.Message);
-                Log($"Spotify вернул 429: {ex.Endpoint}.");
+                Log($"Spotify вернул 429: {ex.Endpoint}.", ex.Message);
             }
             catch (Exception ex)
             {
-                StatusText.Text = Shorten(ex.Message, 140);
                 _toasts.ShowError("Избранное недоступно", ex.Message);
-                Log($"Ошибка Избранного: {Shorten(ex.Message, 90)}");
+                Log("Ошибка Избранного.", ex.Message);
             }
         }
     }
@@ -212,12 +210,10 @@ public partial class MainWindow : Window
         {
             try
             {
-                StatusText.Text = "Проверяю текущий трек...";
                 Log("Нажата клавиша статуса: получаю текущий трек.");
                 var result = await _favorites.GetCurrentTrackWithFavoriteStatusAsync();
                 if (result is null)
                 {
-                    StatusText.Text = "Spotify сейчас ничего не играет.";
                     _toasts.ShowError("Статус Избранного неизвестен", "Spotify сейчас ничего не играет.");
                     Log("Статус не показан: Spotify сейчас ничего не играет.");
                     return;
@@ -231,15 +227,13 @@ public partial class MainWindow : Window
             catch (SpotifyRateLimitException ex)
             {
                 StopTrackMonitor(clearCache: false);
-                StatusText.Text = Shorten(ex.Message, 160);
                 _toasts.ShowError("Spotify ограничил запросы", ex.Message);
-                Log($"Spotify вернул 429: {ex.Endpoint}.");
+                Log($"Spotify вернул 429: {ex.Endpoint}.", ex.Message);
             }
             catch (Exception ex)
             {
-                StatusText.Text = Shorten(ex.Message, 140);
                 _toasts.ShowError("Статус Избранного недоступен", ex.Message);
-                Log($"Ошибка статуса: {Shorten(ex.Message, 90)}");
+                Log("Ошибка статуса Избранного.", ex.Message);
             }
         }
     }
@@ -313,15 +307,13 @@ public partial class MainWindow : Window
             catch (SpotifyRateLimitException ex)
             {
                 StopTrackMonitor(clearCache: false);
-                StatusText.Text = Shorten(ex.Message, 160);
                 _toasts.ShowError("Spotify ограничил запросы", ex.Message);
-                Log($"Мониторинг остановлен: Spotify вернул 429 ({ex.Endpoint}).");
+                Log($"Мониторинг остановлен: Spotify вернул 429 ({ex.Endpoint}).", ex.Message);
             }
             catch (Exception ex)
             {
                 StopTrackMonitor(clearCache: false);
-                StatusText.Text = Shorten($"Мониторинг трека остановлен: {ex.Message}", 160);
-                Log($"Мониторинг остановлен: {Shorten(ex.Message, 90)}");
+                Log("Мониторинг трека остановлен.", ex.Message);
             }
         }
     }
@@ -330,7 +322,6 @@ public partial class MainWindow : Window
     {
         var isLiked = track.IsLiked == true;
         var message = isLiked ? "Уже в Избранном" : "Не в Избранном";
-        StatusText.Text = $"{message}: {track.Name}";
         _toasts.ShowFavoriteStatus(track);
     }
 
@@ -422,14 +413,14 @@ public partial class MainWindow : Window
             catch (SpotifyRateLimitException ex)
             {
                 StopTrackMonitor(clearCache: false);
-                _overlayWindow?.ShowMessage("Spotify ограничил запросы", ex.Message);
+                ShowOverlayError();
                 _toasts.ShowError("Spotify ограничил запросы", ex.Message);
-                Log($"Overlay не обновлен: Spotify вернул 429 ({ex.Endpoint}).");
+                Log($"Overlay не обновлен: Spotify вернул 429 ({ex.Endpoint}).", ex.Message);
             }
             catch (Exception ex)
             {
-                _overlayWindow?.ShowMessage("Overlay не обновлен", Shorten(ex.Message, 90));
-                Log($"Overlay не обновлен: {Shorten(ex.Message, 90)}");
+                ShowOverlayError();
+                Log("Overlay не обновлен.", ex.Message);
             }
         }
     }
@@ -494,32 +485,27 @@ public partial class MainWindow : Window
             catch (SpotifyRateLimitException ex)
             {
                 StopTrackMonitor(clearCache: false);
-                StatusText.Text = Shorten(ex.Message, 160);
-                _overlayWindow?.ShowMessage("Spotify ограничил запросы", ex.Message);
+                ShowOverlayError();
                 _toasts.ShowError("Spotify ограничил запросы", ex.Message);
-                Log($"Команда Overlay остановлена: Spotify вернул 429 ({ex.Endpoint}).");
+                Log($"Команда Overlay остановлена: Spotify вернул 429 ({ex.Endpoint}).", ex.Message);
             }
             catch (SpotifyApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound && command == PlaybackCommand.PlayPause)
             {
                 const string message = "Сейчас ничего не играет.";
-                StatusText.Text = message;
                 _overlayWindow?.ShowMessage("Spotify", message);
                 Log("Пауза/воспроизведение из Overlay недоступны: сейчас ничего не играет.");
             }
             catch (Exception ex) when (command == PlaybackCommand.PlayPause && IsSpotifyForbidden(ex))
             {
-                const string message = "Spotify не смог продолжить прошлый контекст. Запусти трек из «Воспроизводилось ранее».";
-                StatusText.Text = message;
-                _overlayWindow?.ShowMessage("Контекст недоступен", message);
-                _toasts.ShowError("Контекст недоступен", message);
-                Log($"Воспроизведение из текущего контекста недоступно: {ex.Message}");
+                ShowOverlayError();
+                _toasts.ShowError("Контекст недоступен", GenericErrorMessage);
+                Log("Spotify не смог продолжить прошлый контекст. Запусти трек из «Воспроизводилось ранее».", ex.Message);
             }
             catch (Exception ex)
             {
-                StatusText.Text = Shorten(ex.Message, 140);
-                _overlayWindow?.ShowMessage("Команда Overlay не выполнена", Shorten(ex.Message, 90));
+                ShowOverlayError();
                 _toasts.ShowError("Команда Overlay не выполнена", ex.Message);
-                Log($"Команда Overlay не выполнена: {Shorten(ex.Message, 90)}");
+                Log("Команда Overlay не выполнена.", ex.Message);
             }
         }
     }
@@ -529,7 +515,6 @@ public partial class MainWindow : Window
         switch (command)
         {
             case PlaybackCommand.Previous:
-                StatusText.Text = "Переключаю на предыдущий трек...";
                 await _spotify.SkipToPreviousTrackAsync();
                 Log("Overlay: предыдущий трек.");
                 break;
@@ -537,7 +522,6 @@ public partial class MainWindow : Window
                 await TogglePlaybackAsync();
                 break;
             case PlaybackCommand.Next:
-                StatusText.Text = "Переключаю на следующий трек...";
                 await _spotify.SkipToNextTrackAsync();
                 Log("Overlay: следующий трек.");
                 break;
@@ -549,14 +533,12 @@ public partial class MainWindow : Window
         var knownTrack = _favorites.LastObservedTrack;
         if (knownTrack?.IsPlaying == true)
         {
-            StatusText.Text = "Ставлю Spotify на паузу...";
             await _spotify.PausePlaybackAsync();
             UpdateKnownPlaybackState(knownTrack, isPlaying: false);
             Log("Overlay: пауза.");
             return;
         }
 
-        StatusText.Text = "Запускаю воспроизведение Spotify...";
         await _spotify.ResumePlaybackAsync();
         UpdateKnownPlaybackState(knownTrack, isPlaying: true);
         Log("Overlay: воспроизведение.");
@@ -581,7 +563,6 @@ public partial class MainWindow : Window
         {
             try
             {
-                StatusText.Text = $"Запускаю из кеша: {track.Name}...";
                 await _spotify.PlayTrackAsync(track);
                 Log($"Overlay: запущен трек из кеша: {track.Name}.");
 
@@ -591,24 +572,21 @@ public partial class MainWindow : Window
             catch (SpotifyApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
             {
                 const string message = "Сейчас ничего не играет.";
-                StatusText.Text = message;
                 _overlayWindow?.ShowMessage("Spotify", message);
                 Log("Запуск трека из кеша недоступен: сейчас ничего не играет.");
             }
             catch (SpotifyRateLimitException ex)
             {
                 StopTrackMonitor(clearCache: false);
-                StatusText.Text = Shorten(ex.Message, 160);
-                _overlayWindow?.ShowMessage("Spotify ограничил запросы", ex.Message);
+                ShowOverlayError();
                 _toasts.ShowError("Spotify ограничил запросы", ex.Message);
-                Log($"Запуск трека из кеша остановлен: Spotify вернул 429 ({ex.Endpoint}).");
+                Log($"Запуск трека из кеша остановлен: Spotify вернул 429 ({ex.Endpoint}).", ex.Message);
             }
             catch (Exception ex)
             {
-                StatusText.Text = Shorten(ex.Message, 140);
-                _overlayWindow?.ShowMessage("Трек не запущен", Shorten(ex.Message, 90));
+                ShowOverlayError();
                 _toasts.ShowError("Трек не запущен", ex.Message);
-                Log($"Трек из кеша не запущен: {Shorten(ex.Message, 90)}");
+                Log("Трек из кеша не запущен.", ex.Message);
             }
         }
     }
@@ -624,9 +602,7 @@ public partial class MainWindow : Window
         {
             try
             {
-                StatusText.Text = $"Меняю Избранное: {track.Name}...";
                 var result = await _favorites.ToggleCachedTrackAsync(track);
-                StatusText.Text = $"{result.Message}: {result.Track.Name}";
                 RefreshOverlayCache();
                 if (string.Equals(_favorites.LastObservedTrack?.Uri, result.Track.Uri, StringComparison.Ordinal))
                 {
@@ -639,17 +615,15 @@ public partial class MainWindow : Window
             catch (SpotifyRateLimitException ex)
             {
                 StopTrackMonitor(clearCache: false);
-                StatusText.Text = Shorten(ex.Message, 160);
-                _overlayWindow?.ShowMessage("Spotify ограничил запросы", ex.Message);
+                ShowOverlayError();
                 _toasts.ShowError("Spotify ограничил запросы", ex.Message);
-                Log($"Избранное для трека из истории остановлено: Spotify вернул 429 ({ex.Endpoint}).");
+                Log($"Избранное для трека из истории остановлено: Spotify вернул 429 ({ex.Endpoint}).", ex.Message);
             }
             catch (Exception ex)
             {
-                StatusText.Text = Shorten(ex.Message, 140);
-                _overlayWindow?.ShowMessage("Избранное не изменено", Shorten(ex.Message, 90));
+                ShowOverlayError();
                 _toasts.ShowError("Избранное не изменено", ex.Message);
-                Log($"Избранное для трека из истории не изменено: {Shorten(ex.Message, 90)}");
+                Log("Избранное для трека из истории не изменено.", ex.Message);
             }
         }
     }
@@ -755,14 +729,9 @@ public partial class MainWindow : Window
         HotkeyText.Text = $"Избранное: {favoriteHotkey} · Статус: {statusHotkey}";
 
         var account = _auth.HasRefreshToken ? "Spotify подключен." : "Spotify не подключен.";
-        if (_auth.KnowsGrantedScopes && !_auth.HasRequiredScopes)
-        {
-            account += " Не хватает прав на Избранное или управление плеером: открой настройки, нажми «Выйти», затем «Войти в Spotify».";
-        }
-
         var registration = _hotkeys.GetRegistrationMessage();
         var monitor = _trackMonitorTimer?.IsEnabled == true ? " Мониторинг трека: каждые 8 секунд." : string.Empty;
-        var hint = $"Клавиша статуса получает текущий трек через Spotify API; Избранное проверяется только если трека еще нет в кеше.{monitor}{registration}";
+        var hint = $"Клавиша «Избранное» добавляет или убирает текущий трек. Клавиша «Статус» показывает текущий трек и состояние Избранного. Overlay открывается отдельной кнопкой.{monitor}{registration}";
         StatusText.Text = string.IsNullOrWhiteSpace(prefix)
             ? $"{account} {hint}"
             : $"{prefix} {account} {hint}";
@@ -837,9 +806,14 @@ public partial class MainWindow : Window
         };
     }
 
-    private void Log(string message)
+    private void ShowOverlayError()
     {
-        _activityLog.Add(message);
+        _overlayWindow?.ShowMessage(GenericErrorTitle, GenericErrorMessage);
+    }
+
+    private void Log(string title, string? details = null)
+    {
+        _activityLog.Add(title, details);
     }
 }
 

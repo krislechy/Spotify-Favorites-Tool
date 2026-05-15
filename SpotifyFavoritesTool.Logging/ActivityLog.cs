@@ -8,9 +8,9 @@ public sealed class ActivityLog
 
     public ObservableCollection<ActivityLogEntry> Entries { get; } = new();
 
-    public void Add(string message)
+    public void Add(string title, string? details = null)
     {
-        Entries.Insert(0, new ActivityLogEntry(DateTimeOffset.Now, message));
+        Entries.Insert(0, new ActivityLogEntry(DateTimeOffset.Now, title, details));
 
         while (Entries.Count > MaxEntries)
         {
@@ -19,7 +19,8 @@ public sealed class ActivityLog
     }
 }
 
-public sealed record ActivityLogEntry(DateTimeOffset Time, string Message)
+public sealed record ActivityLogEntry(DateTimeOffset Time, string Title, string? Details)
 {
     public string TimeText => Time.ToString("HH:mm:ss");
+    public bool HasDetails => !string.IsNullOrWhiteSpace(Details);
 }

@@ -87,6 +87,109 @@
             <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
+
+        <Style x:Key="LogExpanderToggle" TargetType="ToggleButton">
+            <Setter Property="Width" Value="20" />
+            <Setter Property="Height" Value="20" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="Background" Value="#202A24" />
+            <Setter Property="BorderBrush" Value="#3D4B42" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <Path x:Name="Arrow"
+                                  Data="M 6,8 L 10,12 L 14,8"
+                                  Stroke="#8DE6B1"
+                                  StrokeThickness="1.8"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  RenderTransformOrigin="0.5,0.5">
+                                <Path.RenderTransform>
+                                    <RotateTransform Angle="0" />
+                                </Path.RenderTransform>
+                            </Path>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#2B3A32" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#4E6357" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#1ED760" />
+                                <Setter TargetName="Arrow" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <RotateTransform Angle="180" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.28" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="LogExpander" TargetType="Expander">
+            <Setter Property="Foreground" Value="#D7E4DC" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Expander">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <ToggleButton x:Name="HeaderToggle"
+                                              Style="{StaticResource LogExpanderToggle}"
+                                              IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
+                                              IsEnabled="{Binding HasDetails}" />
+                                <ContentPresenter Grid.Column="1"
+                                                  ContentSource="Header"
+                                                  VerticalAlignment="Center" />
+                            </Grid>
+                            <Border x:Name="ContentRoot"
+                                    Grid.Row="1"
+                                    Margin="26,5,0,3"
+                                    Padding="10,8"
+                                    CornerRadius="8"
+                                    Background="#221B241F"
+                                    BorderBrush="#26362D"
+                                    BorderThickness="1"
+                                    Visibility="Collapsed">
+                                <ContentPresenter />
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="ContentRoot" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <ui:LiquidHoverBorder Margin="8"
@@ -179,7 +282,7 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <TextBlock Text="Одна клавиша для добавления и удаления текущего трека из Избранного"
+                    <TextBlock Text="Горячие клавиши Spotify"
                                Foreground="#D7E4DC"
                                FontSize="13"
                                FontWeight="SemiBold"
@@ -272,10 +375,7 @@
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Expander Margin="10,5"
-                                                  Foreground="#D7E4DC"
-                                                  Background="Transparent"
-                                                  BorderThickness="0"
-                                                  IsTabStop="False">
+                                                  Style="{StaticResource LogExpander}">
                                             <Expander.Header>
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
@@ -287,16 +387,15 @@
                                                                FontFamily="Consolas"
                                                                FontSize="11" />
                                                     <TextBlock Grid.Column="1"
-                                                               Text="{Binding Message}"
+                                                               Text="{Binding Title}"
                                                                Foreground="#D7E4DC"
                                                                FontSize="12"
                                                                TextTrimming="CharacterEllipsis" />
                                                 </Grid>
                                             </Expander.Header>
-                                            <TextBlock Text="{Binding Message}"
+                                            <TextBlock Text="{Binding Details}"
                                                        Foreground="#B9C4BE"
                                                        FontSize="12"
-                                                       Margin="64,4,4,3"
                                                        TextWrapping="Wrap" />
                                         </Expander>
                                     </DataTemplate>
