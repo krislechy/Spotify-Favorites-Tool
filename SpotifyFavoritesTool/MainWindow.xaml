@@ -271,21 +271,34 @@
                                 </ListBox.ItemContainerStyle>
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Margin="10,7">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="64" />
-                                                <ColumnDefinition Width="*" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="{Binding TimeText}"
-                                                       Foreground="#8DE6B1"
-                                                       FontFamily="Consolas"
-                                                       FontSize="11" />
-                                            <TextBlock Grid.Column="1"
-                                                       Text="{Binding Message}"
-                                                       Foreground="#D7E4DC"
+                                        <Expander Margin="10,5"
+                                                  Foreground="#D7E4DC"
+                                                  Background="Transparent"
+                                                  BorderThickness="0"
+                                                  IsTabStop="False">
+                                            <Expander.Header>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="64" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding TimeText}"
+                                                               Foreground="#8DE6B1"
+                                                               FontFamily="Consolas"
+                                                               FontSize="11" />
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding Message}"
+                                                               Foreground="#D7E4DC"
+                                                               FontSize="12"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </Grid>
+                                            </Expander.Header>
+                                            <TextBlock Text="{Binding Message}"
+                                                       Foreground="#B9C4BE"
                                                        FontSize="12"
+                                                       Margin="64,4,4,3"
                                                        TextWrapping="Wrap" />
-                                        </Grid>
+                                        </Expander>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>

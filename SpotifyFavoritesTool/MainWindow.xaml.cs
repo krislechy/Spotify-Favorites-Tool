@@ -506,6 +506,14 @@ public partial class MainWindow : Window
                 _overlayWindow?.ShowMessage("Spotify", message);
                 Log("Пауза/воспроизведение из Overlay недоступны: сейчас ничего не играет.");
             }
+            catch (Exception ex) when (command == PlaybackCommand.PlayPause && IsSpotifyForbidden(ex))
+            {
+                const string message = "Spotify не смог продолжить прошлый контекст. Запусти трек из «Воспроизводилось ранее».";
+                StatusText.Text = message;
+                _overlayWindow?.ShowMessage("Контекст недоступен", message);
+                _toasts.ShowError("Контекст недоступен", message);
+                Log($"Воспроизведение из текущего контекста недоступно: {ex.Message}");
+            }
             catch (Exception ex)
             {
                 StatusText.Text = Shorten(ex.Message, 140);
@@ -806,6 +814,17 @@ public partial class MainWindow : Window
         }
 
         return value[..Math.Max(0, maxLength - 1)] + "...";
+    }
+
+    private static bool IsSpotifyForbidden(Exception exception)
+    {
+        if (exception is SpotifyApiException { StatusCode: HttpStatusCode.Forbidden })
+        {
+            return true;
+        }
+
+        return exception.Message.Contains("403", StringComparison.OrdinalIgnoreCase)
+            || exception.Message.Contains("Forbidden", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string DescribeFavoriteStatusSource(FavoriteStatusSource source)
