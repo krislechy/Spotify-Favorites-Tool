@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace SpotifyFavoritesTool;
 
-internal sealed class TokenResponse
+public sealed class TokenResponse
 {
     [JsonPropertyName("access_token")]
     public string AccessToken { get; set; } = string.Empty;
@@ -17,7 +17,7 @@ internal sealed class TokenResponse
     public int ExpiresIn { get; set; }
 }
 
-internal sealed class PlaybackResponse
+public sealed class PlaybackResponse
 {
     [JsonPropertyName("is_playing")]
     public bool IsPlaying { get; set; }
@@ -29,13 +29,13 @@ internal sealed class PlaybackResponse
     public SpotifyItem? Item { get; set; }
 }
 
-internal sealed class SpotifyPlaybackContext
+public sealed class SpotifyPlaybackContext
 {
     [JsonPropertyName("uri")]
     public string? Uri { get; set; }
 }
 
-internal sealed class SpotifyItem
+public sealed class SpotifyItem
 {
     [JsonPropertyName("id")]
     public string? Id { get; set; }
@@ -59,19 +59,19 @@ internal sealed class SpotifyItem
     public SpotifyAlbum? Album { get; set; }
 }
 
-internal sealed class SpotifyArtist
+public sealed class SpotifyArtist
 {
     [JsonPropertyName("name")]
     public string? Name { get; set; }
 }
 
-internal sealed class SpotifyAlbum
+public sealed class SpotifyAlbum
 {
     [JsonPropertyName("images")]
     public SpotifyImage[]? Images { get; set; }
 }
 
-internal sealed class SpotifyImage
+public sealed class SpotifyImage
 {
     [JsonPropertyName("url")]
     public string? Url { get; set; }

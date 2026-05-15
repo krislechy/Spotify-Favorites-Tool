@@ -10,4 +10,8 @@
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.8" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\SpotifyFavoritesTool.Models\SpotifyFavoritesTool.Models.csproj" />
+  </ItemGroup>
+
 </Project>
