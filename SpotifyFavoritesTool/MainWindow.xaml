@@ -163,8 +163,10 @@
                                 <ToggleButton x:Name="HeaderToggle"
                                               Style="{StaticResource LogExpanderToggle}"
                                               IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
-                                              IsEnabled="{Binding HasDetails}" />
-                                <ContentPresenter Grid.Column="1"
+                                              Visibility="Collapsed" />
+                                <ContentPresenter x:Name="HeaderContent"
+                                                  Grid.Column="0"
+                                                  Grid.ColumnSpan="2"
                                                   ContentSource="Header"
                                                   VerticalAlignment="Center" />
                             </Grid>
@@ -184,6 +186,11 @@
                             <Trigger Property="IsExpanded" Value="True">
                                 <Setter TargetName="ContentRoot" Property="Visibility" Value="Visible" />
                             </Trigger>
+                            <DataTrigger Binding="{Binding HasDetails}" Value="True">
+                                <Setter TargetName="HeaderToggle" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="HeaderContent" Property="Grid.Column" Value="1" />
+                                <Setter TargetName="HeaderContent" Property="Grid.ColumnSpan" Value="1" />
+                            </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
