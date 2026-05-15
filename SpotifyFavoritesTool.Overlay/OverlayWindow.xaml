@@ -103,14 +103,14 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="BorderBrush" Value="#1ED760" />
-                    <Setter Property="Background" Value="#243A2B" />
+                    <Setter Property="BorderBrush" Value="#668DE6B1" />
+                    <Setter Property="Background" Value="#203228" />
                     <Setter Property="Effect">
                         <Setter.Value>
-                            <DropShadowEffect BlurRadius="14"
+                            <DropShadowEffect BlurRadius="24"
                                               ShadowDepth="0"
-                                              Opacity="0.42"
-                                              Color="#1ED760" />
+                                              Opacity="0.46"
+                                              Color="#5AF0A0" />
                         </Setter.Value>
                     </Setter>
                 </Trigger>
@@ -172,6 +172,26 @@
                            Stretch="UniformToFill"
                            RenderOptions.BitmapScalingMode="HighQuality"
                            ImageFailed="AlbumArt_ImageFailed" />
+                    <Border x:Name="ArtworkHoverWash"
+                            Opacity="0"
+                            IsHitTestVisible="False">
+                        <Border.Background>
+                            <RadialGradientBrush Center="0.34,0.22"
+                                                 GradientOrigin="0.28,0.18"
+                                                 RadiusX="0.78"
+                                                 RadiusY="0.78">
+                                <GradientStop Color="#661ED760" Offset="0" />
+                                <GradientStop Color="#338DE6B1" Offset="0.42" />
+                                <GradientStop Color="#00000000" Offset="1" />
+                            </RadialGradientBrush>
+                        </Border.Background>
+                    </Border>
+                    <Border x:Name="ArtworkInnerGlow"
+                            BorderBrush="#708DE6B1"
+                            BorderThickness="1"
+                            CornerRadius="7"
+                            Opacity="0"
+                            IsHitTestVisible="False" />
                     <TextBlock x:Name="AlbumPlaceholder"
                                Text="SP"
                                Foreground="#6F7D74"
@@ -180,6 +200,36 @@
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center" />
                 </Grid>
+                <Border.Triggers>
+                    <EventTrigger RoutedEvent="MouseEnter">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="ArtworkHoverWash"
+                                                 Storyboard.TargetProperty="Opacity"
+                                                 To="1"
+                                                 Duration="0:0:0.16" />
+                                <DoubleAnimation Storyboard.TargetName="ArtworkInnerGlow"
+                                                 Storyboard.TargetProperty="Opacity"
+                                                 To="1"
+                                                 Duration="0:0:0.16" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                    <EventTrigger RoutedEvent="MouseLeave">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="ArtworkHoverWash"
+                                                 Storyboard.TargetProperty="Opacity"
+                                                 To="0"
+                                                 Duration="0:0:0.24" />
+                                <DoubleAnimation Storyboard.TargetName="ArtworkInnerGlow"
+                                                 Storyboard.TargetProperty="Opacity"
+                                                 To="0"
+                                                 Duration="0:0:0.24" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </Border.Triggers>
             </Border>
 
             <Grid Grid.Column="1"
