@@ -1,6 +1,6 @@
 namespace SpotifyFavoritesTool;
 
-internal static class HotkeyFormatter
+public static class HotkeyFormatter
 {
     private static readonly Dictionary<uint, string> VirtualKeyNames = new()
     {
