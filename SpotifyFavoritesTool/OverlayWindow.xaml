@@ -85,7 +85,8 @@
         </Style>
     </Window.Resources>
 
-    <local:LiquidHoverBorder x:Name="OverlayRoot"
+    <Grid ClipToBounds="False">
+        <local:LiquidHoverBorder x:Name="OverlayRoot"
                              Margin="7"
                              Padding="12"
                              CornerRadius="12"
@@ -399,17 +400,13 @@
                 </Grid>
             </local:LiquidHoverBorder>
 
-            <Canvas Grid.RowSpan="3"
-                    Grid.ColumnSpan="3"
-                    ClipToBounds="False"
-                    IsHitTestVisible="False"
-                    Panel.ZIndex="50">
-                <cats:PrettyCatsLayer Width="{Binding ActualWidth, ElementName=OverlayContent}"
-                                      Height="42"
-                                      Canvas.Left="0"
-                                      Canvas.Top="-14"
-                                      IsHitTestVisible="False" />
-            </Canvas>
         </Grid>
-    </local:LiquidHoverBorder>
+        </local:LiquidHoverBorder>
+
+        <cats:PrettyCatsLayer Height="44"
+                              Margin="18,-6,18,0"
+                              VerticalAlignment="Top"
+                              Panel.ZIndex="50"
+                              IsHitTestVisible="False" />
+    </Grid>
 </Window>

@@ -8,7 +8,7 @@ public sealed class PrettyCatsLayer : FrameworkElement
 {
     private const int ActorCount = 3;
     private const double Pixel = 2.4;
-    private const double GroundY = 1.0;
+    private const double GroundY = -2.0;
     private static readonly Random Random = new();
 
     private readonly DispatcherTimer _timer;
