@@ -46,8 +46,8 @@ public sealed class TrayIconController : IDisposable
             BackColor = TrayMenuColors.Background,
             ForeColor = TrayMenuColors.Foreground,
             Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
-            MinimumSize = new Size(168, 0),
-            Padding = new Forms.Padding(8, 6, 12, 6),
+            MinimumSize = new Size(156, 0),
+            Padding = new Forms.Padding(8, 6, 8, 6),
             Renderer = new TrayMenuRenderer()
         };
 
@@ -137,7 +137,7 @@ public sealed class TrayIconController : IDisposable
             }
 
             var menuWidth = e.ToolStrip?.ClientSize.Width ?? e.Item.Width;
-            var availableWidth = Math.Max(1, menuWidth - 28);
+            var availableWidth = Math.Max(1, menuWidth - 18);
             var bounds = new Rectangle(8, 3, availableWidth, e.Item.Height - 6);
             using var path = CreateRoundedRectangle(bounds, 7);
             using var fill = new SolidBrush(TrayMenuColors.HoverBackground);
