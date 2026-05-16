@@ -59,8 +59,9 @@
                 <ControlTemplate TargetType="{x:Type Thumb}">
                     <Border x:Name="ThumbRoot"
                             Margin="1,2,23,2"
+                            Width="5"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="4"
+                            CornerRadius="2.5"
                             Opacity="0.92"
                             SnapsToDevicePixels="True" />
                     <ControlTemplate.Triggers>
