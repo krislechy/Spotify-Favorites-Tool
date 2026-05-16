@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="clr-namespace:SpotifyFavoritesTool.UI;assembly=SpotifyFavoritesTool.UI"
         Title="Настройки Избранного"
+        Icon="/SpotifyFavoritesTool;component/Assets/AppIcon.ico"
         Width="620"
         Height="680"
         MinWidth="540"

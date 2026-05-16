@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="clr-namespace:SpotifyFavoritesTool.UI;assembly=SpotifyFavoritesTool.UI"
         Title="Spotify Favorites Tool"
+        Icon="/SpotifyFavoritesTool;component/Assets/AppIcon.ico"
         Width="720"
         Height="390"
         MinWidth="540"

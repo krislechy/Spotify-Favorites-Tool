@@ -10,6 +10,10 @@
     <ProjectReference Include="..\SpotifyFavoritesTool.Windows\SpotifyFavoritesTool.Windows.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Resource Include="Assets\AppIcon.ico" />
+  </ItemGroup>
+
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
