@@ -62,10 +62,10 @@ public sealed class TrayIconController : IDisposable
         menu.Items.Add(new Forms.ToolStripMenuItem(text, image: null, onClick)
         {
             AutoSize = false,
-            Height = 34,
-            Width = 156,
+            Height = 32,
+            Width = 148,
             Padding = new Forms.Padding(12, 0, 12, 0),
-            Margin = new Forms.Padding(0, 1, 0, 1)
+            Margin = new Forms.Padding(0, 2, 0, 2)
         });
     }
 
@@ -135,7 +135,7 @@ public sealed class TrayIconController : IDisposable
                 return;
             }
 
-            var bounds = new Rectangle(4, 2, e.Item.Width - 8, e.Item.Height - 4);
+            var bounds = new Rectangle(5, 3, e.Item.Width - 14, e.Item.Height - 6);
             using var path = CreateRoundedRectangle(bounds, 7);
             using var fill = new SolidBrush(TrayMenuColors.HoverBackground);
             using var border = new Pen(TrayMenuColors.HoverBorder);
@@ -149,7 +149,9 @@ public sealed class TrayIconController : IDisposable
         {
             e.TextColor = e.Item.Enabled ? TrayMenuColors.Foreground : TrayMenuColors.Muted;
             e.TextFont = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            e.TextRectangle = new Rectangle(16, e.TextRectangle.Y, e.Item.Width - 28, e.TextRectangle.Height);
+            var textHeight = TextRenderer.MeasureText(e.Text, e.TextFont).Height;
+            var textY = e.Item.ContentRectangle.Top + (e.Item.ContentRectangle.Height - textHeight) / 2;
+            e.TextRectangle = new Rectangle(18, textY, e.Item.Width - 34, textHeight);
             base.OnRenderItemText(e);
         }
 
