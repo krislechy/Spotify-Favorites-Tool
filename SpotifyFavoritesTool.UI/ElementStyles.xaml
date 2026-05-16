@@ -52,12 +52,13 @@
     <Style x:Key="ScrollBarThumbStyle" TargetType="{x:Type Thumb}">
         <Setter Property="MinHeight" Value="34" />
         <Setter Property="MinWidth" Value="34" />
+        <!--<Setter Property="CornerRadius" Value="15"/>-->
         <Setter Property="Background" Value="#7F9A8A" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Thumb}">
                     <Border x:Name="ThumbRoot"
-                            Margin="1,2,2,2"
+                            Margin="1,2,23,2"
                             Background="{TemplateBinding Background}"
                             CornerRadius="4"
                             Opacity="0.92"
@@ -90,6 +91,8 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ScrollBar}">
                     <Grid x:Name="ScrollBarRoot"
+                          Background="Transparent"
+                          Opacity="0"
                           SnapsToDevicePixels="True">
                         <Border x:Name="TrackBackground"
                                 Margin="3,4,4,4"
@@ -112,9 +115,11 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type ScrollViewer}}}" Value="True">
+                            <Setter TargetName="ScrollBarRoot" Property="Opacity" Value="1" />
                             <Setter TargetName="TrackBackground" Property="Opacity" Value="1" />
                         </DataTrigger>
                         <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ScrollBarRoot" Property="Opacity" Value="1" />
                             <Setter TargetName="TrackBackground" Property="Opacity" Value="1" />
                         </Trigger>
                         <Trigger Property="Orientation" Value="Horizontal">
