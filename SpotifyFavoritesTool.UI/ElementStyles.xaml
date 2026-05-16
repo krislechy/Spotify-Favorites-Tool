@@ -57,20 +57,20 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Thumb}">
                     <Border x:Name="ThumbRoot"
-                            Width="6"
-                            Margin="0,2"
-                            HorizontalAlignment="Center"
+                            Width="8"
+                            Margin="0,2,1,2"
+                            HorizontalAlignment="Right"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="3"
+                            CornerRadius="4"
                             Opacity="0.74"
                             SnapsToDevicePixels="True" />
                     <ControlTemplate.Triggers>
                         <DataTrigger Binding="{Binding Orientation, RelativeSource={RelativeSource AncestorType={x:Type ScrollBar}}}" Value="Horizontal">
                             <Setter TargetName="ThumbRoot" Property="Width" Value="Auto" />
-                            <Setter TargetName="ThumbRoot" Property="Height" Value="6" />
-                            <Setter TargetName="ThumbRoot" Property="Margin" Value="2,0" />
+                            <Setter TargetName="ThumbRoot" Property="Height" Value="8" />
+                            <Setter TargetName="ThumbRoot" Property="Margin" Value="2,0,2,1" />
                             <Setter TargetName="ThumbRoot" Property="HorizontalAlignment" Value="Stretch" />
-                            <Setter TargetName="ThumbRoot" Property="VerticalAlignment" Value="Center" />
+                            <Setter TargetName="ThumbRoot" Property="VerticalAlignment" Value="Bottom" />
                         </DataTrigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="ThumbRoot" Property="Background" Value="#789183" />
@@ -87,7 +87,7 @@
     </Style>
 
     <Style TargetType="{x:Type ScrollBar}">
-        <Setter Property="Width" Value="10" />
+        <Setter Property="Width" Value="11" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="#5F7466" />
         <Setter Property="Focusable" Value="False" />
