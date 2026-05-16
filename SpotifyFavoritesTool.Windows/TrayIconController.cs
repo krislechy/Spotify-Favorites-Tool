@@ -46,7 +46,8 @@ public sealed class TrayIconController : IDisposable
             BackColor = TrayMenuColors.Background,
             ForeColor = TrayMenuColors.Foreground,
             Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
-            Padding = new Forms.Padding(8, 6, 10, 6),
+            MinimumSize = new Size(168, 0),
+            Padding = new Forms.Padding(8, 6, 12, 6),
             Renderer = new TrayMenuRenderer()
         };
 
@@ -135,14 +136,14 @@ public sealed class TrayIconController : IDisposable
                 return;
             }
 
-            var bounds = new Rectangle(6, 3, e.Item.Width - 24, e.Item.Height - 6);
+            var menuWidth = e.ToolStrip?.ClientSize.Width ?? e.Item.Width;
+            var availableWidth = Math.Max(1, menuWidth - 28);
+            var bounds = new Rectangle(8, 3, availableWidth, e.Item.Height - 6);
             using var path = CreateRoundedRectangle(bounds, 7);
             using var fill = new SolidBrush(TrayMenuColors.HoverBackground);
-            using var border = new Pen(TrayMenuColors.HoverBorder);
 
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
             e.Graphics.FillPath(fill, path);
-            e.Graphics.DrawPath(border, path);
         }
 
         protected override void OnRenderItemText(Forms.ToolStripItemTextRenderEventArgs e)
