@@ -52,31 +52,22 @@
     <Style x:Key="ScrollBarThumbStyle" TargetType="{x:Type Thumb}">
         <Setter Property="MinHeight" Value="34" />
         <Setter Property="MinWidth" Value="34" />
-        <Setter Property="Background" Value="#789183" />
+        <Setter Property="Background" Value="#7F9A8A" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Thumb}">
-                    <Grid Background="Transparent"
-                          SnapsToDevicePixels="True">
-                        <Border x:Name="ThumbRoot"
-                                Width="8"
-                                Margin="0,2,1,2"
-                                HorizontalAlignment="Right"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="4"
-                                Opacity="0.88"
-                                SnapsToDevicePixels="True" />
-                    </Grid>
+                    <Border x:Name="ThumbRoot"
+                            Margin="1,2,2,2"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="4"
+                            Opacity="0.92"
+                            SnapsToDevicePixels="True" />
                     <ControlTemplate.Triggers>
                         <DataTrigger Binding="{Binding Orientation, RelativeSource={RelativeSource AncestorType={x:Type ScrollBar}}}" Value="Horizontal">
-                            <Setter TargetName="ThumbRoot" Property="Width" Value="Auto" />
-                            <Setter TargetName="ThumbRoot" Property="Height" Value="8" />
-                            <Setter TargetName="ThumbRoot" Property="Margin" Value="2,0,2,1" />
-                            <Setter TargetName="ThumbRoot" Property="HorizontalAlignment" Value="Stretch" />
-                            <Setter TargetName="ThumbRoot" Property="VerticalAlignment" Value="Bottom" />
+                            <Setter TargetName="ThumbRoot" Property="Margin" Value="2,1,2,2" />
                         </DataTrigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ThumbRoot" Property="Background" Value="#8DA899" />
+                            <Setter TargetName="ThumbRoot" Property="Background" Value="#8FAF9C" />
                             <Setter TargetName="ThumbRoot" Property="Opacity" Value="1" />
                         </Trigger>
                         <Trigger Property="IsDragging" Value="True">
@@ -90,7 +81,7 @@
     </Style>
 
     <Style TargetType="{x:Type ScrollBar}">
-        <Setter Property="Width" Value="11" />
+        <Setter Property="Width" Value="10" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="#789183" />
         <Setter Property="Focusable" Value="False" />
@@ -101,12 +92,10 @@
                     <Grid x:Name="ScrollBarRoot"
                           SnapsToDevicePixels="True">
                         <Border x:Name="TrackBackground"
-                                Width="2"
-                                HorizontalAlignment="Center"
-                                Margin="0,4"
+                                Margin="3,4,4,4"
                                 Background="#241E2A24"
                                 Opacity="0.40"
-                                CornerRadius="1" />
+                                CornerRadius="3" />
                         <Track x:Name="PART_Track"
                                Orientation="{TemplateBinding Orientation}"
                                IsDirectionReversed="True">
@@ -131,11 +120,7 @@
                         <Trigger Property="Orientation" Value="Horizontal">
                             <Setter Property="Height" Value="10" />
                             <Setter Property="Width" Value="Auto" />
-                            <Setter TargetName="TrackBackground" Property="Width" Value="Auto" />
-                            <Setter TargetName="TrackBackground" Property="Height" Value="2" />
-                            <Setter TargetName="TrackBackground" Property="Margin" Value="4,0" />
-                            <Setter TargetName="TrackBackground" Property="HorizontalAlignment" Value="Stretch" />
-                            <Setter TargetName="TrackBackground" Property="VerticalAlignment" Value="Center" />
+                            <Setter TargetName="TrackBackground" Property="Margin" Value="4,3,4,4" />
                             <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False" />
                         </Trigger>
                     </ControlTemplate.Triggers>
