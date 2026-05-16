@@ -46,7 +46,7 @@ public sealed class TrayIconController : IDisposable
             BackColor = TrayMenuColors.Background,
             ForeColor = TrayMenuColors.Foreground,
             Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
-            Padding = new Forms.Padding(6),
+            Padding = new Forms.Padding(8, 6, 10, 6),
             Renderer = new TrayMenuRenderer()
         };
 
@@ -63,7 +63,7 @@ public sealed class TrayIconController : IDisposable
         {
             AutoSize = false,
             Height = 32,
-            Width = 148,
+            Width = 156,
             Padding = new Forms.Padding(12, 0, 12, 0),
             Margin = new Forms.Padding(0, 2, 0, 2)
         });
@@ -135,7 +135,7 @@ public sealed class TrayIconController : IDisposable
                 return;
             }
 
-            var bounds = new Rectangle(5, 3, e.Item.Width - 14, e.Item.Height - 6);
+            var bounds = new Rectangle(6, 3, e.Item.Width - 24, e.Item.Height - 6);
             using var path = CreateRoundedRectangle(bounds, 7);
             using var fill = new SolidBrush(TrayMenuColors.HoverBackground);
             using var border = new Pen(TrayMenuColors.HoverBorder);
