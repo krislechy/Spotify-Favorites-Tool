@@ -95,10 +95,12 @@
                           Opacity="0"
                           SnapsToDevicePixels="True">
                         <Border x:Name="TrackBackground"
-                                Margin="3,4,4,4"
+                                Width="1"
+                                HorizontalAlignment="Right"
+                                Margin="0,4,5,4"
                                 Background="#241E2A24"
                                 Opacity="0.40"
-                                CornerRadius="3" />
+                                CornerRadius="0.5" />
                         <Track x:Name="PART_Track"
                                Orientation="{TemplateBinding Orientation}"
                                IsDirectionReversed="True">
@@ -115,17 +117,59 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type ScrollViewer}}}" Value="True">
-                            <Setter TargetName="ScrollBarRoot" Property="Opacity" Value="1" />
                             <Setter TargetName="TrackBackground" Property="Opacity" Value="1" />
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="ScrollBarRoot"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="1"
+                                                         Duration="0:0:0.14" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                            <DataTrigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="ScrollBarRoot"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="0"
+                                                         Duration="0:0:0.32" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.ExitActions>
                         </DataTrigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ScrollBarRoot" Property="Opacity" Value="1" />
                             <Setter TargetName="TrackBackground" Property="Opacity" Value="1" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="ScrollBarRoot"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="1"
+                                                         Duration="0:0:0.10" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="ScrollBarRoot"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="0"
+                                                         Duration="0:0:0.32" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
                         </Trigger>
                         <Trigger Property="Orientation" Value="Horizontal">
                             <Setter Property="Height" Value="10" />
                             <Setter Property="Width" Value="Auto" />
-                            <Setter TargetName="TrackBackground" Property="Margin" Value="4,3,4,4" />
+                            <Setter TargetName="TrackBackground" Property="Width" Value="Auto" />
+                            <Setter TargetName="TrackBackground" Property="Height" Value="1" />
+                            <Setter TargetName="TrackBackground" Property="Margin" Value="4,0,4,5" />
+                            <Setter TargetName="TrackBackground" Property="HorizontalAlignment" Value="Stretch" />
+                            <Setter TargetName="TrackBackground" Property="VerticalAlignment" Value="Bottom" />
                             <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False" />
                         </Trigger>
                     </ControlTemplate.Triggers>
