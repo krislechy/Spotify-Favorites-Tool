@@ -57,14 +57,21 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Thumb}">
                     <Border x:Name="ThumbRoot"
-                            Width="3"
+                            Width="6"
                             Margin="0,2"
                             HorizontalAlignment="Center"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="2"
+                            CornerRadius="3"
                             Opacity="0.74"
                             SnapsToDevicePixels="True" />
                     <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding Orientation, RelativeSource={RelativeSource AncestorType={x:Type ScrollBar}}}" Value="Horizontal">
+                            <Setter TargetName="ThumbRoot" Property="Width" Value="Auto" />
+                            <Setter TargetName="ThumbRoot" Property="Height" Value="6" />
+                            <Setter TargetName="ThumbRoot" Property="Margin" Value="2,0" />
+                            <Setter TargetName="ThumbRoot" Property="HorizontalAlignment" Value="Stretch" />
+                            <Setter TargetName="ThumbRoot" Property="VerticalAlignment" Value="Center" />
+                        </DataTrigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="ThumbRoot" Property="Background" Value="#789183" />
                             <Setter TargetName="ThumbRoot" Property="Opacity" Value="0.92" />
@@ -80,7 +87,7 @@
     </Style>
 
     <Style TargetType="{x:Type ScrollBar}">
-        <Setter Property="Width" Value="6" />
+        <Setter Property="Width" Value="10" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="#5F7466" />
         <Setter Property="Focusable" Value="False" />
@@ -88,8 +95,11 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ScrollBar}">
-                    <Grid SnapsToDevicePixels="True">
-                        <Border Width="2"
+                    <Grid x:Name="ScrollBarRoot"
+                          Opacity="0"
+                          SnapsToDevicePixels="True">
+                        <Border x:Name="TrackBackground"
+                                Width="2"
                                 HorizontalAlignment="Center"
                                 Margin="0,4"
                                 Background="#241E2A24"
@@ -109,9 +119,20 @@
                         </Track>
                     </Grid>
                     <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type ScrollViewer}}}" Value="True">
+                            <Setter TargetName="ScrollBarRoot" Property="Opacity" Value="1" />
+                        </DataTrigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ScrollBarRoot" Property="Opacity" Value="1" />
+                        </Trigger>
                         <Trigger Property="Orientation" Value="Horizontal">
-                            <Setter Property="Height" Value="6" />
+                            <Setter Property="Height" Value="10" />
                             <Setter Property="Width" Value="Auto" />
+                            <Setter TargetName="TrackBackground" Property="Width" Value="Auto" />
+                            <Setter TargetName="TrackBackground" Property="Height" Value="2" />
+                            <Setter TargetName="TrackBackground" Property="Margin" Value="4,0" />
+                            <Setter TargetName="TrackBackground" Property="HorizontalAlignment" Value="Stretch" />
+                            <Setter TargetName="TrackBackground" Property="VerticalAlignment" Value="Center" />
                             <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False" />
                         </Trigger>
                     </ControlTemplate.Triggers>
