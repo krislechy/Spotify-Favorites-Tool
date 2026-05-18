@@ -100,6 +100,7 @@ public partial class OverlayWindow : Window, IDisposable
 
         TrackListEmptyText.Text = trackList.EmptyMessage ?? "Spotify не отдал плейлист для текущего трека.";
         TrackListEmptyText.Visibility = _cachedTracks.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        ScrollToNowPlayingTrack();
     }
 
     public void Dispose()
@@ -212,6 +213,35 @@ public partial class OverlayWindow : Window, IDisposable
         {
             StopKaraokeSync();
         }
+
+        if (_isHistoryExpanded)
+        {
+            ScrollToNowPlayingTrack();
+        }
+    }
+
+    private void ScrollToNowPlayingTrack()
+    {
+        if (!_isHistoryExpanded || _cachedTracks.Count == 0)
+        {
+            return;
+        }
+
+        var currentItem = _cachedTracks.FirstOrDefault(item => item.Section == OverlayTrackSection.NowPlaying)
+            ?? _cachedTracks.FirstOrDefault(item => item.Track.IsPlaying == true);
+        if (currentItem is null)
+        {
+            return;
+        }
+
+        Dispatcher.BeginInvoke(() =>
+        {
+            CachedTracksList.ScrollIntoView(currentItem);
+            if (CachedTracksList.ItemContainerGenerator.ContainerFromItem(currentItem) is ListBoxItem container)
+            {
+                container.Focus();
+            }
+        }, DispatcherPriority.ContextIdle);
     }
 
     private void CachedTrackPlayButton_Click(object sender, RoutedEventArgs e)

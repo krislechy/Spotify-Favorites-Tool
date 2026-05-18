@@ -427,25 +427,9 @@
                                     <Grid x:Name="SectionHeader"
                                           Margin="0,2,0,7"
                                           Visibility="Collapsed">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
                                         <Border Height="1"
                                                 VerticalAlignment="Center"
-                                                Background="#223E4F43" />
-                                        <TextBlock x:Name="SectionHeaderText"
-                                                   Grid.Column="1"
-                                                   Margin="10,0"
-                                                   Foreground="#8DE6B1"
-                                                   FontSize="10"
-                                                   FontWeight="SemiBold"
-                                                   Text="Раздел" />
-                                        <Border Grid.Column="2"
-                                                Height="1"
-                                                VerticalAlignment="Center"
-                                                Background="#223E4F43" />
+                                                Background="#263E4F43" />
                                     </Grid>
 
                                     <Border x:Name="HistoryItemRoot"
@@ -631,15 +615,6 @@
                                 <DataTemplate.Triggers>
                                     <DataTrigger Binding="{Binding ShowSectionHeader}" Value="True">
                                         <Setter TargetName="SectionHeader" Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Section}" Value="{x:Static local:OverlayTrackSection.Queue}">
-                                        <Setter TargetName="SectionHeaderText" Property="Text" Value="Далее" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Section}" Value="{x:Static local:OverlayTrackSection.NowPlaying}">
-                                        <Setter TargetName="SectionHeaderText" Property="Text" Value="Сейчас играет" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Section}" Value="{x:Static local:OverlayTrackSection.RecentlyPlayed}">
-                                        <Setter TargetName="SectionHeaderText" Property="Text" Value="Сыграно недавно" />
                                     </DataTrigger>
                                     <Trigger SourceName="HistoryItemRoot" Property="IsMouseOver" Value="True">
                                         <Setter TargetName="HistoryItemRoot" Property="Background" Value="#40202A24" />

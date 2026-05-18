@@ -621,6 +621,8 @@ public partial class MainWindow : Window
 
                 await Task.Delay(650);
                 await RefreshOverlayAsync();
+                await Task.Delay(1000);
+                await RefreshOverlayTrackListAsync();
             }
             catch (SpotifyApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
             {

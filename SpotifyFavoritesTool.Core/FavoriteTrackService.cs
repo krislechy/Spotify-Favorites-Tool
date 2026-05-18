@@ -152,14 +152,14 @@ public sealed class FavoriteTrackService
         var result = new List<OverlayTrackListItem>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
 
-        AddSection(result, seen, queueTracks.Reverse(), OverlayTrackSection.Queue);
+        AddSection(result, seen, recentlyPlayedTracks, OverlayTrackSection.RecentlyPlayed);
 
         if (currentTrack is not null)
         {
             AddSection(result, seen, [currentTrack], OverlayTrackSection.NowPlaying);
         }
 
-        AddSection(result, seen, recentlyPlayedTracks, OverlayTrackSection.RecentlyPlayed);
+        AddSection(result, seen, queueTracks, OverlayTrackSection.Queue);
 
         return result;
     }
