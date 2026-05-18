@@ -75,25 +75,39 @@ public sealed class SpotifyClient
         var playlistId = TryGetPlaylistId(contextUri)
             ?? throw new ArgumentException("Spotify context is not a playlist.", nameof(contextUri));
 
-        var tracks = new List<PlaybackTrack>();
-        var nextUrl = $"{ApiRoot}/playlists/{Uri.EscapeDataString(playlistId)}/items?limit=50&additional_types=track";
-        while (!string.IsNullOrWhiteSpace(nextUrl))
+        try
         {
-            var response = await SendAsync(HttpMethod.Get, nextUrl, cancellationToken);
-            var page = JsonSerializer.Deserialize<PlaylistTracksResponse>(response.Body, JsonOptions);
-            if (page?.Items is not null)
+            var tracks = new List<PlaybackTrack>();
+            var nextUrl = $"{ApiRoot}/playlists/{Uri.EscapeDataString(playlistId)}/items?limit=50&additional_types=track";
+            while (!string.IsNullOrWhiteSpace(nextUrl))
             {
-                tracks.AddRange(page.Items
-                    .Select(item => item.Track)
-                    .Where(item => item?.Id is not null && item.Uri is not null && item.Name is not null)
-                    .Where(item => string.Equals(item!.Type, "track", StringComparison.OrdinalIgnoreCase))
-                    .Select(item => CreateTrack(item!, contextUri, isPlaying: false, progressMs: null)));
+                var response = await SendAsync(HttpMethod.Get, nextUrl, cancellationToken);
+                var page = JsonSerializer.Deserialize<PlaylistTracksResponse>(response.Body, JsonOptions);
+                if (page?.Items is not null)
+                {
+                    tracks.AddRange(page.Items
+                        .Select(item => item.Track)
+                        .Where(item => item?.Id is not null && item.Uri is not null && item.Name is not null)
+                        .Where(item => string.Equals(item!.Type, "track", StringComparison.OrdinalIgnoreCase))
+                        .Select(item => CreateTrack(item!, contextUri, isPlaying: false, progressMs: null)));
+                }
+
+                nextUrl = page?.Next;
             }
 
-            nextUrl = page?.Next;
+            return tracks;
         }
-
-        return tracks;
+        catch (Exception ex) when (ex is SpotifyApiException or InvalidOperationException)
+        {
+            throw new InvalidOperationException(
+                "Spotify не дал прочитать текущий плейлист через Web API." + Environment.NewLine +
+                $"Context: {contextUri}" + Environment.NewLine +
+                $"Playlist id: {playlistId}" + Environment.NewLine +
+                $"Granted scopes: {_auth.GrantedScopes}" + Environment.NewLine +
+                "Если права выданы, вероятно этот context является персонализированным/служебным плейлистом Spotify, который playback показывает как плейлист, но playlist endpoint не отдает." + Environment.NewLine +
+                ex.Message,
+                ex);
+        }
     }
 
     public async Task SkipToPreviousTrackAsync(CancellationToken cancellationToken = default)
@@ -263,8 +277,9 @@ public sealed class SpotifyClient
         {
             HttpStatusCode.Unauthorized => new InvalidOperationException(
                 "Spotify вернул 401. Открой настройки, нажми «Выйти», потом «Войти в Spotify» и выдай новые права."),
-            HttpStatusCode.Forbidden => new InvalidOperationException(
-                $"{BuildScopeError("этого действия", SpotifyAuthService.RequiredScopes)} Endpoint: {DescribeEndpoint(url)}. Ответ Spotify: {FormatBody(body)}"),
+            HttpStatusCode.Forbidden => new SpotifyApiException(
+                statusCode,
+                $"Endpoint: {DescribeEndpoint(url)}. Ответ Spotify: {FormatBody(body)}"),
             _ => new SpotifyApiException(statusCode, body)
         };
     }

@@ -34,6 +34,7 @@ public sealed class SpotifyAuthService
     public bool HasClientId => !string.IsNullOrWhiteSpace(_settings.Current.ClientId);
     public bool HasRefreshToken => !string.IsNullOrWhiteSpace(_settings.Current.RefreshToken);
     public bool HasAnyToken => !string.IsNullOrWhiteSpace(_settings.Current.AccessToken) || HasRefreshToken;
+    public string GrantedScopes => _settings.Current.GrantedScopes;
     public bool KnowsGrantedScopes => !string.IsNullOrWhiteSpace(_settings.Current.GrantedScopes);
     public bool HasPlaybackReadScopes => HasScopes(_settings.Current.GrantedScopes, PlaybackReadScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries));
     public bool HasFavoriteScopes => HasScopes(_settings.Current.GrantedScopes, FavoriteScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries));
