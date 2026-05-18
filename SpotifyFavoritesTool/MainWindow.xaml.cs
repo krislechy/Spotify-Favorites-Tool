@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     private readonly AsyncActionGate _userActionGate = new();
     private readonly AsyncActionGate _trackMonitorGate = new();
     private readonly AsyncActionGate _overlayRefreshGate = new();
+    private readonly AsyncActionGate _overlayListRefreshGate = new();
 
     private SettingsWindow? _settingsWindow;
     private OverlayWindow? _overlayWindow;
@@ -161,7 +162,7 @@ public partial class MainWindow : Window
             _overlayWindow?.ShowMessage(
                 _auth.HasRefreshToken ? "Spotify подключен" : "Spotify отключен",
                 _auth.HasRefreshToken ? "Жду текущий трек" : "Открой настройки и войди в Spotify");
-            _overlayWindow?.SetCachedTracks(_favorites.CachedTracks);
+            _ = RefreshOverlayTrackListAsync();
             StartTrackMonitorIfReady();
             UpdateStatus();
             Log(_auth.HasRefreshToken ? "Spotify подключен, кеш треков очищен." : "Spotify отключен, кеш треков очищен.");
@@ -351,6 +352,7 @@ public partial class MainWindow : Window
         UpdateOverlayButton();
         Log("Overlay открыт.");
         _ = RefreshOverlayAsync();
+        _ = RefreshOverlayTrackListAsync();
     }
 
     private void CloseOverlayWindow()
@@ -439,12 +441,39 @@ public partial class MainWindow : Window
     {
         var cachedTrack = _favorites.StoreObservedTrack(track);
         _overlayWindow?.ShowTrack(cachedTrack);
-        RefreshOverlayCache();
+        _ = RefreshOverlayTrackListAsync();
     }
 
     private void RefreshOverlayCache()
     {
-        _overlayWindow?.SetCachedTracks(_favorites.CachedTracks);
+        _ = RefreshOverlayTrackListAsync();
+    }
+
+    private async Task RefreshOverlayTrackListAsync()
+    {
+        if (_overlayWindow is null || !_overlayListRefreshGate.TryEnter(out var action))
+        {
+            return;
+        }
+
+        using (action)
+        {
+            try
+            {
+                var trackList = await _favorites.GetOverlayTrackListAsync();
+                _overlayWindow?.SetTrackList(trackList);
+            }
+            catch (SpotifyRateLimitException ex)
+            {
+                _overlayWindow?.SetCachedTracks(_favorites.CachedTracks);
+                Log($"Список Overlay не обновлен: Spotify вернул 429 ({ex.Endpoint}).", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _overlayWindow?.SetCachedTracks(_favorites.CachedTracks);
+                Log("Список Overlay не обновлен, показана локальная история.", ex.Message);
+            }
+        }
     }
 
     private void OverlayWindow_FavoriteRequested(object? sender, EventArgs e)

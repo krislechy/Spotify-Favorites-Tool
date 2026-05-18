@@ -86,8 +86,14 @@ public partial class OverlayWindow : Window, IDisposable
 
     public void SetCachedTracks(IEnumerable<PlaybackTrack> tracks)
     {
+        SetTrackList(new OverlayTrackList("Воспроизводилось ранее", tracks.ToArray(), IsPlaybackContext: false));
+    }
+
+    public void SetTrackList(OverlayTrackList trackList)
+    {
         _cachedTracks.Clear();
-        foreach (var track in tracks)
+        HistoryTitleText.Text = trackList.Title;
+        foreach (var track in trackList.Tracks)
         {
             _cachedTracks.Add(track);
         }

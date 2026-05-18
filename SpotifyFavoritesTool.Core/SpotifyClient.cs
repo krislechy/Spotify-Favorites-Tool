@@ -60,6 +60,32 @@ public sealed class SpotifyClient
         await SetTrackLikedAsync(track, isLiked, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<PlaybackTrack>> GetPlaylistTracksAsync(string contextUri, CancellationToken cancellationToken = default)
+    {
+        var playlistId = TryGetPlaylistId(contextUri)
+            ?? throw new ArgumentException("Spotify context is not a playlist.", nameof(contextUri));
+
+        var tracks = new List<PlaybackTrack>();
+        var nextUrl = $"{ApiRoot}/playlists/{Uri.EscapeDataString(playlistId)}/tracks?limit=100";
+        while (!string.IsNullOrWhiteSpace(nextUrl))
+        {
+            var response = await SendAsync(HttpMethod.Get, nextUrl, cancellationToken);
+            var page = JsonSerializer.Deserialize<PlaylistTracksResponse>(response.Body, JsonOptions);
+            if (page?.Items is not null)
+            {
+                tracks.AddRange(page.Items
+                    .Select(item => item.Track)
+                    .Where(item => item?.Id is not null && item.Uri is not null && item.Name is not null)
+                    .Where(item => string.Equals(item!.Type, "track", StringComparison.OrdinalIgnoreCase))
+                    .Select(item => CreateTrack(item!, contextUri, isPlaying: false, progressMs: null)));
+            }
+
+            nextUrl = page?.Next;
+        }
+
+        return tracks;
+    }
+
     public async Task SkipToPreviousTrackAsync(CancellationToken cancellationToken = default)
     {
         await SendPlaybackCommandAsync(HttpMethod.Post, "previous", cancellationToken);
@@ -134,6 +160,23 @@ public sealed class SpotifyClient
             ?.Url;
 
         return new PlaybackTrack(item.Id!, item.Uri!, item.Name!, artists, image, contextUri, IsPlaying: isPlaying, DurationMs: item.DurationMs, ProgressMs: progressMs);
+    }
+
+    public static bool IsPlaylistContext(string? contextUri)
+    {
+        return TryGetPlaylistId(contextUri) is not null;
+    }
+
+    private static string? TryGetPlaylistId(string? contextUri)
+    {
+        const string prefix = "spotify:playlist:";
+        if (string.IsNullOrWhiteSpace(contextUri) || !contextUri.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var id = contextUri[prefix.Length..];
+        return string.IsNullOrWhiteSpace(id) ? null : id;
     }
 
     private static object CreatePlaybackBody(PlaybackTrack track)
@@ -255,6 +298,11 @@ public sealed class SpotifyClient
         if (url.Contains("/me/player/play", StringComparison.OrdinalIgnoreCase))
         {
             return "воспроизведение Spotify";
+        }
+
+        if (url.Contains("/playlists/", StringComparison.OrdinalIgnoreCase))
+        {
+            return "получение треков плейлиста";
         }
 
         return "Spotify API";

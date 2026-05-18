@@ -4,6 +4,7 @@ public sealed class FavoriteTrackService
 {
     private readonly SpotifyClient _spotify;
     private readonly TrackFavoriteCache _cache = new();
+    private readonly Dictionary<string, IReadOnlyList<PlaybackTrack>> _contextTrackCache = new(StringComparer.Ordinal);
     private string? _lastObservedTrackUri;
 
     public FavoriteTrackService(SpotifyClient spotify)
@@ -14,6 +15,25 @@ public sealed class FavoriteTrackService
     public PlaybackTrack? LastObservedTrack { get; private set; }
     public IReadOnlyList<PlaybackTrack> CachedTracks => _cache.GetTracks();
 
+    public async Task<OverlayTrackList> GetOverlayTrackListAsync(CancellationToken cancellationToken = default)
+    {
+        var currentTrack = LastObservedTrack;
+        var contextUri = currentTrack?.ContextUri;
+        if (SpotifyClient.IsPlaylistContext(contextUri))
+        {
+            var contextTracks = await GetContextTracksAsync(contextUri!, cancellationToken);
+            return new OverlayTrackList(
+                "Текущий плейлист",
+                _cache.EnrichTracks(contextTracks, currentTrack),
+                IsPlaybackContext: true);
+        }
+
+        return new OverlayTrackList(
+            "Воспроизводилось ранее",
+            _cache.EnrichTracks(CachedTracks, currentTrack),
+            IsPlaybackContext: false);
+    }
+
     public void ResetObservation()
     {
         _lastObservedTrackUri = null;
@@ -23,6 +43,7 @@ public sealed class FavoriteTrackService
     public void ClearCache()
     {
         _cache.Clear();
+        _contextTrackCache.Clear();
         ResetObservation();
     }
 
@@ -118,5 +139,17 @@ public sealed class FavoriteTrackService
         }
 
         return cachedTrack;
+    }
+
+    private async Task<IReadOnlyList<PlaybackTrack>> GetContextTracksAsync(string contextUri, CancellationToken cancellationToken)
+    {
+        if (_contextTrackCache.TryGetValue(contextUri, out var cachedTracks))
+        {
+            return cachedTracks;
+        }
+
+        var tracks = await _spotify.GetPlaylistTracksAsync(contextUri, cancellationToken);
+        _contextTrackCache[contextUri] = tracks;
+        return tracks;
     }
 }

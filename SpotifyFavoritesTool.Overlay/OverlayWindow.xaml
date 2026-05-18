@@ -387,7 +387,8 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <TextBlock Text="Воспроизводилось ранее"
+                    <TextBlock x:Name="HistoryTitleText"
+                               Text="Воспроизводилось ранее"
                                Foreground="#F4F8F5"
                                FontWeight="SemiBold"
                                FontSize="12"

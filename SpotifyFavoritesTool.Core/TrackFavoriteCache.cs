@@ -48,6 +48,31 @@ public sealed class TrackFavoriteCache
             .ToArray();
     }
 
+    public IReadOnlyList<PlaybackTrack> EnrichTracks(IEnumerable<PlaybackTrack> tracks, PlaybackTrack? currentTrack)
+    {
+        return tracks
+            .Select(track => EnrichTrack(track, currentTrack))
+            .ToArray();
+    }
+
+    private PlaybackTrack EnrichTrack(PlaybackTrack track, PlaybackTrack? currentTrack)
+    {
+        var enrichedTrack = _tracks.TryGetValue(track.Uri, out var storedTrack)
+            ? Merge(storedTrack, track)
+            : track;
+
+        if (currentTrack is not null && string.Equals(track.Uri, currentTrack.Uri, StringComparison.Ordinal))
+        {
+            enrichedTrack = Merge(enrichedTrack, currentTrack).WithPlaybackState(currentTrack.IsPlaying);
+        }
+        else if (currentTrack is not null)
+        {
+            enrichedTrack = enrichedTrack.WithPlaybackState(false);
+        }
+
+        return enrichedTrack;
+    }
+
     private static PlaybackTrack Merge(PlaybackTrack storedTrack, PlaybackTrack latestTrack)
     {
         return latestTrack with

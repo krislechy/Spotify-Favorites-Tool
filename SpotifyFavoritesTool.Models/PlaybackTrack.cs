@@ -48,6 +48,11 @@ public sealed record FavoriteStatusResult(
     PlaybackTrack Track,
     FavoriteStatusSource Source);
 
+public sealed record OverlayTrackList(
+    string Title,
+    IReadOnlyList<PlaybackTrack> Tracks,
+    bool IsPlaybackContext);
+
 public enum FavoriteStatusSource
 {
     Cache,

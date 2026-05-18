@@ -85,3 +85,18 @@ public sealed class SpotifyImage
     [JsonPropertyName("height")]
     public int? Height { get; set; }
 }
+
+public sealed class PlaylistTracksResponse
+{
+    [JsonPropertyName("items")]
+    public PlaylistTrackItem[]? Items { get; set; }
+
+    [JsonPropertyName("next")]
+    public string? Next { get; set; }
+}
+
+public sealed class PlaylistTrackItem
+{
+    [JsonPropertyName("track")]
+    public SpotifyItem? Track { get; set; }
+}
