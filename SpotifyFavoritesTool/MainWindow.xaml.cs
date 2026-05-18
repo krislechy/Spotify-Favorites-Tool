@@ -27,6 +27,7 @@ public partial class MainWindow : Window
     private readonly AsyncActionGate _overlayRefreshGate = new();
     private readonly AsyncActionGate _overlayListRefreshGate = new();
     private bool _overlayListRefreshPending;
+    private CancellationTokenSource? _delayedOverlayListRefresh;
 
     private SettingsWindow? _settingsWindow;
     private OverlayWindow? _overlayWindow;
@@ -79,6 +80,8 @@ public partial class MainWindow : Window
         _source?.RemoveHook(WndProc);
         _trayIcon?.Dispose();
         _toasts.Dispose();
+        _delayedOverlayListRefresh?.Cancel();
+        _delayedOverlayListRefresh?.Dispose();
     }
 
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
@@ -439,14 +442,46 @@ public partial class MainWindow : Window
 
     private void UpdateOverlayTrack(PlaybackTrack track)
     {
+        var previousTrackUri = _favorites.LastObservedTrack?.Uri;
         var cachedTrack = _favorites.StoreObservedTrack(track);
         _overlayWindow?.ShowTrack(cachedTrack);
         _ = RefreshOverlayTrackListAsync();
+
+        if (!string.Equals(previousTrackUri, cachedTrack.Uri, StringComparison.Ordinal))
+        {
+            ScheduleDelayedOverlayListRefresh();
+        }
     }
 
     private void RefreshOverlayCache()
     {
         _ = RefreshOverlayTrackListAsync();
+    }
+
+    private void ScheduleDelayedOverlayListRefresh()
+    {
+        _delayedOverlayListRefresh?.Cancel();
+        _delayedOverlayListRefresh?.Dispose();
+        _delayedOverlayListRefresh = new CancellationTokenSource();
+        var cancellationToken = _delayedOverlayListRefresh.Token;
+
+        _ = RefreshOverlayTrackListAfterDelayAsync(TimeSpan.FromSeconds(2), cancellationToken);
+    }
+
+    private async Task RefreshOverlayTrackListAfterDelayAsync(TimeSpan delay, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(delay, cancellationToken);
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                await RefreshOverlayTrackListAsync();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Newer track update scheduled a fresher refresh.
+        }
     }
 
     private async Task RefreshOverlayTrackListAsync()
