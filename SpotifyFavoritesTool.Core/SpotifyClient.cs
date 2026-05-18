@@ -62,6 +62,11 @@ public sealed class SpotifyClient
 
     public async Task<IReadOnlyList<PlaybackTrack>> GetPlaylistTracksAsync(string contextUri, CancellationToken cancellationToken = default)
     {
+        if (_auth.KnowsGrantedScopes && !_auth.HasPlaylistReadScopes)
+        {
+            throw new InvalidOperationException(BuildScopeError("чтения плейлистов", SpotifyAuthService.PlaylistReadScopes));
+        }
+
         var playlistId = TryGetPlaylistId(contextUri)
             ?? throw new ArgumentException("Spotify context is not a playlist.", nameof(contextUri));
 
@@ -170,12 +175,31 @@ public sealed class SpotifyClient
     private static string? TryGetPlaylistId(string? contextUri)
     {
         const string prefix = "spotify:playlist:";
-        if (string.IsNullOrWhiteSpace(contextUri) || !contextUri.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(contextUri))
         {
             return null;
         }
 
-        var id = contextUri[prefix.Length..];
+        if (contextUri.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            var spotifyId = contextUri[prefix.Length..];
+            return string.IsNullOrWhiteSpace(spotifyId) ? null : spotifyId;
+        }
+
+        if (!Uri.TryCreate(contextUri, UriKind.Absolute, out var uri)
+            || !uri.Host.Contains("spotify.com", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var playlistIndex = Array.FindIndex(segments, segment => string.Equals(segment, "playlist", StringComparison.OrdinalIgnoreCase));
+        if (playlistIndex < 0 || playlistIndex + 1 >= segments.Length)
+        {
+            return null;
+        }
+
+        var id = segments[playlistIndex + 1];
         return string.IsNullOrWhiteSpace(id) ? null : id;
     }
 

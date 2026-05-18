@@ -15,7 +15,8 @@ public sealed class SpotifyAuthService
     public const string RedirectUri = "http://127.0.0.1:53154/callback/";
     public const string FavoriteScopes = "user-read-currently-playing user-library-read user-library-modify";
     public const string PlaybackControlScopes = "user-modify-playback-state";
-    public const string RequiredScopes = $"{FavoriteScopes} {PlaybackControlScopes}";
+    public const string PlaylistReadScopes = "playlist-read-private playlist-read-collaborative";
+    public const string RequiredScopes = $"{FavoriteScopes} {PlaybackControlScopes} {PlaylistReadScopes}";
 
     private const string AuthorizeEndpoint = "https://accounts.spotify.com/authorize";
     private const string TokenEndpoint = "https://accounts.spotify.com/api/token";
@@ -35,6 +36,7 @@ public sealed class SpotifyAuthService
     public bool KnowsGrantedScopes => !string.IsNullOrWhiteSpace(_settings.Current.GrantedScopes);
     public bool HasFavoriteScopes => HasScopes(_settings.Current.GrantedScopes, FavoriteScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries));
     public bool HasPlaybackControlScopes => HasScopes(_settings.Current.GrantedScopes, PlaybackControlScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+    public bool HasPlaylistReadScopes => HasScopes(_settings.Current.GrantedScopes, PlaylistReadScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries));
     public bool HasRequiredScopes => HasScopes(_settings.Current.GrantedScopes, RequiredScopeItems);
 
     public async Task LoginAsync(CancellationToken cancellationToken = default)
