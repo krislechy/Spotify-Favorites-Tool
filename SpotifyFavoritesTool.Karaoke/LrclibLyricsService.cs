@@ -156,7 +156,7 @@ public sealed partial class LrclibLyricsService
 
         if (track.DurationMs is > 0 && candidate.Duration is > 0)
         {
-            var expectedSeconds = (int)Math.Round(track.DurationMs.Value / 1000d);
+            var expectedSeconds = track.DurationMs.Value / 1000d;
             var diff = Math.Abs(expectedSeconds - candidate.Duration.Value);
             score += diff switch
             {
@@ -216,7 +216,7 @@ public sealed partial class LrclibLyricsService
         public string? ArtistName { get; set; }
 
         [JsonPropertyName("duration")]
-        public int? Duration { get; set; }
+        public double? Duration { get; set; }
 
         [JsonPropertyName("syncedLyrics")]
         public string? SyncedLyrics { get; set; }

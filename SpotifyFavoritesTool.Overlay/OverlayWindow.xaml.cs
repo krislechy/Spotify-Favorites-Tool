@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -300,13 +301,13 @@ public partial class OverlayWindow : Window, IDisposable
         catch (OperationCanceledException)
         {
         }
-        catch
+        catch (Exception ex)
         {
             _karaokeLines.Clear();
             PlainLyricsText.Visibility = Visibility.Collapsed;
             KaraokeLyricsList.Visibility = Visibility.Visible;
             _karaokeLines.Add(new KaraokeLineViewModel(new KaraokeLyricLine(TimeSpan.Zero, "Не удалось загрузить караоке.")));
-            KaraokeStatusText.Text = "ошибка";
+            KaraokeStatusText.Text = ex is JsonException ? "ошибка формата текста" : "ошибка";
         }
     }
 
