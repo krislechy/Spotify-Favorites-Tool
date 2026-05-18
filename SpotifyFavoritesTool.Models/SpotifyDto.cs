@@ -120,4 +120,7 @@ public sealed class RecentlyPlayedItem
 {
     [JsonPropertyName("track")]
     public SpotifyItem? Track { get; set; }
+
+    [JsonPropertyName("played_at")]
+    public DateTimeOffset? PlayedAt { get; set; }
 }

@@ -146,9 +146,9 @@ public sealed class SpotifyClient
         var response = await SendAsync(HttpMethod.Get, $"{ApiRoot}/me/player/recently-played?limit=50", cancellationToken);
         var recentlyPlayed = JsonSerializer.Deserialize<RecentlyPlayedResponse>(response.Body, JsonOptions);
         return recentlyPlayed?.Items?
-            .Select(item => item.Track)
-            .Where(item => item is not null && IsTrackItem(item))
-            .Select(item => CreateTrack(item!, contextUri: null, isPlaying: false, progressMs: null))
+            .Where(item => item.Track is not null && IsTrackItem(item.Track))
+            .OrderByDescending(item => item.PlayedAt ?? DateTimeOffset.MinValue)
+            .Select(item => CreateTrack(item.Track!, contextUri: null, isPlaying: false, progressMs: null))
             .ToArray()
             ?? Array.Empty<PlaybackTrack>();
     }
