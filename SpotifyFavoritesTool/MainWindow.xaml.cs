@@ -33,7 +33,6 @@ public partial class MainWindow : Window
     private bool _isExiting;
     private DispatcherTimer? _trackMonitorTimer;
     private TrayIconController? _trayIcon;
-    private KaraokeWindow? _karaokeWindow;
 
     public MainWindow()
     {
@@ -74,7 +73,6 @@ public partial class MainWindow : Window
         StopTrackMonitor(clearCache: false);
         SaveWindowPosition();
         CloseOverlayWindow();
-        CloseKaraokeWindow();
         _hotkeys.Unregister();
         _source?.RemoveHook(WndProc);
         _trayIcon?.Dispose();
@@ -106,11 +104,6 @@ public partial class MainWindow : Window
         }
 
         OpenOverlayWindow();
-    }
-
-    private void KaraokeButton_Click(object sender, RoutedEventArgs e)
-    {
-        ShowKaraokeWindow();
     }
 
     private void ActivityLogToggleButton_Click(object sender, RoutedEventArgs e)
@@ -363,30 +356,6 @@ public partial class MainWindow : Window
     private void CloseOverlayWindow()
     {
         _overlayWindow?.Close();
-    }
-
-    private void ShowKaraokeWindow()
-    {
-        if (_karaokeWindow is { IsVisible: true })
-        {
-            _karaokeWindow.Activate();
-            Log("Karaoke уже открыто.");
-            return;
-        }
-
-        _karaokeWindow = new KaraokeWindow(_spotify)
-        {
-            Owner = this,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner
-        };
-        _karaokeWindow.Closed += KaraokeWindow_Closed;
-        _karaokeWindow.Show();
-        Log("Karaoke открыто.");
-    }
-
-    private void CloseKaraokeWindow()
-    {
-        _karaokeWindow?.Close();
     }
 
     private void SubscribeOverlayEvents(OverlayWindow overlay)
@@ -685,24 +654,6 @@ public partial class MainWindow : Window
         if (!_isExiting)
         {
             Log("Overlay закрыт.");
-        }
-    }
-
-    private void KaraokeWindow_Closed(object? sender, EventArgs e)
-    {
-        if (sender is KaraokeWindow karaoke)
-        {
-            karaoke.Closed -= KaraokeWindow_Closed;
-        }
-
-        if (ReferenceEquals(_karaokeWindow, sender))
-        {
-            _karaokeWindow = null;
-        }
-
-        if (!_isExiting)
-        {
-            Log("Karaoke закрыто.");
         }
     }
 

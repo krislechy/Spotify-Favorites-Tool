@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SpotifyFavoritesTool.Karaoke\SpotifyFavoritesTool.Karaoke.csproj" />
     <ProjectReference Include="..\SpotifyFavoritesTool.Models\SpotifyFavoritesTool.Models.csproj" />
     <ProjectReference Include="..\SpotifyFavoritesTool.UI\SpotifyFavoritesTool.UI.csproj" />
     <ProjectReference Include="..\SpotifyFavoritesTool.Windows\SpotifyFavoritesTool.Windows.csproj" />

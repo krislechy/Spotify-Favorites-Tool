@@ -336,7 +336,7 @@
                         ToolTip="Следующий трек" />
                 <Button x:Name="HistoryToggleButton"
                         Style="{StaticResource TransportButton}"
-                        Margin="0"
+                        Margin="0,0,8,0"
                         Click="HistoryToggleButton_Click"
                         ToolTip="Показать воспроизводившиеся ранее треки">
                     <Canvas Width="16"
@@ -345,6 +345,23 @@
                         <Path Data="M 3,4 L 13,4 M 3,8 L 13,8 M 3,12 L 13,12"
                               Stroke="#F4F8F5"
                               StrokeThickness="1.8"
+                              StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round" />
+                    </Canvas>
+                </Button>
+                <Button x:Name="KaraokeToggleButton"
+                        Style="{StaticResource TransportButton}"
+                        Margin="0"
+                        Click="KaraokeToggleButton_Click"
+                        ToolTip="Показать караоке">
+                    <Canvas Width="16"
+                            Height="16"
+                            IsHitTestVisible="False">
+                        <Path Data="M 8,1.8 C 6.4,1.8 5.3,3 5.3,4.7 L 5.3,8.2 C 5.3,9.9 6.4,11.1 8,11.1 C 9.6,11.1 10.7,9.9 10.7,8.2 L 10.7,4.7 C 10.7,3 9.6,1.8 8,1.8 Z"
+                              Fill="#F4F8F5" />
+                        <Path Data="M 3.5,7.8 C 3.5,10.5 5.3,12.5 8,12.5 C 10.7,12.5 12.5,10.5 12.5,7.8 M 8,12.5 L 8,15 M 5.6,15 L 10.4,15"
+                              Stroke="#8DE6B1"
+                              StrokeThickness="1.5"
                               StrokeStartLineCap="Round"
                               StrokeEndLineCap="Round" />
                     </Canvas>
@@ -621,6 +638,118 @@
                             </LinearGradientBrush>
                         </Border.Background>
                     </Border>
+                </Grid>
+            </ui:LiquidHoverBorder>
+
+            <ui:LiquidHoverBorder x:Name="KaraokePanel"
+                                  Grid.Row="2"
+                                  Grid.ColumnSpan="3"
+                                  Margin="0,12,0,0"
+                                  Padding="10"
+                                  Height="276"
+                                  Visibility="Collapsed"
+                                  CornerRadius="10"
+                                  BaseColor="#141B17"
+                                  BorderBrush="#32483C"
+                                  BorderThickness="1"
+                                  IsLiquidEnabled="False"
+                                  SurfaceOpacity="0.20">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Караоке"
+                                   Foreground="#F4F8F5"
+                                   FontWeight="SemiBold"
+                                   FontSize="12"
+                                   VerticalAlignment="Center" />
+                        <TextBlock x:Name="KaraokeStatusText"
+                                   Grid.Column="1"
+                                   Foreground="#8DE6B1"
+                                   FontSize="10"
+                                   TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+
+                    <ListBox x:Name="KaraokeLyricsList"
+                             Grid.Row="1"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Foreground="#D7E4DC"
+                             IsTabStop="False"
+                             ScrollViewer.CanContentScroll="False"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0,0,0,6" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                <Setter Property="IsTabStop" Value="False" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    CornerRadius="8">
+                                                <ContentPresenter />
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border x:Name="KaraokeLineRoot"
+                                        Padding="10,7"
+                                        CornerRadius="8"
+                                        Background="Transparent">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="42" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding TimeText}"
+                                                   Foreground="#6F7D74"
+                                                   FontFamily="Consolas"
+                                                   FontSize="10"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock x:Name="KaraokeLineText"
+                                                   Grid.Column="1"
+                                                   Text="{Binding Text}"
+                                                   Foreground="#B9C4BE"
+                                                   FontSize="12.5"
+                                                   TextWrapping="Wrap" />
+                                    </Grid>
+                                </Border>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                        <Setter TargetName="KaraokeLineRoot" Property="Background" Value="#3020362B" />
+                                        <Setter TargetName="KaraokeLineText" Property="Foreground" Value="#F7FAF8" />
+                                        <Setter TargetName="KaraokeLineText" Property="FontSize" Value="15.5" />
+                                        <Setter TargetName="KaraokeLineText" Property="FontWeight" Value="Bold" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <TextBlock x:Name="PlainLyricsText"
+                               Grid.Row="1"
+                               Visibility="Collapsed"
+                               Foreground="#D7E4DC"
+                               FontSize="12.5"
+                               LineHeight="19"
+                               TextWrapping="Wrap" />
                 </Grid>
             </ui:LiquidHoverBorder>
         </Grid>
