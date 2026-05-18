@@ -593,7 +593,8 @@
                                                           Fill="#F4F8F5" />
                                                 </Canvas>
                                             </Button>
-                                            <Button Style="{StaticResource HistoryPlayButton}"
+                                            <Button x:Name="HistoryFavoriteButton"
+                                                    Style="{StaticResource HistoryPlayButton}"
                                                     Tag="{Binding Track}"
                                                     Content="{Binding Track.FavoriteGlyph}"
                                                     Click="CachedTrackFavoriteButton_Click"
@@ -656,6 +657,10 @@
                                         <Setter TargetName="HistoryArtistLine" Property="Foreground" Value="#7F8D84" />
                                         <Setter TargetName="HistoryCover" Property="Opacity" Value="0.56" />
                                         <Setter TargetName="HistoryFavoriteGlyph" Property="Foreground" Value="#7F8D84" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Track.IsLiked}" Value="{x:Null}">
+                                        <Setter TargetName="HistoryFavoriteGlyph" Property="Visibility" Value="Collapsed" />
+                                        <Setter TargetName="HistoryFavoriteButton" Property="Visibility" Value="Collapsed" />
                                     </DataTrigger>
                                 </DataTemplate.Triggers>
                             </DataTemplate>
