@@ -25,6 +25,7 @@ public partial class OverlayWindow : Window, IDisposable
     private readonly DispatcherTimer _karaokeSyncTimer;
     private readonly Stopwatch _karaokeClock = new();
     private string? _requestedAlbumImageUrl;
+    private string? _karaokeTrackUri;
     private PlaybackTrack? _currentTrack;
     private CancellationTokenSource? _karaokeLoadCancellation;
     private bool _isHistoryExpanded;
@@ -66,6 +67,10 @@ public partial class OverlayWindow : Window, IDisposable
         if (_isKaraokeExpanded && !string.Equals(previousTrackUri, track.Uri, StringComparison.Ordinal))
         {
             _ = LoadKaraokeAsync(track);
+        }
+        else if (_isKaraokeExpanded)
+        {
+            SyncKaraokePlayback(track);
         }
     }
 
@@ -283,13 +288,14 @@ public partial class OverlayWindow : Window, IDisposable
             KaraokeLyricsList.Visibility = Visibility.Visible;
             KaraokeStatusText.Text = "поиск текста";
 
+            var loadTimer = Stopwatch.StartNew();
             var lyrics = await _lyricsService.GetLyricsAsync(track, cancellationToken);
             if (cancellationToken.IsCancellationRequested || !string.Equals(_currentTrack?.Uri, track.Uri, StringComparison.Ordinal))
             {
                 return;
             }
 
-            ShowKaraokeLyrics(track, lyrics);
+            ShowKaraokeLyrics(track, lyrics, loadTimer.Elapsed);
         }
         catch (OperationCanceledException)
         {
@@ -304,9 +310,10 @@ public partial class OverlayWindow : Window, IDisposable
         }
     }
 
-    private void ShowKaraokeLyrics(PlaybackTrack track, KaraokeLyrics lyrics)
+    private void ShowKaraokeLyrics(PlaybackTrack track, KaraokeLyrics lyrics, TimeSpan loadElapsed)
     {
         _karaokeLines.Clear();
+        _karaokeTrackUri = null;
         PlainLyricsText.Visibility = Visibility.Collapsed;
         KaraokeLyricsList.Visibility = Visibility.Visible;
 
@@ -317,12 +324,8 @@ public partial class OverlayWindow : Window, IDisposable
                 _karaokeLines.Add(new KaraokeLineViewModel(line));
             }
 
-            _karaokeBasePosition = TimeSpan.FromMilliseconds(Math.Max(0, track.ProgressMs ?? 0));
-            _karaokeClock.Restart();
-            if (track.IsPlaying != true)
-            {
-                _karaokeClock.Stop();
-            }
+            _karaokeTrackUri = track.Uri;
+            SyncKaraokePlayback(track, track.IsPlaying == true ? loadElapsed : TimeSpan.Zero);
 
             KaraokeStatusText.Text = "синхронизировано";
             _karaokeSyncTimer.Start();
@@ -346,6 +349,45 @@ public partial class OverlayWindow : Window, IDisposable
     private void KaraokeSyncTimer_Tick(object? sender, EventArgs e)
     {
         UpdateCurrentKaraokeLine();
+    }
+
+    private void SyncKaraokePlayback(PlaybackTrack track, TimeSpan? progressOffset = null)
+    {
+        if (_karaokeLines.Count == 0 || !string.Equals(_karaokeTrackUri, track.Uri, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        if (track.ProgressMs.HasValue)
+        {
+            var offset = progressOffset ?? TimeSpan.Zero;
+            _karaokeBasePosition = TimeSpan.FromMilliseconds(Math.Max(0, track.ProgressMs.Value)) + offset;
+            if (track.IsPlaying == true)
+            {
+                _karaokeClock.Restart();
+            }
+            else
+            {
+                _karaokeClock.Reset();
+            }
+
+            UpdateCurrentKaraokeLine();
+            return;
+        }
+
+        if (track.IsPlaying == true)
+        {
+            if (!_karaokeClock.IsRunning)
+            {
+                _karaokeClock.Start();
+            }
+        }
+        else if (_karaokeClock.IsRunning)
+        {
+            _karaokeBasePosition += _karaokeClock.Elapsed;
+            _karaokeClock.Reset();
+            UpdateCurrentKaraokeLine();
+        }
     }
 
     private void UpdateCurrentKaraokeLine()
@@ -386,6 +428,7 @@ public partial class OverlayWindow : Window, IDisposable
     {
         _karaokeSyncTimer.Stop();
         _karaokeClock.Stop();
+        _karaokeTrackUri = null;
         _currentKaraokeLineIndex = -1;
     }
 
