@@ -67,7 +67,7 @@ public partial class OverlayWindow : Window, IDisposable
         _ = SetAlbumArtAsync(track.AlbumImageUrl);
         if (_isKaraokeExpanded && !string.Equals(previousTrackUri, track.Uri, StringComparison.Ordinal))
         {
-            _ = LoadKaraokeAsync(track);
+            _ = LoadKaraokeAsync(track with { ProgressMs = null });
         }
         else if (_isKaraokeExpanded)
         {
@@ -201,7 +201,7 @@ public partial class OverlayWindow : Window, IDisposable
         KaraokeToggleButton.ToolTip = _isKaraokeExpanded ? "Скрыть караоке" : "Показать караоке";
         if (_isKaraokeExpanded && _currentTrack is { } track)
         {
-            _ = LoadKaraokeAsync(track);
+            _ = LoadKaraokeAsync(track with { ProgressMs = null });
         }
     }
 
