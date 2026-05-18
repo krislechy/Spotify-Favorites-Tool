@@ -147,7 +147,9 @@ public sealed class SpotifyClient
         var recentlyPlayed = JsonSerializer.Deserialize<RecentlyPlayedResponse>(response.Body, JsonOptions);
         return recentlyPlayed?.Items?
             .Where(item => item.Track is not null && IsTrackItem(item.Track))
-            .OrderByDescending(item => item.PlayedAt ?? DateTimeOffset.MinValue)
+            .GroupBy(item => item.Track!.Uri, StringComparer.Ordinal)
+            .Select(group => group.MaxBy(item => item.PlayedAt ?? DateTimeOffset.MinValue)!)
+            .OrderBy(item => item.PlayedAt ?? DateTimeOffset.MinValue)
             .Select(item => CreateTrack(item.Track!, contextUri: null, isPlaying: false, progressMs: null))
             .ToArray()
             ?? Array.Empty<PlaybackTrack>();
