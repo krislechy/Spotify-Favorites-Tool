@@ -1,0 +1,144 @@
+Spotify Web API: GET /v1/me/player/recently-played
+Источник: https://developer.spotify.com/documentation/web-api/reference/get-recently-played
+Проверено: 2026-05-18
+
+Назначение
+Endpoint возвращает треки из истории недавно прослушанного текущего пользователя.
+Spotify отдельно указывает, что podcast episodes сейчас не поддерживаются.
+
+Авторизация
+Нужен OAuth scope:
+user-read-recently-played
+
+Request
+GET https://api.spotify.com/v1/me/player/recently-played
+
+Query parameters
+limit:
+  Максимальное число элементов.
+  Default: 20.
+  Minimum: 1.
+  Maximum: 50.
+
+after:
+  Unix timestamp в миллисекундах.
+  Возвращает элементы после этого cursor timestamp, не включая сам cursor.
+  Если указан after, before указывать нельзя.
+
+before:
+  Unix timestamp в миллисекундах.
+  Возвращает элементы до этого cursor timestamp, не включая сам cursor.
+  Если указан before, after указывать нельзя.
+
+Response 200
+Возвращается paged set of tracks:
+
+{
+  "href": "string",
+  "limit": 20,
+  "next": "string | null",
+  "cursors": {
+    "after": "string",
+    "before": "string"
+  },
+  "total": 0,
+  "items": [
+    {
+      "track": {
+        "album": {
+          "album_type": "album | single | compilation",
+          "total_tracks": 0,
+          "available_markets": ["string"],
+          "external_urls": {
+            "spotify": "string"
+          },
+          "href": "string",
+          "id": "string",
+          "images": [
+            {
+              "url": "string",
+              "height": 300,
+              "width": 300
+            }
+          ],
+          "name": "string",
+          "release_date": "string",
+          "release_date_precision": "year | month | day",
+          "restrictions": {
+            "reason": "market | product | explicit"
+          },
+          "type": "album",
+          "uri": "spotify:album:..."
+        },
+        "artists": [
+          {
+            "external_urls": {
+              "spotify": "string"
+            },
+            "href": "string",
+            "id": "string",
+            "name": "string",
+            "type": "artist",
+            "uri": "spotify:artist:..."
+          }
+        ],
+        "available_markets": ["string"],
+        "disc_number": 0,
+        "duration_ms": 0,
+        "explicit": false,
+        "external_ids": {
+          "isrc": "string",
+          "ean": "string",
+          "upc": "string"
+        },
+        "external_urls": {
+          "spotify": "string"
+        },
+        "href": "string",
+        "id": "string",
+        "is_playable": true,
+        "linked_from": {},
+        "restrictions": {
+          "reason": "string"
+        },
+        "name": "string",
+        "popularity": 0,
+        "preview_url": "string | null",
+        "track_number": 0,
+        "type": "track",
+        "uri": "spotify:track:...",
+        "is_local": false
+      },
+      "played_at": "string date-time",
+      "context": {
+        "type": "artist | playlist | album | show | string",
+        "href": "string",
+        "external_urls": {
+          "spotify": "string"
+        },
+        "uri": "spotify:playlist:..."
+      }
+    }
+  ]
+}
+
+Ключевые поля для нашего приложения
+items[].track:
+  Сам трек, который пользователь слушал.
+
+items[].played_at:
+  Дата и время, когда трек был проигран.
+  Именно это поле нужно использовать, если строить порядок истории по времени.
+
+items[].context:
+  Контекст, из которого был проигран трек: playlist, album, artist и т.п.
+
+cursors.after / cursors.before:
+  Курсоры для запроса следующей или предыдущей страницы истории.
+
+next:
+  URL следующей страницы или null.
+
+Важный вывод
+Этот endpoint не возвращает текущую очередь и не гарантирует модель "уже сыгранные треки текущей очереди".
+Это именно история недавно прослушанных треков пользователя. Для нашей панели Overlay, если нужен список "что уже прошло в этой сессии/очереди", локальный кеш приложения подходит лучше и делает меньше запросов к Spotify.
