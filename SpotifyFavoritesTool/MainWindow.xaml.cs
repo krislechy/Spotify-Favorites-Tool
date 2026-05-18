@@ -346,7 +346,7 @@ public partial class MainWindow : Window
     {
         _overlayWindow = new OverlayWindow();
         SubscribeOverlayEvents(_overlayWindow);
-        _overlayWindow.SetCachedTracks(_favorites.CachedTracks);
+        _overlayWindow.SetTrackList(new OverlayTrackList("Текущий плейлист", Array.Empty<PlaybackTrack>(), IsPlaybackContext: true));
         ShowInitialOverlayContent(_overlayWindow);
 
         _overlayWindow.Show();
@@ -471,19 +471,17 @@ public partial class MainWindow : Window
                 {
                     var trackList = await _favorites.GetOverlayTrackListAsync();
                     _overlayWindow?.SetTrackList(trackList);
-                    Log(trackList.IsPlaybackContext
-                        ? $"Список Overlay: показан текущий плейлист ({trackList.Tracks.Count} треков)."
-                        : $"Список Overlay: показана локальная история ({trackList.Tracks.Count} треков).");
+                    Log($"Список Overlay: показан текущий плейлист ({trackList.Tracks.Count} треков).");
                 }
                 catch (SpotifyRateLimitException ex)
                 {
-                    _overlayWindow?.SetCachedTracks(_favorites.CachedTracks);
+                    _overlayWindow?.SetTrackList(new OverlayTrackList("Текущий плейлист", Array.Empty<PlaybackTrack>(), IsPlaybackContext: true));
                     Log($"Список Overlay не обновлен: Spotify вернул 429 ({ex.Endpoint}).", ex.Message);
                 }
                 catch (Exception ex)
                 {
-                    _overlayWindow?.SetCachedTracks(_favorites.CachedTracks);
-                    Log("Список Overlay не обновлен, показана локальная история.", ex.Message);
+                    _overlayWindow?.SetTrackList(new OverlayTrackList("Текущий плейлист", Array.Empty<PlaybackTrack>(), IsPlaybackContext: true));
+                    Log("Список Overlay не обновлен: текущий плейлист недоступен.", ex.Message);
                 }
             }
             while (_overlayListRefreshPending && _overlayWindow is not null);

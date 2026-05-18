@@ -86,7 +86,7 @@ public partial class OverlayWindow : Window, IDisposable
 
     public void SetCachedTracks(IEnumerable<PlaybackTrack> tracks)
     {
-        SetTrackList(new OverlayTrackList("Воспроизводилось ранее", tracks.ToArray(), IsPlaybackContext: false));
+        SetTrackList(new OverlayTrackList("Текущий плейлист", Array.Empty<PlaybackTrack>(), IsPlaybackContext: true));
     }
 
     public void SetTrackList(OverlayTrackList trackList)
@@ -97,6 +97,8 @@ public partial class OverlayWindow : Window, IDisposable
         {
             _cachedTracks.Add(track);
         }
+
+        TrackListEmptyText.Visibility = _cachedTracks.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     public void Dispose()

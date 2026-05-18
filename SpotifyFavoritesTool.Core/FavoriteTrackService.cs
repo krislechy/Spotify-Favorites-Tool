@@ -29,9 +29,9 @@ public sealed class FavoriteTrackService
         }
 
         return new OverlayTrackList(
-            "Воспроизводилось ранее",
-            _cache.EnrichTracks(CachedTracks, currentTrack),
-            IsPlaybackContext: false);
+            "Текущий плейлист",
+            Array.Empty<PlaybackTrack>(),
+            IsPlaybackContext: true);
     }
 
     public void ResetObservation()
