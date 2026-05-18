@@ -471,8 +471,11 @@ public partial class MainWindow : Window
                 {
                     var trackList = await _favorites.GetOverlayTrackListAsync();
                     _overlayWindow?.SetTrackList(trackList);
+                    var recentCount = trackList.Tracks.Count(item => item.Section == OverlayTrackSection.RecentlyPlayed);
+                    var currentCount = trackList.Tracks.Count(item => item.Section == OverlayTrackSection.NowPlaying);
+                    var queueCount = trackList.Tracks.Count(item => item.Section == OverlayTrackSection.Queue);
                     Log(
-                        $"Список Overlay: показан текущий плейлист ({trackList.Tracks.Count} треков).",
+                        $"Список Overlay: {recentCount} недавно, {currentCount} сейчас, {queueCount} далее.",
                         trackList.EmptyMessage);
                 }
                 catch (SpotifyRateLimitException ex)

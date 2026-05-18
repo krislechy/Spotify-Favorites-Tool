@@ -152,11 +152,16 @@ public sealed class FavoriteTrackService
         var result = new List<OverlayTrackListItem>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
 
-        AddSection(result, seen, recentlyPlayedTracks, OverlayTrackSection.RecentlyPlayed);
+        AddSection(
+            result,
+            seen,
+            recentlyPlayedTracks.Where(track => !IsCurrentTrack(track, currentTrack)),
+            OverlayTrackSection.RecentlyPlayed);
 
         if (currentTrack is not null)
         {
-            AddSection(result, seen, [currentTrack], OverlayTrackSection.NowPlaying);
+            result.Add(new OverlayTrackListItem(currentTrack, OverlayTrackSection.NowPlaying, ShowSectionHeader: true));
+            seen.Add(currentTrack.Uri);
         }
 
         AddSection(result, seen, queueTracks, OverlayTrackSection.Queue);
@@ -181,5 +186,10 @@ public sealed class FavoriteTrackService
             result.Add(new OverlayTrackListItem(track, section, ShowSectionHeader: !hasHeader));
             hasHeader = true;
         }
+    }
+
+    private static bool IsCurrentTrack(PlaybackTrack track, PlaybackTrack? currentTrack)
+    {
+        return currentTrack is not null && string.Equals(track.Uri, currentTrack.Uri, StringComparison.Ordinal);
     }
 }
