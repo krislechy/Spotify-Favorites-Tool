@@ -50,9 +50,21 @@ public sealed record FavoriteStatusResult(
 
 public sealed record OverlayTrackList(
     string Title,
-    IReadOnlyList<PlaybackTrack> Tracks,
+    IReadOnlyList<OverlayTrackListItem> Tracks,
     bool IsPlaybackContext,
     string? EmptyMessage = null);
+
+public sealed record OverlayTrackListItem(
+    PlaybackTrack Track,
+    OverlayTrackSection Section,
+    bool ShowSectionHeader);
+
+public enum OverlayTrackSection
+{
+    Queue,
+    NowPlaying,
+    RecentlyPlayed
+}
 
 public enum FavoriteStatusSource
 {

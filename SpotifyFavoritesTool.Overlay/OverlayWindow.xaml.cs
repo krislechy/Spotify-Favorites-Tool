@@ -18,7 +18,7 @@ public partial class OverlayWindow : Window, IDisposable
     private const double MaxAlbumArtPreviewSize = 320;
     private static readonly TimeSpan KaraokeSyncInterval = TimeSpan.FromMilliseconds(220);
 
-    private readonly ObservableCollection<PlaybackTrack> _cachedTracks = [];
+    private readonly ObservableCollection<OverlayTrackListItem> _cachedTracks = [];
     private readonly ObservableCollection<KaraokeLineViewModel> _karaokeLines = [];
     private readonly Dictionary<string, BitmapImage> _albumArtCache = new(StringComparer.Ordinal);
     private readonly LrclibLyricsService _lyricsService = new();
@@ -86,16 +86,16 @@ public partial class OverlayWindow : Window, IDisposable
 
     public void SetCachedTracks(IEnumerable<PlaybackTrack> tracks)
     {
-        SetTrackList(new OverlayTrackList("Текущий плейлист", Array.Empty<PlaybackTrack>(), IsPlaybackContext: true));
+        SetTrackList(new OverlayTrackList("Очередь Spotify", Array.Empty<OverlayTrackListItem>(), IsPlaybackContext: true));
     }
 
     public void SetTrackList(OverlayTrackList trackList)
     {
         _cachedTracks.Clear();
         HistoryTitleText.Text = trackList.Title;
-        foreach (var track in trackList.Tracks)
+        foreach (var item in trackList.Tracks)
         {
-            _cachedTracks.Add(track);
+            _cachedTracks.Add(item);
         }
 
         TrackListEmptyText.Text = trackList.EmptyMessage ?? "Spotify не отдал плейлист для текущего трека.";
@@ -220,6 +220,10 @@ public partial class OverlayWindow : Window, IDisposable
         {
             CachedTrackPlayRequested?.Invoke(this, new TrackRequestedEventArgs(track));
         }
+        else if (sender is Controls.Button { Tag: OverlayTrackListItem item })
+        {
+            CachedTrackPlayRequested?.Invoke(this, new TrackRequestedEventArgs(item.Track));
+        }
     }
 
     private void CachedTrackFavoriteButton_Click(object sender, RoutedEventArgs e)
@@ -227,6 +231,10 @@ public partial class OverlayWindow : Window, IDisposable
         if (sender is Controls.Button { Tag: PlaybackTrack track })
         {
             CachedTrackFavoriteRequested?.Invoke(this, new TrackRequestedEventArgs(track));
+        }
+        else if (sender is Controls.Button { Tag: OverlayTrackListItem item })
+        {
+            CachedTrackFavoriteRequested?.Invoke(this, new TrackRequestedEventArgs(item.Track));
         }
     }
 

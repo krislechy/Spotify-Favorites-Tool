@@ -346,7 +346,7 @@ public partial class MainWindow : Window
     {
         _overlayWindow = new OverlayWindow();
         SubscribeOverlayEvents(_overlayWindow);
-        _overlayWindow.SetTrackList(new OverlayTrackList("Текущий плейлист", Array.Empty<PlaybackTrack>(), IsPlaybackContext: true));
+        _overlayWindow.SetTrackList(new OverlayTrackList("Очередь Spotify", Array.Empty<OverlayTrackListItem>(), IsPlaybackContext: true));
         ShowInitialOverlayContent(_overlayWindow);
 
         _overlayWindow.Show();
@@ -477,12 +477,12 @@ public partial class MainWindow : Window
                 }
                 catch (SpotifyRateLimitException ex)
                 {
-                    _overlayWindow?.SetTrackList(new OverlayTrackList("Текущий плейлист", Array.Empty<PlaybackTrack>(), IsPlaybackContext: true));
+                    _overlayWindow?.SetTrackList(new OverlayTrackList("Очередь Spotify", Array.Empty<OverlayTrackListItem>(), IsPlaybackContext: true));
                     Log($"Список Overlay не обновлен: Spotify вернул 429 ({ex.Endpoint}).", ex.Message);
                 }
                 catch (Exception ex)
                 {
-                    _overlayWindow?.SetTrackList(new OverlayTrackList("Текущий плейлист", Array.Empty<PlaybackTrack>(), IsPlaybackContext: true));
+                    _overlayWindow?.SetTrackList(new OverlayTrackList("Очередь Spotify", Array.Empty<OverlayTrackListItem>(), IsPlaybackContext: true));
                     Log("Список Overlay не обновлен: текущий плейлист недоступен.", ex.Message);
                 }
             }

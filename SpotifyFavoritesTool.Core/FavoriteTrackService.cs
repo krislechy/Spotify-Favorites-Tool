@@ -23,7 +23,7 @@ public sealed class FavoriteTrackService
 
         return new OverlayTrackList(
             "Очередь Spotify",
-            _cache.EnrichTracks(streamTracks, currentTrack),
+            BuildSectionedTracks(streamTracks, currentTrack),
             IsPlaybackContext: true,
             EmptyMessage: "Spotify не отдал текущую очередь.");
     }
@@ -134,27 +134,40 @@ public sealed class FavoriteTrackService
         return cachedTrack;
     }
 
-    private static IReadOnlyList<PlaybackTrack> BuildPlaybackStream(
+    private IReadOnlyList<OverlayTrackListItem> BuildSectionedTracks(
+        IReadOnlyList<OverlayTrackListItem> streamTracks,
+        PlaybackTrack? currentTrack)
+    {
+        var enrichedTracks = _cache.EnrichTracks(streamTracks.Select(item => item.Track), currentTrack);
+        return streamTracks
+            .Zip(enrichedTracks, (item, track) => item with { Track = track })
+            .ToArray();
+    }
+
+    private static IReadOnlyList<OverlayTrackListItem> BuildPlaybackStream(
         PlaybackTrack? currentTrack,
         IReadOnlyList<PlaybackTrack> queueTracks,
         IReadOnlyList<PlaybackTrack> recentlyPlayedTracks)
     {
-        var tracks = new List<PlaybackTrack>();
+        var tracks = new List<(PlaybackTrack Track, OverlayTrackSection Section)>();
+        tracks.AddRange(queueTracks.Select(track => (track, OverlayTrackSection.Queue)));
+
         if (currentTrack is not null)
         {
-            tracks.Add(currentTrack);
+            tracks.Add((currentTrack, OverlayTrackSection.NowPlaying));
         }
 
-        tracks.AddRange(queueTracks);
-        tracks.AddRange(recentlyPlayedTracks);
+        tracks.AddRange(recentlyPlayedTracks.Select(track => (track, OverlayTrackSection.RecentlyPlayed)));
 
-        var result = new List<PlaybackTrack>();
+        var result = new List<OverlayTrackListItem>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var track in tracks)
+        var shownSections = new HashSet<OverlayTrackSection>();
+        foreach (var (track, section) in tracks)
         {
             if (seen.Add(track.Uri))
             {
-                result.Add(track);
+                var showHeader = shownSections.Add(section);
+                result.Add(new OverlayTrackListItem(track, section, showHeader));
             }
         }
 
