@@ -1,0 +1,20 @@
+GET https://api.spotify.com/v1/me/player/recently-played?limit=50
+
+Headers:
+Authorization: Bearer <ACCESS_TOKEN>
+Accept: application/json
+
+Body:
+empty
+
+Required OAuth scope:
+user-read-recently-played
+
+PowerShell curl example:
+curl.exe -X GET "https://api.spotify.com/v1/me/player/recently-played?limit=50" `
+  -H "Authorization: Bearer <ACCESS_TOKEN>" `
+  -H "Accept: application/json"
+
+Notes:
+Do not save a real access token in git, chat, screenshots, or logs.
+Access tokens are temporary secrets. If you need a fresh one, re-login through the app or inspect it only locally.
