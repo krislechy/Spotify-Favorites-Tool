@@ -639,7 +639,7 @@
                                         <Setter TargetName="SectionHeaderText" Property="Text" Value="Сейчас играет" />
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Section}" Value="{x:Static local:OverlayTrackSection.RecentlyPlayed}">
-                                        <Setter TargetName="SectionHeaderText" Property="Text" Value="Недавно" />
+                                        <Setter TargetName="SectionHeaderText" Property="Text" Value="Сыграно недавно" />
                                     </DataTrigger>
                                     <Trigger SourceName="HistoryItemRoot" Property="IsMouseOver" Value="True">
                                         <Setter TargetName="HistoryItemRoot" Property="Background" Value="#40202A24" />

@@ -19,7 +19,7 @@ public sealed class FavoriteTrackService
         var currentTrack = LastObservedTrack;
         var queueTracks = await _spotify.GetQueueTracksAsync(currentTrack, cancellationToken);
         var recentlyPlayedTracks = await _spotify.GetRecentlyPlayedTracksAsync(cancellationToken);
-        var streamTracks = BuildPlaybackStream(currentTrack, queueTracks, recentlyPlayedTracks);
+        var streamTracks = BuildPlaybackStream(queueTracks, currentTrack, recentlyPlayedTracks);
 
         return new OverlayTrackList(
             "Очередь Spotify",
@@ -145,32 +145,41 @@ public sealed class FavoriteTrackService
     }
 
     private static IReadOnlyList<OverlayTrackListItem> BuildPlaybackStream(
-        PlaybackTrack? currentTrack,
         IReadOnlyList<PlaybackTrack> queueTracks,
+        PlaybackTrack? currentTrack,
         IReadOnlyList<PlaybackTrack> recentlyPlayedTracks)
     {
-        var tracks = new List<(PlaybackTrack Track, OverlayTrackSection Section)>();
-        tracks.AddRange(queueTracks.Select(track => (track, OverlayTrackSection.Queue)));
+        var result = new List<OverlayTrackListItem>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+
+        AddSection(result, seen, queueTracks.Reverse(), OverlayTrackSection.Queue);
 
         if (currentTrack is not null)
         {
-            tracks.Add((currentTrack, OverlayTrackSection.NowPlaying));
+            AddSection(result, seen, [currentTrack], OverlayTrackSection.NowPlaying);
         }
 
-        tracks.AddRange(recentlyPlayedTracks.Select(track => (track, OverlayTrackSection.RecentlyPlayed)));
-
-        var result = new List<OverlayTrackListItem>();
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-        var shownSections = new HashSet<OverlayTrackSection>();
-        foreach (var (track, section) in tracks)
-        {
-            if (seen.Add(track.Uri))
-            {
-                var showHeader = shownSections.Add(section);
-                result.Add(new OverlayTrackListItem(track, section, showHeader));
-            }
-        }
+        AddSection(result, seen, recentlyPlayedTracks, OverlayTrackSection.RecentlyPlayed);
 
         return result;
+    }
+
+    private static void AddSection(
+        List<OverlayTrackListItem> result,
+        HashSet<string> seen,
+        IEnumerable<PlaybackTrack> tracks,
+        OverlayTrackSection section)
+    {
+        var hasHeader = false;
+        foreach (var track in tracks)
+        {
+            if (!seen.Add(track.Uri))
+            {
+                continue;
+            }
+
+            result.Add(new OverlayTrackListItem(track, section, ShowSectionHeader: !hasHeader));
+            hasHeader = true;
+        }
     }
 }
