@@ -22,6 +22,9 @@ public sealed class PlaybackResponse
     [JsonPropertyName("is_playing")]
     public bool IsPlaying { get; set; }
 
+    [JsonPropertyName("progress_ms")]
+    public int? ProgressMs { get; set; }
+
     [JsonPropertyName("context")]
     public SpotifyPlaybackContext? Context { get; set; }
 

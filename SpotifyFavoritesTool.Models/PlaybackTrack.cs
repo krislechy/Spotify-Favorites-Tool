@@ -9,7 +9,8 @@ public sealed record PlaybackTrack(
     string? ContextUri = null,
     bool? IsLiked = null,
     bool? IsPlaying = null,
-    int? DurationMs = null)
+    int? DurationMs = null,
+    int? ProgressMs = null)
 {
     public string DisplayLine => $"{Name} · {Artists}";
     public string DurationText => DurationMs is > 0 ? FormatDuration(DurationMs.Value) : string.Empty;

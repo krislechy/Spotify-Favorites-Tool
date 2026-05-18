@@ -333,6 +333,22 @@
                                 Content="Запустить Overlay"
                                 Click="OverlayButton_Click"
                                 ToolTip="Открыть отдельное окно оверлея поверх окон" />
+                        <Button x:Name="KaraokeButton"
+                                Style="{StaticResource SquareActionButton}"
+                                Click="KaraokeButton_Click"
+                                ToolTip="Открыть экспериментальное караоке">
+                            <Canvas Width="18"
+                                    Height="18"
+                                    IsHitTestVisible="False">
+                                <Path Data="M 9,2 C 7.1,2 5.8,3.4 5.8,5.4 L 5.8,9.2 C 5.8,11.2 7.1,12.6 9,12.6 C 10.9,12.6 12.2,11.2 12.2,9.2 L 12.2,5.4 C 12.2,3.4 10.9,2 9,2 Z"
+                                      Fill="#F4F8F5" />
+                                <Path Data="M 4,8.7 C 4,11.7 6,14 9,14 C 12,14 14,11.7 14,8.7 M 9,14 L 9,17 M 6,17 L 12,17"
+                                      Stroke="#8DE6B1"
+                                      StrokeThickness="1.7"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round" />
+                            </Canvas>
+                        </Button>
                         <Button x:Name="ActivityLogToggleButton"
                                 Style="{StaticResource SquareActionButton}"
                                 Click="ActivityLogToggleButton_Click"

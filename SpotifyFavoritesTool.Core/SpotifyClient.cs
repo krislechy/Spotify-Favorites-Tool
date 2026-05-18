@@ -47,7 +47,7 @@ public sealed class SpotifyClient
             throw new InvalidOperationException("Сейчас играет не трек.");
         }
 
-        return CreateTrack(item, playback?.Context?.Uri, playback?.IsPlaying == true);
+        return CreateTrack(item, playback?.Context?.Uri, playback?.IsPlaying == true, playback?.ProgressMs);
     }
 
     public async Task<bool> GetTrackLikedStateAsync(PlaybackTrack track, CancellationToken cancellationToken = default)
@@ -122,7 +122,7 @@ public sealed class SpotifyClient
         await SendAsync(method, $"{ApiRoot}/me/player/{command}", cancellationToken);
     }
 
-    private static PlaybackTrack CreateTrack(SpotifyItem item, string? contextUri, bool isPlaying)
+    private static PlaybackTrack CreateTrack(SpotifyItem item, string? contextUri, bool isPlaying, int? progressMs)
     {
         var artists = item.Artists is { Length: > 0 }
             ? string.Join(", ", item.Artists.Select(artist => artist.Name).Where(name => !string.IsNullOrWhiteSpace(name)))
@@ -133,7 +133,7 @@ public sealed class SpotifyClient
             .FirstOrDefault()
             ?.Url;
 
-        return new PlaybackTrack(item.Id!, item.Uri!, item.Name!, artists, image, contextUri, IsPlaying: isPlaying, DurationMs: item.DurationMs);
+        return new PlaybackTrack(item.Id!, item.Uri!, item.Name!, artists, image, contextUri, IsPlaying: isPlaying, DurationMs: item.DurationMs, ProgressMs: progressMs);
     }
 
     private static object CreatePlaybackBody(PlaybackTrack track)
