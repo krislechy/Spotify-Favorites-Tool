@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -17,22 +16,15 @@ public partial class OverlayWindow : Window, IDisposable
     private const double CollapsedHeight = 150;
     private const double ExpandedHeight = 438;
     private const double MaxAlbumArtPreviewSize = 320;
-    private static readonly TimeSpan KaraokeSyncInterval = TimeSpan.FromMilliseconds(220);
 
     private readonly ObservableCollection<OverlayTrackListItem> _cachedTracks = [];
-    private readonly ObservableCollection<KaraokeLineViewModel> _karaokeLines = [];
     private readonly Dictionary<string, BitmapImage> _albumArtCache = new(StringComparer.Ordinal);
     private readonly LrclibLyricsService _lyricsService = new();
-    private readonly DispatcherTimer _karaokeSyncTimer;
-    private readonly Stopwatch _karaokeClock = new();
     private string? _requestedAlbumImageUrl;
-    private string? _karaokeTrackUri;
     private PlaybackTrack? _currentTrack;
     private CancellationTokenSource? _karaokeLoadCancellation;
     private bool _isHistoryExpanded;
     private bool _isKaraokeExpanded;
-    private TimeSpan _karaokeBasePosition;
-    private int _currentKaraokeLineIndex = -1;
     private bool _disposed;
 
     public event EventHandler? FavoriteRequested;
@@ -46,12 +38,6 @@ public partial class OverlayWindow : Window, IDisposable
     {
         InitializeComponent();
         CachedTracksList.ItemsSource = _cachedTracks;
-        KaraokeLyricsList.ItemsSource = _karaokeLines;
-        _karaokeSyncTimer = new DispatcherTimer(DispatcherPriority.Background)
-        {
-            Interval = KaraokeSyncInterval
-        };
-        _karaokeSyncTimer.Tick += KaraokeSyncTimer_Tick;
         ShowMessage("Overlay готов", "Жду текущий трек");
     }
 
@@ -67,11 +53,7 @@ public partial class OverlayWindow : Window, IDisposable
         _ = SetAlbumArtAsync(track.AlbumImageUrl);
         if (_isKaraokeExpanded && !string.Equals(previousTrackUri, track.Uri, StringComparison.Ordinal))
         {
-            _ = LoadKaraokeAsync(track with { ProgressMs = null });
-        }
-        else if (_isKaraokeExpanded)
-        {
-            SyncKaraokePlayback(track);
+            _ = LoadLyricsAsync(track);
         }
     }
 
@@ -120,11 +102,8 @@ public partial class OverlayWindow : Window, IDisposable
         AlbumArt.Source = null;
         _albumArtCache.Clear();
         _cachedTracks.Clear();
-        _karaokeLines.Clear();
         _karaokeLoadCancellation?.Cancel();
         _karaokeLoadCancellation?.Dispose();
-        _karaokeSyncTimer.Stop();
-        _karaokeSyncTimer.Tick -= KaraokeSyncTimer_Tick;
         FavoriteRequested = null;
         PreviousRequested = null;
         PlayPauseRequested = null;
@@ -198,10 +177,10 @@ public partial class OverlayWindow : Window, IDisposable
     private void KaraokeToggleButton_Click(object sender, RoutedEventArgs e)
     {
         SetExpandedPanel(_isKaraokeExpanded ? OverlayExpandedPanel.None : OverlayExpandedPanel.Karaoke);
-        KaraokeToggleButton.ToolTip = _isKaraokeExpanded ? "Скрыть караоке" : "Показать караоке";
+        KaraokeToggleButton.ToolTip = _isKaraokeExpanded ? "Скрыть текст" : "Показать текст";
         if (_isKaraokeExpanded && _currentTrack is { } track)
         {
-            _ = LoadKaraokeAsync(track with { ProgressMs = null });
+            _ = LoadLyricsAsync(track);
         }
     }
 
@@ -217,7 +196,7 @@ public partial class OverlayWindow : Window, IDisposable
 
         if (!_isKaraokeExpanded)
         {
-            StopKaraokeSync();
+            CancelLyricsLoad();
         }
 
         if (_isHistoryExpanded)
@@ -274,7 +253,7 @@ public partial class OverlayWindow : Window, IDisposable
         }
     }
 
-    private async Task LoadKaraokeAsync(PlaybackTrack track)
+    private async Task LoadLyricsAsync(PlaybackTrack track)
     {
         _karaokeLoadCancellation?.Cancel();
         _karaokeLoadCancellation?.Dispose();
@@ -283,154 +262,47 @@ public partial class OverlayWindow : Window, IDisposable
 
         try
         {
-            StopKaraokeSync();
-            _karaokeLines.Clear();
-            PlainLyricsText.Visibility = Visibility.Collapsed;
-            KaraokeLyricsList.Visibility = Visibility.Visible;
-            KaraokeStatusText.Text = "поиск текста";
+            PlainLyricsText.Text = string.Empty;
+            PlainLyricsText.Visibility = Visibility.Visible;
+            KaraokeStatusText.Text = "поиск";
 
-            var loadTimer = Stopwatch.StartNew();
             var lyrics = await _lyricsService.GetLyricsAsync(track, cancellationToken);
             if (cancellationToken.IsCancellationRequested || !string.Equals(_currentTrack?.Uri, track.Uri, StringComparison.Ordinal))
             {
                 return;
             }
 
-            ShowKaraokeLyrics(track, lyrics, loadTimer.Elapsed);
+            ShowLyrics(lyrics);
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception ex)
         {
-            _karaokeLines.Clear();
-            PlainLyricsText.Visibility = Visibility.Collapsed;
-            KaraokeLyricsList.Visibility = Visibility.Visible;
-            _karaokeLines.Add(new KaraokeLineViewModel(new KaraokeLyricLine(TimeSpan.Zero, "Не удалось загрузить караоке.")));
+            PlainLyricsText.Text = "Не удалось загрузить текст песни.";
+            PlainLyricsText.Visibility = Visibility.Visible;
             KaraokeStatusText.Text = ex is JsonException ? "ошибка формата текста" : "ошибка";
         }
     }
 
-    private void ShowKaraokeLyrics(PlaybackTrack track, KaraokeLyrics lyrics, TimeSpan loadElapsed)
+    private void ShowLyrics(KaraokeLyrics lyrics)
     {
-        _karaokeLines.Clear();
-        _karaokeTrackUri = null;
-        PlainLyricsText.Visibility = Visibility.Collapsed;
-        KaraokeLyricsList.Visibility = Visibility.Visible;
-
-        if (lyrics.HasSyncedLines)
+        if (!string.IsNullOrWhiteSpace(lyrics.DisplayText))
         {
-            foreach (var line in lyrics.Lines)
-            {
-                _karaokeLines.Add(new KaraokeLineViewModel(line));
-            }
-
-            _karaokeTrackUri = track.Uri;
-            SyncKaraokePlayback(track, track.IsPlaying == true ? loadElapsed : TimeSpan.Zero);
-
-            KaraokeStatusText.Text = "синхронизировано";
-            _karaokeSyncTimer.Start();
-            UpdateCurrentKaraokeLine();
-            return;
-        }
-
-        if (lyrics.Kind == LyricsKind.Plain && !string.IsNullOrWhiteSpace(lyrics.PlainText))
-        {
-            PlainLyricsText.Text = lyrics.PlainText;
+            PlainLyricsText.Text = lyrics.DisplayText;
             PlainLyricsText.Visibility = Visibility.Visible;
-            KaraokeLyricsList.Visibility = Visibility.Collapsed;
-            KaraokeStatusText.Text = "без таймингов";
+            KaraokeStatusText.Text = string.IsNullOrWhiteSpace(lyrics.SourceName) ? "найдено" : lyrics.SourceName;
             return;
         }
 
-        _karaokeLines.Add(new KaraokeLineViewModel(new KaraokeLyricLine(TimeSpan.Zero, "Текст для этого трека не найден.")));
+        PlainLyricsText.Text = "Текст для этого трека не найден.";
+        PlainLyricsText.Visibility = Visibility.Visible;
         KaraokeStatusText.Text = "не найдено";
     }
 
-    private void KaraokeSyncTimer_Tick(object? sender, EventArgs e)
+    private void CancelLyricsLoad()
     {
-        UpdateCurrentKaraokeLine();
-    }
-
-    private void SyncKaraokePlayback(PlaybackTrack track, TimeSpan? progressOffset = null)
-    {
-        if (_karaokeLines.Count == 0 || !string.Equals(_karaokeTrackUri, track.Uri, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        if (track.ProgressMs.HasValue)
-        {
-            var offset = progressOffset ?? TimeSpan.Zero;
-            _karaokeBasePosition = TimeSpan.FromMilliseconds(Math.Max(0, track.ProgressMs.Value)) + offset;
-            if (track.IsPlaying == true)
-            {
-                _karaokeClock.Restart();
-            }
-            else
-            {
-                _karaokeClock.Reset();
-            }
-
-            UpdateCurrentKaraokeLine();
-            return;
-        }
-
-        if (track.IsPlaying == true)
-        {
-            if (!_karaokeClock.IsRunning)
-            {
-                _karaokeClock.Start();
-            }
-        }
-        else if (_karaokeClock.IsRunning)
-        {
-            _karaokeBasePosition += _karaokeClock.Elapsed;
-            _karaokeClock.Reset();
-            UpdateCurrentKaraokeLine();
-        }
-    }
-
-    private void UpdateCurrentKaraokeLine()
-    {
-        if (_karaokeLines.Count == 0)
-        {
-            return;
-        }
-
-        var position = _karaokeBasePosition + (_karaokeClock.IsRunning ? _karaokeClock.Elapsed : TimeSpan.Zero);
-        var nextIndex = 0;
-        for (var index = 0; index < _karaokeLines.Count; index++)
-        {
-            if (_karaokeLines[index].Line.Time > position)
-            {
-                break;
-            }
-
-            nextIndex = index;
-        }
-
-        if (nextIndex == _currentKaraokeLineIndex)
-        {
-            return;
-        }
-
-        if (_currentKaraokeLineIndex >= 0 && _currentKaraokeLineIndex < _karaokeLines.Count)
-        {
-            _karaokeLines[_currentKaraokeLineIndex].IsCurrent = false;
-        }
-
-        _currentKaraokeLineIndex = nextIndex;
-        _karaokeLines[_currentKaraokeLineIndex].IsCurrent = true;
-        KaraokeLyricsList.ScrollIntoView(_karaokeLines[_currentKaraokeLineIndex]);
-    }
-
-    private void StopKaraokeSync()
-    {
-        _karaokeSyncTimer.Stop();
-        _karaokeClock.Stop();
-        _karaokeTrackUri = null;
-        _currentKaraokeLineIndex = -1;
+        _karaokeLoadCancellation?.Cancel();
     }
 
     private void AlbumArt_ImageFailed(object sender, ExceptionRoutedEventArgs e)

@@ -354,15 +354,22 @@
                         Style="{StaticResource TransportButton}"
                         Margin="0"
                         Click="KaraokeToggleButton_Click"
-                        ToolTip="Показать караоке">
+                        ToolTip="Показать текст песни">
                     <Canvas Width="16"
                             Height="16"
                             IsHitTestVisible="False">
-                        <Path Data="M 8,1.8 C 6.4,1.8 5.3,3 5.3,4.7 L 5.3,8.2 C 5.3,9.9 6.4,11.1 8,11.1 C 9.6,11.1 10.7,9.9 10.7,8.2 L 10.7,4.7 C 10.7,3 9.6,1.8 8,1.8 Z"
-                              Fill="#F4F8F5" />
-                        <Path Data="M 3.5,7.8 C 3.5,10.5 5.3,12.5 8,12.5 C 10.7,12.5 12.5,10.5 12.5,7.8 M 8,12.5 L 8,15 M 5.6,15 L 10.4,15"
+                        <Path Data="M 4,2.5 L 10.6,2.5 L 13,4.9 L 13,13.5 L 4,13.5 Z"
+                              Fill="#1F2B24"
                               Stroke="#8DE6B1"
-                              StrokeThickness="1.5"
+                              StrokeThickness="1.25"
+                              StrokeLineJoin="Round" />
+                        <Path Data="M 10.6,2.6 L 10.6,5 L 13,5"
+                              Stroke="#8DE6B1"
+                              StrokeThickness="1.15"
+                              StrokeLineJoin="Round" />
+                        <Path Data="M 6,6.3 L 11,6.3 M 6,8.5 L 11,8.5 M 6,10.7 L 9.5,10.7"
+                              Stroke="#F4F8F5"
+                              StrokeThickness="1.25"
                               StrokeStartLineCap="Round"
                               StrokeEndLineCap="Round" />
                     </Canvas>
@@ -721,7 +728,7 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="Караоке"
+                        <TextBlock Text="Lyrics"
                                    Foreground="#F4F8F5"
                                    FontWeight="SemiBold"
                                    FontSize="12"
@@ -734,78 +741,17 @@
                                    VerticalAlignment="Center" />
                     </Grid>
 
-                    <ListBox x:Name="KaraokeLyricsList"
-                             Grid.Row="1"
-                             Background="Transparent"
-                             BorderThickness="0"
-                             Foreground="#D7E4DC"
-                             IsTabStop="False"
-                             ScrollViewer.CanContentScroll="False"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto"
-                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                        <ListBox.ItemContainerStyle>
-                            <Style TargetType="ListBoxItem">
-                                <Setter Property="Padding" Value="0" />
-                                <Setter Property="Margin" Value="0,0,0,6" />
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                <Setter Property="Background" Value="Transparent" />
-                                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-                                <Setter Property="IsTabStop" Value="False" />
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="ListBoxItem">
-                                            <Border Background="{TemplateBinding Background}"
-                                                    CornerRadius="8">
-                                                <ContentPresenter />
-                                            </Border>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </ListBox.ItemContainerStyle>
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Border x:Name="KaraokeLineRoot"
-                                        Padding="10,7"
-                                        CornerRadius="8"
-                                        Background="Transparent">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="42" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{Binding TimeText}"
-                                                   Foreground="#6F7D74"
-                                                   FontFamily="Consolas"
-                                                   FontSize="10"
-                                                   VerticalAlignment="Center" />
-                                        <TextBlock x:Name="KaraokeLineText"
-                                                   Grid.Column="1"
-                                                   Text="{Binding Text}"
-                                                   Foreground="#B9C4BE"
-                                                   FontSize="12.5"
-                                                   TextWrapping="Wrap" />
-                                    </Grid>
-                                </Border>
-                                <DataTemplate.Triggers>
-                                    <DataTrigger Binding="{Binding IsCurrent}" Value="True">
-                                        <Setter TargetName="KaraokeLineRoot" Property="Background" Value="#3020362B" />
-                                        <Setter TargetName="KaraokeLineText" Property="Foreground" Value="#F7FAF8" />
-                                        <Setter TargetName="KaraokeLineText" Property="FontSize" Value="15.5" />
-                                        <Setter TargetName="KaraokeLineText" Property="FontWeight" Value="Bold" />
-                                    </DataTrigger>
-                                </DataTemplate.Triggers>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-
-                    <TextBlock x:Name="PlainLyricsText"
-                               Grid.Row="1"
-                               Visibility="Collapsed"
-                               Foreground="#D7E4DC"
-                               FontSize="12.5"
-                               LineHeight="19"
-                               TextWrapping="Wrap" />
+                    <ScrollViewer Grid.Row="1"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  CanContentScroll="False">
+                        <TextBlock x:Name="PlainLyricsText"
+                                   Visibility="Collapsed"
+                                   Foreground="#D7E4DC"
+                                   FontSize="12.5"
+                                   LineHeight="19"
+                                   TextWrapping="Wrap" />
+                    </ScrollViewer>
                 </Grid>
             </ui:LiquidHoverBorder>
         </Grid>

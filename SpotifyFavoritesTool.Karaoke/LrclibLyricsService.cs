@@ -10,6 +10,8 @@ public sealed partial class LrclibLyricsService
 {
     private const string GetEndpoint = "https://lrclib.net/api/get";
     private const string SearchEndpoint = "https://lrclib.net/api/search";
+    private const string LyricsOvhEndpoint = "https://api.lyrics.ovh/v1";
+    private const string GeniusSearchEndpoint = "https://genius.com/search";
     private static readonly HttpClient Http = new();
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -38,7 +40,19 @@ public sealed partial class LrclibLyricsService
             return exactLyrics;
         }
 
-        return await SearchLyricsAsync(track, cancellationToken);
+        var searchLyrics = await SearchLyricsAsync(track, cancellationToken);
+        if (searchLyrics.Kind != LyricsKind.None)
+        {
+            return searchLyrics;
+        }
+
+        var lyricsOvhLyrics = await SearchLyricsOvhAsync(track, cancellationToken);
+        if (lyricsOvhLyrics.Kind != LyricsKind.None)
+        {
+            return lyricsOvhLyrics;
+        }
+
+        return BuildGeniusSearchResult(track);
     }
 
     private static async Task<KaraokeLyrics> TryLoadExactLyricsAsync(PlaybackTrack track, CancellationToken cancellationToken)
@@ -72,6 +86,21 @@ public sealed partial class LrclibLyricsService
         return bestCandidate is null ? KaraokeLyrics.Empty : ToLyrics(bestCandidate);
     }
 
+    private static async Task<KaraokeLyrics> SearchLyricsOvhAsync(PlaybackTrack track, CancellationToken cancellationToken)
+    {
+        using var response = await SendAsync(BuildLyricsOvhUrl(track), cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return KaraokeLyrics.Empty;
+        }
+
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        var dto = JsonSerializer.Deserialize<LyricsOvhResponse>(body, JsonOptions);
+        return string.IsNullOrWhiteSpace(dto?.Lyrics)
+            ? KaraokeLyrics.Empty
+            : new KaraokeLyrics(LyricsKind.Plain, Array.Empty<KaraokeLyricLine>(), dto.Lyrics, "lyrics.ovh");
+    }
+
     private static async Task<HttpResponseMessage> SendAsync(string url, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
@@ -94,12 +123,12 @@ public sealed partial class LrclibLyricsService
         var syncedLines = LrcLyricsParser.Parse(dto?.SyncedLyrics);
         if (syncedLines.Count > 0)
         {
-            return new KaraokeLyrics(LyricsKind.Synced, syncedLines, dto?.PlainLyrics);
+            return new KaraokeLyrics(LyricsKind.Synced, syncedLines, dto?.PlainLyrics, "LRCLIB");
         }
 
         return string.IsNullOrWhiteSpace(dto?.PlainLyrics)
             ? KaraokeLyrics.Empty
-            : new KaraokeLyrics(LyricsKind.Plain, Array.Empty<KaraokeLyricLine>(), dto.PlainLyrics);
+            : new KaraokeLyrics(LyricsKind.Plain, Array.Empty<KaraokeLyricLine>(), dto.PlainLyrics, "LRCLIB");
     }
 
     private static string BuildExactUrl(PlaybackTrack track)
@@ -123,6 +152,22 @@ public sealed partial class LrclibLyricsService
     {
         var query = $"{NormalizeSearchText(track.Name)} {NormalizeSearchText(GetPrimaryArtist(track))}".Trim();
         return SearchEndpoint + "?q=" + Uri.EscapeDataString(query);
+    }
+
+    private static string BuildLyricsOvhUrl(PlaybackTrack track)
+    {
+        return $"{LyricsOvhEndpoint}/{Uri.EscapeDataString(GetPrimaryArtist(track))}/{Uri.EscapeDataString(track.Name)}";
+    }
+
+    private static KaraokeLyrics BuildGeniusSearchResult(PlaybackTrack track)
+    {
+        var query = $"{track.Artists} {track.Name}";
+        var url = GeniusSearchEndpoint + "?q=" + Uri.EscapeDataString(query);
+        var text = "Текст не найден в LRCLIB и lyrics.ovh." + Environment.NewLine +
+            "Можно попробовать найти его на Genius:" + Environment.NewLine +
+            url;
+
+        return new KaraokeLyrics(LyricsKind.Link, Array.Empty<KaraokeLyricLine>(), text, "Genius", url);
     }
 
     private static string BuildQuery(Dictionary<string, string> parameters)
@@ -223,6 +268,12 @@ public sealed partial class LrclibLyricsService
 
         [JsonPropertyName("plainLyrics")]
         public string? PlainLyrics { get; set; }
+    }
+
+    private sealed class LyricsOvhResponse
+    {
+        [JsonPropertyName("lyrics")]
+        public string? Lyrics { get; set; }
     }
 
     [GeneratedRegex(@"\s*[\(\[].*?(remaster(?:ed)?|deluxe|edition|explicit|clean|radio edit|mono|stereo|version|feat\.?|ft\.?).*?[\)\]]\s*", RegexOptions.IgnoreCase)]
