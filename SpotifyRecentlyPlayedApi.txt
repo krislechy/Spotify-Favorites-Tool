@@ -2,143 +2,197 @@ Spotify Web API: GET /v1/me/player/recently-played
 Источник: https://developer.spotify.com/documentation/web-api/reference/get-recently-played
 Проверено: 2026-05-18
 
-Назначение
-Endpoint возвращает треки из истории недавно прослушанного текущего пользователя.
-Spotify отдельно указывает, что podcast episodes сейчас не поддерживаются.
+Response 200: A paged set of tracks
 
-Авторизация
-Нужен OAuth scope:
-user-read-recently-played
-
-Request
-GET https://api.spotify.com/v1/me/player/recently-played
-
-Query parameters
-limit:
-  Максимальное число элементов.
-  Default: 20.
-  Minimum: 1.
-  Maximum: 50.
-
-after:
-  Unix timestamp в миллисекундах.
-  Возвращает элементы после этого cursor timestamp, не включая сам cursor.
-  Если указан after, before указывать нельзя.
-
-before:
-  Unix timestamp в миллисекундах.
-  Возвращает элементы до этого cursor timestamp, не включая сам cursor.
-  Если указан before, after указывать нельзя.
-
-Response 200
-Возвращается paged set of tracks:
+Ниже именно JSON-форма ответа, которую описывает документация Spotify.
+Значения примерные, структура и имена полей соответствуют response schema.
 
 {
-  "href": "string",
-  "limit": 20,
-  "next": "string | null",
+  "href": "https://api.spotify.com/v1/me/player/recently-played?limit=2",
+  "limit": 2,
+  "next": "https://api.spotify.com/v1/me/player/recently-played?before=1484811043508&limit=2",
   "cursors": {
-    "after": "string",
-    "before": "string"
+    "after": "1484811043508",
+    "before": "1484811043508"
   },
   "total": 0,
   "items": [
     {
       "track": {
         "album": {
-          "album_type": "album | single | compilation",
-          "total_tracks": 0,
-          "available_markets": ["string"],
+          "album_type": "album",
+          "total_tracks": 9,
+          "available_markets": [
+            "CA",
+            "BR",
+            "IT"
+          ],
           "external_urls": {
-            "spotify": "string"
+            "spotify": "https://open.spotify.com/album/2up3OPMp9Tb4dAKM2erWXQ"
           },
-          "href": "string",
-          "id": "string",
+          "href": "https://api.spotify.com/v1/albums/2up3OPMp9Tb4dAKM2erWXQ",
+          "id": "2up3OPMp9Tb4dAKM2erWXQ",
           "images": [
             {
-              "url": "string",
+              "url": "https://i.scdn.co/image/ab67616d00001e02ff9ca10b55ce82ae553c8228",
               "height": 300,
               "width": 300
             }
           ],
-          "name": "string",
-          "release_date": "string",
-          "release_date_precision": "year | month | day",
+          "name": "Album name",
+          "release_date": "1981-12",
+          "release_date_precision": "month",
           "restrictions": {
-            "reason": "market | product | explicit"
+            "reason": "market"
           },
           "type": "album",
-          "uri": "spotify:album:..."
+          "uri": "spotify:album:2up3OPMp9Tb4dAKM2erWXQ"
         },
         "artists": [
           {
             "external_urls": {
-              "spotify": "string"
+              "spotify": "https://open.spotify.com/artist/0TnOYISbd1XYRBk9myaseg"
             },
-            "href": "string",
-            "id": "string",
-            "name": "string",
+            "href": "https://api.spotify.com/v1/artists/0TnOYISbd1XYRBk9myaseg",
+            "id": "0TnOYISbd1XYRBk9myaseg",
+            "name": "Artist name",
             "type": "artist",
-            "uri": "spotify:artist:..."
+            "uri": "spotify:artist:0TnOYISbd1XYRBk9myaseg"
           }
         ],
-        "available_markets": ["string"],
-        "disc_number": 0,
-        "duration_ms": 0,
+        "available_markets": [
+          "CA",
+          "BR",
+          "IT"
+        ],
+        "disc_number": 1,
+        "duration_ms": 183200,
         "explicit": false,
         "external_ids": {
-          "isrc": "string",
+          "isrc": "USUM71703861",
           "ean": "string",
           "upc": "string"
         },
         "external_urls": {
-          "spotify": "string"
+          "spotify": "https://open.spotify.com/track/11dFghVXANMlKmJXsNCbNl"
         },
-        "href": "string",
-        "id": "string",
+        "href": "https://api.spotify.com/v1/tracks/11dFghVXANMlKmJXsNCbNl",
+        "id": "11dFghVXANMlKmJXsNCbNl",
         "is_playable": true,
         "linked_from": {},
         "restrictions": {
-          "reason": "string"
+          "reason": "market"
         },
-        "name": "string",
-        "popularity": 0,
-        "preview_url": "string | null",
-        "track_number": 0,
+        "name": "Track name",
+        "popularity": 64,
+        "preview_url": "https://p.scdn.co/mp3-preview/example",
+        "track_number": 1,
         "type": "track",
-        "uri": "spotify:track:...",
+        "uri": "spotify:track:11dFghVXANMlKmJXsNCbNl",
         "is_local": false
       },
-      "played_at": "string date-time",
+      "played_at": "2026-05-18T14:25:30.000Z",
       "context": {
-        "type": "artist | playlist | album | show | string",
-        "href": "string",
+        "type": "playlist",
+        "href": "https://api.spotify.com/v1/playlists/37i9dQZF1DXcBWIGoYBM5M",
         "external_urls": {
-          "spotify": "string"
+          "spotify": "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M"
         },
-        "uri": "spotify:playlist:..."
+        "uri": "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M"
+      }
+    },
+    {
+      "track": {
+        "album": {
+          "album_type": "single",
+          "total_tracks": 1,
+          "available_markets": [
+            "CA",
+            "BR",
+            "IT"
+          ],
+          "external_urls": {
+            "spotify": "https://open.spotify.com/album/example"
+          },
+          "href": "https://api.spotify.com/v1/albums/example",
+          "id": "example",
+          "images": [
+            {
+              "url": "https://i.scdn.co/image/example",
+              "height": 640,
+              "width": 640
+            }
+          ],
+          "name": "Another album",
+          "release_date": "2026-01-01",
+          "release_date_precision": "day",
+          "type": "album",
+          "uri": "spotify:album:example"
+        },
+        "artists": [
+          {
+            "external_urls": {
+              "spotify": "https://open.spotify.com/artist/example"
+            },
+            "href": "https://api.spotify.com/v1/artists/example",
+            "id": "example",
+            "name": "Another artist",
+            "type": "artist",
+            "uri": "spotify:artist:example"
+          }
+        ],
+        "available_markets": [
+          "CA",
+          "BR",
+          "IT"
+        ],
+        "disc_number": 1,
+        "duration_ms": 210000,
+        "explicit": true,
+        "external_ids": {
+          "isrc": "USUM70000000"
+        },
+        "external_urls": {
+          "spotify": "https://open.spotify.com/track/example"
+        },
+        "href": "https://api.spotify.com/v1/tracks/example",
+        "id": "example",
+        "is_playable": true,
+        "name": "Another track",
+        "popularity": 72,
+        "preview_url": null,
+        "track_number": 1,
+        "type": "track",
+        "uri": "spotify:track:example",
+        "is_local": false
+      },
+      "played_at": "2026-05-18T14:21:10.000Z",
+      "context": {
+        "type": "album",
+        "href": "https://api.spotify.com/v1/albums/example",
+        "external_urls": {
+          "spotify": "https://open.spotify.com/album/example"
+        },
+        "uri": "spotify:album:example"
       }
     }
   ]
 }
 
-Ключевые поля для нашего приложения
-items[].track:
-  Сам трек, который пользователь слушал.
+Важные поля для порядка:
 
-items[].played_at:
-  Дата и время, когда трек был проигран.
-  Именно это поле нужно использовать, если строить порядок истории по времени.
+items[].played_at
+  Время, когда трек был проигран.
+  Если использовать этот API для истории, сортировать нужно по этому полю.
 
-items[].context:
-  Контекст, из которого был проигран трек: playlist, album, artist и т.п.
+items[].track
+  Сам трек.
 
-cursors.after / cursors.before:
-  Курсоры для запроса следующей или предыдущей страницы истории.
+items[].context
+  Контекст, из которого трек был проигран: playlist, album, artist и т.п.
 
-next:
-  URL следующей страницы или null.
+next + cursors
+  Пагинация истории.
 
-Важный вывод
-Этот endpoint не возвращает текущую очередь и не гарантирует модель "уже сыгранные треки текущей очереди".
-Это именно история недавно прослушанных треков пользователя. Для нашей панели Overlay, если нужен список "что уже прошло в этой сессии/очереди", локальный кеш приложения подходит лучше и делает меньше запросов к Spotify.
+Важно:
+Это response истории прослушивания пользователя, а не response текущей очереди.
