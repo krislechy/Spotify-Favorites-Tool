@@ -2,12 +2,14 @@ using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace SpotifyFavoritesTool;
 
-public sealed class LrclibLyricsService
+public sealed partial class LrclibLyricsService
 {
-    private const string Endpoint = "https://lrclib.net/api/get";
+    private const string GetEndpoint = "https://lrclib.net/api/get";
+    private const string SearchEndpoint = "https://lrclib.net/api/search";
     private static readonly HttpClient Http = new();
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -30,23 +32,65 @@ public sealed class LrclibLyricsService
 
     private static async Task<KaraokeLyrics> LoadLyricsAsync(PlaybackTrack track, CancellationToken cancellationToken)
     {
-        var url = BuildUrl(track);
-        using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Headers.UserAgent.ParseAdd("SpotifyFavoritesTool/1.0");
+        var exactLyrics = await TryLoadExactLyricsAsync(track, cancellationToken);
+        if (exactLyrics.Kind != LyricsKind.None)
+        {
+            return exactLyrics;
+        }
 
-        using var response = await Http.SendAsync(request, cancellationToken);
+        return await SearchLyricsAsync(track, cancellationToken);
+    }
+
+    private static async Task<KaraokeLyrics> TryLoadExactLyricsAsync(PlaybackTrack track, CancellationToken cancellationToken)
+    {
+        using var response = await SendAsync(BuildExactUrl(track), cancellationToken);
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
             return KaraokeLyrics.Empty;
         }
 
-        if (!response.IsSuccessStatusCode)
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        var dto = JsonSerializer.Deserialize<LrclibResponse>(body, JsonOptions);
+        return ToLyrics(dto);
+    }
+
+    private static async Task<KaraokeLyrics> SearchLyricsAsync(PlaybackTrack track, CancellationToken cancellationToken)
+    {
+        using var response = await SendAsync(BuildSearchUrl(track), cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound)
         {
-            throw new InvalidOperationException($"Сервис текста вернул {(int)response.StatusCode} {response.ReasonPhrase}.");
+            return KaraokeLyrics.Empty;
         }
 
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
-        var dto = JsonSerializer.Deserialize<LrclibResponse>(body, JsonOptions);
+        var candidates = JsonSerializer.Deserialize<LrclibResponse[]>(body, JsonOptions) ?? [];
+        var bestCandidate = candidates
+            .Where(HasAnyLyrics)
+            .OrderByDescending(candidate => ScoreCandidate(track, candidate))
+            .FirstOrDefault();
+
+        return bestCandidate is null ? KaraokeLyrics.Empty : ToLyrics(bestCandidate);
+    }
+
+    private static async Task<HttpResponseMessage> SendAsync(string url, CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.UserAgent.ParseAdd("SpotifyFavoritesTool/1.0");
+
+        var response = await Http.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
+        {
+            var statusCode = (int)response.StatusCode;
+            var reason = response.ReasonPhrase;
+            response.Dispose();
+            throw new InvalidOperationException($"Lyrics service returned {statusCode} {reason}.");
+        }
+
+        return response;
+    }
+
+    private static KaraokeLyrics ToLyrics(LrclibResponse? dto)
+    {
         var syncedLines = LrcLyricsParser.Parse(dto?.SyncedLyrics);
         if (syncedLines.Count > 0)
         {
@@ -58,10 +102,9 @@ public sealed class LrclibLyricsService
             : new KaraokeLyrics(LyricsKind.Plain, Array.Empty<KaraokeLyricLine>(), dto.PlainLyrics);
     }
 
-    private static string BuildUrl(PlaybackTrack track)
+    private static string BuildExactUrl(PlaybackTrack track)
     {
-        var artist = track.Artists.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()
-            ?? track.Artists;
+        var artist = GetPrimaryArtist(track);
         var parameters = new Dictionary<string, string>
         {
             ["track_name"] = track.Name,
@@ -73,16 +116,121 @@ public sealed class LrclibLyricsService
             parameters["duration"] = Math.Round(track.DurationMs.Value / 1000d).ToString("0");
         }
 
-        return Endpoint + "?" + string.Join("&", parameters.Select(pair =>
+        return GetEndpoint + "?" + BuildQuery(parameters);
+    }
+
+    private static string BuildSearchUrl(PlaybackTrack track)
+    {
+        var query = $"{NormalizeSearchText(track.Name)} {NormalizeSearchText(GetPrimaryArtist(track))}".Trim();
+        return SearchEndpoint + "?q=" + Uri.EscapeDataString(query);
+    }
+
+    private static string BuildQuery(Dictionary<string, string> parameters)
+    {
+        return string.Join("&", parameters.Select(pair =>
             $"{Uri.EscapeDataString(pair.Key)}={Uri.EscapeDataString(pair.Value)}"));
+    }
+
+    private static string GetPrimaryArtist(PlaybackTrack track)
+    {
+        return track.Artists.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()
+            ?? track.Artists;
+    }
+
+    private static int ScoreCandidate(PlaybackTrack track, LrclibResponse candidate)
+    {
+        var score = 0;
+        if (IsSameText(track.Name, candidate.TrackName))
+        {
+            score += 60;
+        }
+        else if (ContainsNormalized(candidate.TrackName, track.Name) || ContainsNormalized(track.Name, candidate.TrackName))
+        {
+            score += 35;
+        }
+
+        if (ContainsNormalized(candidate.ArtistName, track.Artists) || ContainsNormalized(track.Artists, candidate.ArtistName))
+        {
+            score += 30;
+        }
+
+        if (track.DurationMs is > 0 && candidate.Duration is > 0)
+        {
+            var expectedSeconds = (int)Math.Round(track.DurationMs.Value / 1000d);
+            var diff = Math.Abs(expectedSeconds - candidate.Duration.Value);
+            score += diff switch
+            {
+                <= 1 => 20,
+                <= 3 => 12,
+                <= 7 => 5,
+                _ => -20
+            };
+        }
+
+        if (!string.IsNullOrWhiteSpace(candidate.SyncedLyrics))
+        {
+            score += 10;
+        }
+
+        return score;
+    }
+
+    private static bool HasAnyLyrics(LrclibResponse candidate)
+    {
+        return !string.IsNullOrWhiteSpace(candidate.SyncedLyrics)
+            || !string.IsNullOrWhiteSpace(candidate.PlainLyrics);
+    }
+
+    private static bool IsSameText(string? left, string? right)
+    {
+        return string.Equals(NormalizeSearchText(left), NormalizeSearchText(right), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool ContainsNormalized(string? haystack, string? needle)
+    {
+        var normalizedHaystack = NormalizeSearchText(haystack);
+        var normalizedNeedle = NormalizeSearchText(needle);
+        return normalizedHaystack.Length > 0
+            && normalizedNeedle.Length > 0
+            && normalizedHaystack.Contains(normalizedNeedle, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeSearchText(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var withoutBrackets = BracketSuffixRegex().Replace(value, " ");
+        var withoutNoise = NoiseWordsRegex().Replace(withoutBrackets, " ");
+        return WhitespaceRegex().Replace(withoutNoise, " ").Trim();
     }
 
     private sealed class LrclibResponse
     {
+        [JsonPropertyName("trackName")]
+        public string? TrackName { get; set; }
+
+        [JsonPropertyName("artistName")]
+        public string? ArtistName { get; set; }
+
+        [JsonPropertyName("duration")]
+        public int? Duration { get; set; }
+
         [JsonPropertyName("syncedLyrics")]
         public string? SyncedLyrics { get; set; }
 
         [JsonPropertyName("plainLyrics")]
         public string? PlainLyrics { get; set; }
     }
+
+    [GeneratedRegex(@"\s*[\(\[].*?(remaster(?:ed)?|deluxe|edition|explicit|clean|radio edit|mono|stereo|version|feat\.?|ft\.?).*?[\)\]]\s*", RegexOptions.IgnoreCase)]
+    private static partial Regex BracketSuffixRegex();
+
+    [GeneratedRegex(@"\b(remaster(?:ed)?|deluxe|edition|explicit|clean|radio edit|mono|stereo|version)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex NoiseWordsRegex();
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex WhitespaceRegex();
 }
