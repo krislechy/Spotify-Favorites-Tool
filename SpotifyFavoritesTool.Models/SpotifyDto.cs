@@ -100,3 +100,24 @@ public sealed class PlaylistTrackItem
     [JsonPropertyName("track")]
     public SpotifyItem? Track { get; set; }
 }
+
+public sealed class QueueResponse
+{
+    [JsonPropertyName("currently_playing")]
+    public SpotifyItem? CurrentlyPlaying { get; set; }
+
+    [JsonPropertyName("queue")]
+    public SpotifyItem[]? Queue { get; set; }
+}
+
+public sealed class RecentlyPlayedResponse
+{
+    [JsonPropertyName("items")]
+    public RecentlyPlayedItem[]? Items { get; set; }
+}
+
+public sealed class RecentlyPlayedItem
+{
+    [JsonPropertyName("track")]
+    public SpotifyItem? Track { get; set; }
+}

@@ -4,7 +4,6 @@ public sealed class FavoriteTrackService
 {
     private readonly SpotifyClient _spotify;
     private readonly TrackFavoriteCache _cache = new();
-    private readonly Dictionary<string, IReadOnlyList<PlaybackTrack>> _contextTrackCache = new(StringComparer.Ordinal);
     private string? _lastObservedTrackUri;
 
     public FavoriteTrackService(SpotifyClient spotify)
@@ -18,23 +17,15 @@ public sealed class FavoriteTrackService
     public async Task<OverlayTrackList> GetOverlayTrackListAsync(CancellationToken cancellationToken = default)
     {
         var currentTrack = LastObservedTrack;
-        var contextUri = currentTrack?.ContextUri;
-        if (SpotifyClient.IsPlaylistContext(contextUri))
-        {
-            var contextTracks = await GetContextTracksAsync(contextUri!, cancellationToken);
-            return new OverlayTrackList(
-                "Текущий плейлист",
-                _cache.EnrichTracks(contextTracks, currentTrack),
-                IsPlaybackContext: true);
-        }
+        var queueTracks = await _spotify.GetQueueTracksAsync(currentTrack, cancellationToken);
+        var recentlyPlayedTracks = await _spotify.GetRecentlyPlayedTracksAsync(cancellationToken);
+        var streamTracks = BuildPlaybackStream(currentTrack, queueTracks, recentlyPlayedTracks);
 
         return new OverlayTrackList(
-            "Текущий плейлист",
-            Array.Empty<PlaybackTrack>(),
+            "Очередь Spotify",
+            _cache.EnrichTracks(streamTracks, currentTrack),
             IsPlaybackContext: true,
-            EmptyMessage: string.IsNullOrWhiteSpace(contextUri)
-                ? "Spotify не вернул context для текущего трека."
-                : $"Текущий context не является плейлистом: {contextUri}");
+            EmptyMessage: "Spotify не отдал текущую очередь.");
     }
 
     public void ResetObservation()
@@ -46,7 +37,6 @@ public sealed class FavoriteTrackService
     public void ClearCache()
     {
         _cache.Clear();
-        _contextTrackCache.Clear();
         ResetObservation();
     }
 
@@ -144,15 +134,30 @@ public sealed class FavoriteTrackService
         return cachedTrack;
     }
 
-    private async Task<IReadOnlyList<PlaybackTrack>> GetContextTracksAsync(string contextUri, CancellationToken cancellationToken)
+    private static IReadOnlyList<PlaybackTrack> BuildPlaybackStream(
+        PlaybackTrack? currentTrack,
+        IReadOnlyList<PlaybackTrack> queueTracks,
+        IReadOnlyList<PlaybackTrack> recentlyPlayedTracks)
     {
-        if (_contextTrackCache.TryGetValue(contextUri, out var cachedTracks))
+        var tracks = new List<PlaybackTrack>();
+        if (currentTrack is not null)
         {
-            return cachedTracks;
+            tracks.Add(currentTrack);
         }
 
-        var tracks = await _spotify.GetPlaylistTracksAsync(contextUri, cancellationToken);
-        _contextTrackCache[contextUri] = tracks;
-        return tracks;
+        tracks.AddRange(queueTracks);
+        tracks.AddRange(recentlyPlayedTracks);
+
+        var result = new List<PlaybackTrack>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var track in tracks)
+        {
+            if (seen.Add(track.Uri))
+            {
+                result.Add(track);
+            }
+        }
+
+        return result;
     }
 }
