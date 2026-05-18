@@ -471,7 +471,9 @@ public partial class MainWindow : Window
                 {
                     var trackList = await _favorites.GetOverlayTrackListAsync();
                     _overlayWindow?.SetTrackList(trackList);
-                    Log($"Список Overlay: показан текущий плейлист ({trackList.Tracks.Count} треков).");
+                    Log(
+                        $"Список Overlay: показан текущий плейлист ({trackList.Tracks.Count} треков).",
+                        trackList.EmptyMessage);
                 }
                 catch (SpotifyRateLimitException ex)
                 {

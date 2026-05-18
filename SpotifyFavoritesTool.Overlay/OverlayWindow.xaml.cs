@@ -98,6 +98,7 @@ public partial class OverlayWindow : Window, IDisposable
             _cachedTracks.Add(track);
         }
 
+        TrackListEmptyText.Text = trackList.EmptyMessage ?? "Spotify не отдал плейлист для текущего трека.";
         TrackListEmptyText.Visibility = _cachedTracks.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 

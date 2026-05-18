@@ -51,7 +51,8 @@ public sealed record FavoriteStatusResult(
 public sealed record OverlayTrackList(
     string Title,
     IReadOnlyList<PlaybackTrack> Tracks,
-    bool IsPlaybackContext);
+    bool IsPlaybackContext,
+    string? EmptyMessage = null);
 
 public enum FavoriteStatusSource
 {

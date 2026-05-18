@@ -31,7 +31,10 @@ public sealed class FavoriteTrackService
         return new OverlayTrackList(
             "Текущий плейлист",
             Array.Empty<PlaybackTrack>(),
-            IsPlaybackContext: true);
+            IsPlaybackContext: true,
+            EmptyMessage: string.IsNullOrWhiteSpace(contextUri)
+                ? "Spotify не вернул context для текущего трека."
+                : $"Текущий context не является плейлистом: {contextUri}");
     }
 
     public void ResetObservation()

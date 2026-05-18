@@ -25,9 +25,14 @@ public sealed class SpotifyClient
 
     public async Task<PlaybackTrack?> GetCurrentTrackOrNullAsync(CancellationToken cancellationToken = default)
     {
+        if (_auth.KnowsGrantedScopes && !_auth.HasPlaybackReadScopes)
+        {
+            throw new InvalidOperationException(BuildScopeError("полного состояния плеера", SpotifyAuthService.PlaybackReadScopes));
+        }
+
         var response = await SendAsync(
             HttpMethod.Get,
-            $"{ApiRoot}/me/player/currently-playing?additional_types=track",
+            $"{ApiRoot}/me/player?additional_types=track",
             cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.NoContent)
@@ -71,7 +76,7 @@ public sealed class SpotifyClient
             ?? throw new ArgumentException("Spotify context is not a playlist.", nameof(contextUri));
 
         var tracks = new List<PlaybackTrack>();
-        var nextUrl = $"{ApiRoot}/playlists/{Uri.EscapeDataString(playlistId)}/tracks?limit=100";
+        var nextUrl = $"{ApiRoot}/playlists/{Uri.EscapeDataString(playlistId)}/items?limit=50&additional_types=track";
         while (!string.IsNullOrWhiteSpace(nextUrl))
         {
             var response = await SendAsync(HttpMethod.Get, nextUrl, cancellationToken);
@@ -302,6 +307,11 @@ public sealed class SpotifyClient
         if (url.Contains("/me/player/currently-playing", StringComparison.OrdinalIgnoreCase))
         {
             return "получение текущего трека";
+        }
+
+        if (url.Contains("/me/player?", StringComparison.OrdinalIgnoreCase))
+        {
+            return "получение состояния плеера";
         }
 
         if (url.Contains("/me/player/previous", StringComparison.OrdinalIgnoreCase))
